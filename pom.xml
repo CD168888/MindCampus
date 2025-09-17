@@ -178,6 +178,13 @@
                 <version>${mc.version}</version>
             </dependency>
 
+            <!-- 核心项目模块 -->
+            <dependency>
+                <groupId>com.mc</groupId>
+                <artifactId>mc-project</artifactId>
+                <version>${mc.version}</version>
+            </dependency>
+
             <!-- 通用工具-->
             <dependency>
                 <groupId>com.mc</groupId>
@@ -195,6 +202,7 @@
         <module>mc-quartz</module>
         <module>mc-generator</module>
         <module>mc-common</module>
+        <module>mc-project</module>
     </modules>
     <packaging>pom</packaging>
 
