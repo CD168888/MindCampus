@@ -142,3 +142,14 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+# knife4j 配置
+knife4j:
+  enable: true           # 是否启用 knife4j 页面
+  production: false      # 是否生产模式（true 会关闭某些调试功能）
+  basic:
+    enable: false       # 是否启用 knife4j 内置的 basic 访问控制（可选）
+    username: ruoyi
+    password: 123456
+  setting:
+    swagger-model-name: 心理健康系统实体类
