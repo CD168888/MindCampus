@@ -6,7 +6,7 @@ import com.mc.system.domain.SysUserOnline;
 /**
  * 在线用户 服务层
  * 
- * @author ruoyi
+ * @author caidu
  */
 public interface ISysUserOnlineService
 {

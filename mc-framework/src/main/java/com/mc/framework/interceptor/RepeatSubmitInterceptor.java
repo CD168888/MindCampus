@@ -14,7 +14,7 @@ import com.mc.common.utils.ServletUtils;
 /**
  * 防止重复提交拦截器
  *
- * @author ruoyi
+ * @author caidu
  */
 @Component
 public abstract class RepeatSubmitInterceptor implements HandlerInterceptor

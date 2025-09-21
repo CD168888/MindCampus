@@ -6,7 +6,7 @@ import com.mc.common.utils.DesensitizedUtil;
 /**
  * 脱敏类型
  *
- * @author ruoyi
+ * @author caidu
  */
 public enum DesensitizedType
 {

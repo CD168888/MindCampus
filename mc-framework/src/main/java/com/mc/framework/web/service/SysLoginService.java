@@ -31,7 +31,7 @@ import com.mc.system.service.ISysUserService;
 /**
  * 登录校验方法
  * 
- * @author ruoyi
+ * @author caidu
  */
 @Component
 public class SysLoginService

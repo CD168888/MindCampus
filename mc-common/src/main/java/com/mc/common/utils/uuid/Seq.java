@@ -5,7 +5,7 @@ import com.mc.common.utils.DateUtils;
 import com.mc.common.utils.StringUtils;
 
 /**
- * @author ruoyi 序列生成类
+ * @author caidu 序列生成类
  */
 public class Seq
 {

@@ -25,7 +25,7 @@ import com.mc.system.service.ISysDeptService;
 /**
  * 部门信息
  * 
- * @author ruoyi
+ * @author caidu
  */
 @RestController
 @RequestMapping("/system/dept")

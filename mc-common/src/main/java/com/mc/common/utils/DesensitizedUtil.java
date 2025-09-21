@@ -3,7 +3,7 @@ package com.mc.common.utils;
 /**
  * 脱敏工具类
  *
- * @author ruoyi
+ * @author caidu
  */
 public class DesensitizedUtil
 {

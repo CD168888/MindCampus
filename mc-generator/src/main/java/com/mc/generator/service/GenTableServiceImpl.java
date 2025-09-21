@@ -39,7 +39,7 @@ import com.mc.generator.util.VelocityUtils;
 /**
  * 业务 服务层实现
  * 
- * @author ruoyi
+ * @author caidu
  */
 @Service
 public class GenTableServiceImpl implements IGenTableService

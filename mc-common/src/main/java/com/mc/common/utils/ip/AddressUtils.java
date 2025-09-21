@@ -12,7 +12,7 @@ import com.mc.common.utils.http.HttpUtils;
 /**
  * 获取地址类
  * 
- * @author ruoyi
+ * @author caidu
  */
 public class AddressUtils
 {

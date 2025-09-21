@@ -6,7 +6,7 @@ import com.mc.common.constant.HttpStatus;
 /**
  * 响应信息主体
  *
- * @author ruoyi
+ * @author caidu
  */
 public class R<T> implements Serializable
 {

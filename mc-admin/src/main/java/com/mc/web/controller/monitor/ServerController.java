@@ -10,7 +10,7 @@ import com.mc.framework.web.domain.Server;
 /**
  * 服务器监控
  * 
- * @author ruoyi
+ * @author caidu
  */
 @RestController
 @RequestMapping("/monitor/server")

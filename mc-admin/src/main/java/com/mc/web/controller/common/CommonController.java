@@ -23,7 +23,7 @@ import com.mc.framework.config.ServerConfig;
 /**
  * 通用请求处理
  * 
- * @author ruoyi
+ * @author caidu
  */
 @RestController
 @RequestMapping("/common")

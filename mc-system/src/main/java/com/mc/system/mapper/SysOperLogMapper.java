@@ -6,7 +6,7 @@ import com.mc.system.domain.SysOperLog;
 /**
  * 操作日志 数据层
  * 
- * @author ruoyi
+ * @author caidu
  */
 public interface SysOperLogMapper
 {

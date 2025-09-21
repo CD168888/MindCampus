@@ -7,7 +7,7 @@ import com.mc.common.utils.ServletUtils;
 /**
  * 服务相关配置
  * 
- * @author ruoyi
+ * @author caidu
  */
 @Component
 public class ServerConfig

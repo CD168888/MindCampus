@@ -16,7 +16,7 @@ import com.mc.common.exception.ServiceException;
 /**
  * 安全服务工具类
  * 
- * @author ruoyi
+ * @author caidu
  */
 public class SecurityUtils
 {

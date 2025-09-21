@@ -11,7 +11,7 @@ import com.mc.quartz.domain.SysJob;
 /**
  * 任务执行工具
  *
- * @author ruoyi
+ * @author caidu
  */
 public class JobInvokeUtil
 {

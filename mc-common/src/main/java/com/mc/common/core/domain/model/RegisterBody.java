@@ -3,7 +3,7 @@ package com.mc.common.core.domain.model;
 /**
  * 用户注册对象
  * 
- * @author ruoyi
+ * @author caidu
  */
 public class RegisterBody extends LoginBody
 {

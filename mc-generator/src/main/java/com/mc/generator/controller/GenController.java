@@ -39,7 +39,7 @@ import com.mc.generator.service.IGenTableService;
 /**
  * 代码生成 操作处理
  * 
- * @author ruoyi
+ * @author caidu
  */
 @RestController
 @RequestMapping("/tool/gen")

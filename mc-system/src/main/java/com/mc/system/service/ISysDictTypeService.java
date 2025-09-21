@@ -7,7 +7,7 @@ import com.mc.common.core.domain.entity.SysDictType;
 /**
  * 字典 业务层
  * 
- * @author ruoyi
+ * @author caidu
  */
 public interface ISysDictTypeService
 {

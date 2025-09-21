@@ -9,7 +9,7 @@ import com.mc.common.utils.StringUtils;
 /**
  * 首页
  *
- * @author ruoyi
+ * @author caidu
  */
 @RestController
 public class SysIndexController

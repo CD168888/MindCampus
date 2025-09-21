@@ -12,7 +12,7 @@ import com.mc.common.utils.StringUtils;
 /**
  * 类型转换器
  *
- * @author ruoyi
+ * @author caidu
  */
 public class Convert
 {

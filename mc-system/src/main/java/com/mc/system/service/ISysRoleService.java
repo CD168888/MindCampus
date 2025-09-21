@@ -8,7 +8,7 @@ import com.mc.system.domain.SysUserRole;
 /**
  * 角色业务层
  * 
- * @author ruoyi
+ * @author caidu
  */
 public interface ISysRoleService
 {

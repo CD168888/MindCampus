@@ -35,7 +35,7 @@ import com.mc.system.service.ISysUserService;
 /**
  * 用户 业务层处理
  * 
- * @author ruoyi
+ * @author caidu
  */
 @Service
 public class SysUserServiceImpl implements ISysUserService

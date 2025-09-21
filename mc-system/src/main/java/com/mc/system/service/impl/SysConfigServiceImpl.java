@@ -20,7 +20,7 @@ import com.mc.system.service.ISysConfigService;
 /**
  * 参数配置 服务层实现
  * 
- * @author ruoyi
+ * @author caidu
  */
 @Service
 public class SysConfigServiceImpl implements ISysConfigService

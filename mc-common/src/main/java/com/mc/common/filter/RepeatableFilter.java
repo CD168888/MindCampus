@@ -14,7 +14,7 @@ import com.mc.common.utils.StringUtils;
 /**
  * Repeatable 过滤器
  * 
- * @author ruoyi
+ * @author caidu
  */
 public class RepeatableFilter implements Filter
 {
