@@ -1,15 +1,16 @@
 package com.mc.student.service.impl;
 
-import java.util.List;
-
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mc.common.core.domain.entity.SysUser;
 import com.mc.common.utils.DateUtils;
+import com.mc.student.domain.Student;
+import com.mc.student.mapper.StudentInfoMapper;
+import com.mc.student.service.IStudentInfoService;
 import com.mc.system.mapper.SysUserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.mc.student.mapper.StudentInfoMapper;
-import com.mc.student.domain.StudentInfo;
-import com.mc.student.service.IStudentInfoService;
+
+import java.util.List;
 
 /**
  * 学生信息Service业务层处理
@@ -18,7 +19,7 @@ import com.mc.student.service.IStudentInfoService;
  * @date 2025-09-21
  */
 @Service
-public class StudentInfoServiceImpl implements IStudentInfoService {
+public class StudentInfoServiceImpl extends ServiceImpl<StudentInfoMapper, Student> implements IStudentInfoService {
     @Autowired
     private StudentInfoMapper studentInfoMapper;
     @Autowired
@@ -31,43 +32,43 @@ public class StudentInfoServiceImpl implements IStudentInfoService {
      * @return 学生信息
      */
     @Override
-    public StudentInfo selectStudentInfoByStudentId(Long studentId) {
+    public Student selectStudentInfoByStudentId(Long studentId) {
         return studentInfoMapper.selectStudentInfoByStudentId(studentId);
     }
 
     /**
      * 查询学生信息列表
      *
-     * @param studentInfo 学生信息
+     * @param student 学生信息
      * @return 学生信息
      */
     @Override
-    public List<StudentInfo> selectStudentInfoList(StudentInfo studentInfo) {
-        return studentInfoMapper.selectStudentInfoList(studentInfo);
+    public List<Student> selectStudentInfoList(Student student) {
+        return studentInfoMapper.selectStudentInfoList(student);
     }
 
     /**
      * 新增学生信息
      *
-     * @param studentInfo 学生信息
+     * @param student 学生信息
      * @return 结果
      */
     @Override
-    public int insertStudentInfo(StudentInfo studentInfo) {
-        studentInfo.setCreateTime(DateUtils.getNowDate());
-        return studentInfoMapper.insertStudentInfo(studentInfo);
+    public int insertStudentInfo(Student student) {
+        student.setCreateTime(DateUtils.getNowDate());
+        return studentInfoMapper.insertStudentInfo(student);
     }
 
     /**
      * 修改学生信息
      *
-     * @param studentInfo 学生信息
+     * @param student 学生信息
      * @return 结果
      */
     @Override
-    public int updateStudentInfo(StudentInfo studentInfo) {
-        studentInfo.setUpdateTime(DateUtils.getNowDate());
-        return studentInfoMapper.updateStudentInfo(studentInfo);
+    public int updateStudentInfo(Student student) {
+        student.setUpdateTime(DateUtils.getNowDate());
+        return studentInfoMapper.updateStudentInfo(student);
     }
 
     /**
@@ -101,16 +102,16 @@ public class StudentInfoServiceImpl implements IStudentInfoService {
     public List<String> listUnbindUserIds() {
         // 查询所有用户列表
         List<SysUser> sysUsers = sysUserMapper.selectUserList(new SysUser());
-        // 提取所有用户的ID，并过滤掉空ID
+        // 提取所有用户的ID，并过滤掉空ID和ID为1的用户
         List<String> allUserIds = sysUsers.stream()
                 .map(user -> String.valueOf(user.getUserId()))
-                .filter(id -> !id.isEmpty())
+                .filter(id -> !id.isEmpty() && !"1".equals(id))
                 .toList();
 
         // 查询所有已绑定的学生信息列表
-        List<StudentInfo> studentInfos = studentInfoMapper.selectStudentInfoList(new StudentInfo());
+        List<Student> students = studentInfoMapper.selectStudentInfoList(new Student());
         // 提取已绑定学生的用户ID，并过滤掉空ID
-        List<String> boundUserIds = studentInfos.stream()
+        List<String> boundUserIds = students.stream()
                 .map(student -> String.valueOf(student.getUserId()))
                 .filter(id -> !id.isEmpty())
                 .toList();

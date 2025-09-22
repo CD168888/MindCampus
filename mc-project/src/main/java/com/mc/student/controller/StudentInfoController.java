@@ -1,29 +1,22 @@
 package com.mc.student.controller;
 
-import java.util.List;
-
+import com.mc.common.annotation.Log;
+import com.mc.common.core.controller.BaseController;
+import com.mc.common.core.domain.AjaxResult;
+import com.mc.common.core.page.TableDataInfo;
+import com.mc.common.enums.BusinessType;
+import com.mc.common.utils.poi.ExcelUtil;
+import com.mc.student.domain.Student;
+import com.mc.student.service.IStudentInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import com.mc.common.annotation.Log;
-import com.mc.common.core.controller.BaseController;
-import com.mc.common.core.domain.AjaxResult;
-import com.mc.common.enums.BusinessType;
-import com.mc.student.domain.StudentInfo;
-import com.mc.student.service.IStudentInfoService;
-import com.mc.common.utils.poi.ExcelUtil;
-import com.mc.common.core.page.TableDataInfo;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 学生信息Controller
@@ -45,9 +38,9 @@ public class StudentInfoController extends BaseController {
     @PreAuthorize("@ss.hasPermi('student:info:list')")
     @GetMapping("/list")
     public TableDataInfo list(
-            @Parameter(description = "学生信息查询条件") StudentInfo studentInfo) {
+            @Parameter(description = "学生信息查询条件") Student student) {
         startPage();
-        List<StudentInfo> list = studentInfoService.selectStudentInfoList(studentInfo);
+        List<Student> list = studentInfoService.selectStudentInfoList(student);
         return getDataTable(list);
     }
 
@@ -60,9 +53,9 @@ public class StudentInfoController extends BaseController {
     @PostMapping("/export")
     public void export(
             @Parameter(description = "HTTP响应对象") HttpServletResponse response,
-            @Parameter(description = "学生信息查询条件") StudentInfo studentInfo) {
-        List<StudentInfo> list = studentInfoService.selectStudentInfoList(studentInfo);
-        ExcelUtil<StudentInfo> util = new ExcelUtil<StudentInfo>(StudentInfo.class);
+            @Parameter(description = "学生信息查询条件") Student student) {
+        List<Student> list = studentInfoService.selectStudentInfoList(student);
+        ExcelUtil<Student> util = new ExcelUtil<Student>(Student.class);
         util.exportExcel(response, list, "学生信息数据");
     }
 
@@ -85,8 +78,8 @@ public class StudentInfoController extends BaseController {
     @Log(title = "学生信息", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(
-            @Parameter(description = "学生信息实体") @RequestBody StudentInfo studentInfo) {
-        return toAjax(studentInfoService.insertStudentInfo(studentInfo));
+            @Parameter(description = "学生信息实体") @RequestBody Student student) {
+        return toAjax(studentInfoService.insertStudentInfo(student));
     }
 
     /**
@@ -97,8 +90,8 @@ public class StudentInfoController extends BaseController {
     @Log(title = "学生信息", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(
-            @Parameter(description = "学生信息实体") @RequestBody StudentInfo studentInfo) {
-        return toAjax(studentInfoService.updateStudentInfo(studentInfo));
+            @Parameter(description = "学生信息实体") @RequestBody Student student) {
+        return toAjax(studentInfoService.updateStudentInfo(student));
     }
 
     /**

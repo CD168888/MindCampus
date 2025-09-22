@@ -1,9 +1,9 @@
 package com.mc.student.domain;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import com.mc.common.annotation.Excel;
 import com.mc.common.core.domain.BaseEntity;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * 学生信息对象 student_info
@@ -11,7 +11,7 @@ import com.mc.common.core.domain.BaseEntity;
  * @author caidu
  * @date 2025-09-21
  */
-public class StudentInfo extends BaseEntity {
+public class Student extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     /**

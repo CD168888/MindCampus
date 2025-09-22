@@ -1,8 +1,9 @@
 package com.mc.student.mapper;
 
-import java.util.List;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.mc.student.domain.Student;
 
-import com.mc.student.domain.StudentInfo;
+import java.util.List;
 
 /**
  * 学生信息Mapper接口
@@ -10,38 +11,38 @@ import com.mc.student.domain.StudentInfo;
  * @author caidu
  * @date 2025-09-21
  */
-public interface StudentInfoMapper {
+public interface StudentInfoMapper extends BaseMapper<Student> {
     /**
      * 查询学生信息
      *
      * @param studentId 学生信息主键
      * @return 学生信息
      */
-    public StudentInfo selectStudentInfoByStudentId(Long studentId);
+    public Student selectStudentInfoByStudentId(Long studentId);
 
     /**
      * 查询学生信息列表
      *
-     * @param studentInfo 学生信息
+     * @param student 学生信息
      * @return 学生信息集合
      */
-    public List<StudentInfo> selectStudentInfoList(StudentInfo studentInfo);
+    public List<Student> selectStudentInfoList(Student student);
 
     /**
      * 新增学生信息
      *
-     * @param studentInfo 学生信息
+     * @param student 学生信息
      * @return 结果
      */
-    public int insertStudentInfo(StudentInfo studentInfo);
+    public int insertStudentInfo(Student student);
 
     /**
      * 修改学生信息
      *
-     * @param studentInfo 学生信息
+     * @param student 学生信息
      * @return 结果
      */
-    public int updateStudentInfo(StudentInfo studentInfo);
+    public int updateStudentInfo(Student student);
 
     /**
      * 删除学生信息
