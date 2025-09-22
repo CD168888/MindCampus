@@ -2,8 +2,8 @@ package com.mc.student.controller;
 
 import com.mc.common.annotation.Log;
 import com.mc.common.core.controller.BaseController;
-import com.mc.common.core.domain.AjaxResult;
 import com.mc.common.core.domain.R;
+import com.mc.common.core.page.TableDataInfo;
 import com.mc.common.enums.BusinessType;
 import com.mc.common.utils.poi.ExcelUtil;
 import com.mc.student.domain.Student;
@@ -37,10 +37,11 @@ public class StudentInfoController extends BaseController {
     @Operation(summary = "查询学生信息列表")
     @PreAuthorize("@ss.hasPermi('student:info:list')")
     @GetMapping("/list")
-    public R<List<Student>> list(
+    public TableDataInfo<List<Student>> list(
             @Parameter(description = "学生信息查询条件") Student student) {
         startPage();
-        return R.ok(studentInfoService.selectStudentInfoList(student));
+        List<Student> list = studentInfoService.selectStudentInfoList(student);
+        return getDataTable(list);
     }
 
     /**
@@ -64,9 +65,9 @@ public class StudentInfoController extends BaseController {
     @Operation(summary = "获取学生信息详细信息")
     @PreAuthorize("@ss.hasPermi('student:info:query')")
     @GetMapping(value = "/{studentId}")
-    public AjaxResult getInfo(
+    public R<Student> getInfo(
             @Parameter(description = "学生ID") @PathVariable("studentId") Long studentId) {
-        return success(studentInfoService.selectStudentInfoByStudentId(studentId));
+        return R.ok(studentInfoService.selectStudentInfoByStudentId(studentId));
     }
 
     /**
