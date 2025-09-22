@@ -122,16 +122,12 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
   group-configs:
-    - group: 'default'
-      display-name: '测试模块'
-      paths-to-match: '/**'
-      packages-to-scan: com.mc.web.controller.tool
+#    - group: 'default'
+#      display-name: '测试模块'
+#      paths-to-match: '/**'
+#      packages-to-scan: com.mc.web.controller.tool
     - group: 'system'
       display-name: '后台管理模块'
-      paths-to-match: '/**'
-      packages-to-scan: com.mc.system.controller
-    - group: 'student'
-      display-name: '学生管理模块'
       paths-to-match: '/**'
       packages-to-scan: com.mc.student.controller
 
