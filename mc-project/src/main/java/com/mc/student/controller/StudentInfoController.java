@@ -3,7 +3,7 @@ package com.mc.student.controller;
 import com.mc.common.annotation.Log;
 import com.mc.common.core.controller.BaseController;
 import com.mc.common.core.domain.AjaxResult;
-import com.mc.common.core.page.TableDataInfo;
+import com.mc.common.core.domain.R;
 import com.mc.common.enums.BusinessType;
 import com.mc.common.utils.poi.ExcelUtil;
 import com.mc.student.domain.Student;
@@ -37,11 +37,10 @@ public class StudentInfoController extends BaseController {
     @Operation(summary = "查询学生信息列表")
     @PreAuthorize("@ss.hasPermi('student:info:list')")
     @GetMapping("/list")
-    public TableDataInfo list(
+    public R<List<Student>> list(
             @Parameter(description = "学生信息查询条件") Student student) {
         startPage();
-        List<Student> list = studentInfoService.selectStudentInfoList(student);
-        return getDataTable(list);
+        return R.ok(studentInfoService.selectStudentInfoList(student));
     }
 
     /**
@@ -77,9 +76,9 @@ public class StudentInfoController extends BaseController {
     @PreAuthorize("@ss.hasPermi('student:info:add')")
     @Log(title = "学生信息", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(
+    public R<Integer> add(
             @Parameter(description = "学生信息实体") @RequestBody Student student) {
-        return toAjax(studentInfoService.insertStudentInfo(student));
+        return R.ok(studentInfoService.insertStudentInfo(student));
     }
 
     /**
@@ -89,9 +88,9 @@ public class StudentInfoController extends BaseController {
     @PreAuthorize("@ss.hasPermi('student:info:edit')")
     @Log(title = "学生信息", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(
+    public R<Integer> edit(
             @Parameter(description = "学生信息实体") @RequestBody Student student) {
-        return toAjax(studentInfoService.updateStudentInfo(student));
+        return R.ok(studentInfoService.updateStudentInfo(student));
     }
 
     /**
@@ -101,9 +100,9 @@ public class StudentInfoController extends BaseController {
     @PreAuthorize("@ss.hasPermi('student:info:remove')")
     @Log(title = "学生信息", businessType = BusinessType.DELETE)
     @DeleteMapping("/{studentIds}")
-    public AjaxResult remove(
+    public R<Integer> remove(
             @Parameter(description = "学生ID数组") @PathVariable Long[] studentIds) {
-        return toAjax(studentInfoService.deleteStudentInfoByStudentIds(studentIds));
+        return R.ok(studentInfoService.deleteStudentInfoByStudentIds(studentIds));
     }
 
     /**
@@ -112,8 +111,8 @@ public class StudentInfoController extends BaseController {
     @Operation(summary = "查询未绑定的用户ID列表")
     @PreAuthorize("@ss.hasPermi('student:info:listUnbindUserIds')")
     @GetMapping("/listUnbindUserIds")
-    public AjaxResult listUnbindUserIds() {
+    public R<List<String>> listUnbindUserIds() {
         List<String> list = studentInfoService.listUnbindUserIds();
-        return success(list);
+        return R.ok(list);
     }
 }
