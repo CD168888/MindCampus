@@ -129,7 +129,9 @@ springdoc:
     - group: 'system'
       display-name: '后台管理模块'
       paths-to-match: '/**'
-      packages-to-scan: com.mc.student.controller
+      packages-to-scan:
+        - com.mc.student.controller
+        - com.mc.questionnaire.controller
 
 # 防盗链配置
 referer:
