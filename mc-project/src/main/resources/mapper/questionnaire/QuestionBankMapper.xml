@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mc.questionnaire.mapper.QuestionBankMapper">
+    
+    <resultMap type="QuestionBank" id="QuestionBankResult">
+        <result property="bankId"    column="bank_id"    />
+        <result property="type"    column="type"    />
+        <result property="content"    column="content"    />
+        <result property="options"    column="options"    />
+        <result property="standardAnswer"    column="standard_answer"    />
+        <result property="score"    column="score"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectQuestionBankVo">
+        select bank_id, type, content, options, standard_answer, score, create_by, create_time, update_by, update_time, remark from question_bank
+    </sql>
+
+    <select id="selectQuestionBankList" parameterType="QuestionBank" resultMap="QuestionBankResult">
+        <include refid="selectQuestionBankVo"/>
+        <where>  
+            <if test="type != null  and type != ''"> and type = #{type}</if>
+            <if test="content != null  and content != ''"> and content like concat('%', #{content}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectQuestionBankByBankId" parameterType="Long" resultMap="QuestionBankResult">
+        <include refid="selectQuestionBankVo"/>
+        where bank_id = #{bankId}
+    </select>
+
+    <insert id="insertQuestionBank" parameterType="QuestionBank" useGeneratedKeys="true" keyProperty="bankId">
+        insert into question_bank
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="type != null and type != ''">type,</if>
+            <if test="content != null and content != ''">content,</if>
+            <if test="options != null and options != ''">options,</if>
+            <if test="standardAnswer != null and standardAnswer != ''">standard_answer,</if>
+            <if test="score != null">score,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="type != null and type != ''">#{type},</if>
+            <if test="content != null and content != ''">#{content},</if>
+            <if test="options != null and options != ''">#{options},</if>
+            <if test="standardAnswer != null and standardAnswer != ''">#{standardAnswer},</if>
+            <if test="score != null">#{score},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateQuestionBank" parameterType="QuestionBank">
+        update question_bank
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="type != null and type != ''">type = #{type},</if>
+            <if test="content != null and content != ''">content = #{content},</if>
+            <if test="options != null and options != ''">options = #{options},</if>
+            <if test="standardAnswer != null and standardAnswer != ''">standard_answer = #{standardAnswer},</if>
+            <if test="score != null">score = #{score},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where bank_id = #{bankId}
+    </update>
+
+    <delete id="deleteQuestionBankByBankId" parameterType="Long">
+        delete from question_bank where bank_id = #{bankId}
+    </delete>
+
+    <delete id="deleteQuestionBankByBankIds" parameterType="String">
+        delete from question_bank where bank_id in 
+        <foreach item="bankId" collection="array" open="(" separator="," close=")">
+            #{bankId}
+        </foreach>
+    </delete>
+</mapper>
