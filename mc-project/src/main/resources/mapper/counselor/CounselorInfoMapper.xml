@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mc.counselor.mapper.CounselorInfoMapper">
+    
+    <resultMap type="CounselorInfo" id="CounselorInfoResult">
+        <result property="counselorId"    column="counselor_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="name"    column="name"    />
+        <result property="phone"    column="phone"    />
+        <result property="email"    column="email"    />
+        <result property="office"    column="office"    />
+        <result property="status"    column="status"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectCounselorInfoVo">
+        select counselor_id, user_id, name, phone, email, office, status, create_by, create_time, update_by, update_time, remark from counselor_info
+    </sql>
+
+    <select id="selectCounselorInfoList" parameterType="CounselorInfo" resultMap="CounselorInfoResult">
+        <include refid="selectCounselorInfoVo"/>
+        <where>  
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
+            <if test="email != null  and email != ''"> and email = #{email}</if>
+            <if test="office != null  and office != ''"> and office = #{office}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    
+    <select id="selectCounselorInfoByCounselorId" parameterType="Long" resultMap="CounselorInfoResult">
+        <include refid="selectCounselorInfoVo"/>
+        where counselor_id = #{counselorId}
+    </select>
+
+    <insert id="insertCounselorInfo" parameterType="CounselorInfo" useGeneratedKeys="true" keyProperty="counselorId">
+        insert into counselor_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="name != null and name != ''">name,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="email != null and email != ''">email,</if>
+            <if test="office != null and office != ''">office,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="email != null and email != ''">#{email},</if>
+            <if test="office != null and office != ''">#{office},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateCounselorInfo" parameterType="CounselorInfo">
+        update counselor_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="phone != null and phone != ''">phone = #{phone},</if>
+            <if test="email != null and email != ''">email = #{email},</if>
+            <if test="office != null and office != ''">office = #{office},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where counselor_id = #{counselorId}
+    </update>
+
+    <delete id="deleteCounselorInfoByCounselorId" parameterType="Long">
+        delete from counselor_info where counselor_id = #{counselorId}
+    </delete>
+
+    <delete id="deleteCounselorInfoByCounselorIds" parameterType="String">
+        delete from counselor_info where counselor_id in 
+        <foreach item="counselorId" collection="array" open="(" separator="," close=")">
+            #{counselorId}
+        </foreach>
+    </delete>
+</mapper>
