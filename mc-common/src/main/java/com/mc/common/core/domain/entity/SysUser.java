@@ -1,24 +1,26 @@
 package com.mc.common.core.domain.entity;
 
-import java.util.Date;
-import java.util.List;
-import jakarta.validation.constraints.*;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import com.mc.common.annotation.Excel;
 import com.mc.common.annotation.Excel.ColumnType;
 import com.mc.common.annotation.Excel.Type;
 import com.mc.common.annotation.Excels;
 import com.mc.common.core.domain.BaseEntity;
 import com.mc.common.xss.Xss;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * 用户对象 sys_user
- * 
+ *
  * @author caidu
  */
-public class SysUser extends BaseEntity
-{
+public class SysUser extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     /** 用户ID */
@@ -36,6 +38,10 @@ public class SysUser extends BaseEntity
     /** 用户昵称 */
     @Excel(name = "用户名称")
     private String nickName;
+
+    /** 用户类型（00系统用户 01学生用户 02辅导员用户 ...） */
+    @Excel(name = "用户类型", readConverterExp = "00=系统用户,01=学生用户,02=辅导员用户")
+    private String userType;
 
     /** 用户邮箱 */
     @Excel(name = "用户邮箱")
@@ -142,6 +148,14 @@ public class SysUser extends BaseEntity
     public void setNickName(String nickName)
     {
         this.nickName = nickName;
+    }
+
+    public String getUserType() {
+        return userType;
+    }
+
+    public void setUserType(String userType) {
+        this.userType = userType;
     }
 
     @Xss(message = "用户账号不能包含脚本字符")
@@ -317,6 +331,7 @@ public class SysUser extends BaseEntity
             .append("deptId", getDeptId())
             .append("userName", getUserName())
             .append("nickName", getNickName())
+            .append("userType", getUserType())
             .append("email", getEmail())
             .append("phonenumber", getPhonenumber())
             .append("sex", getSex())
