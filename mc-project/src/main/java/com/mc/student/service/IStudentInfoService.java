@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.mc.student.domain.Student;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 学生信息Service接口
@@ -61,9 +62,9 @@ public interface IStudentInfoService extends IService<Student> {
     public int deleteStudentInfoByStudentId(Long studentId);
 
     /**
-     * 查询未绑定的用户ID列表
+     * 查询未绑定的用户ID/昵称列表
      *
-     * @return 用户ID列表
+     * @return 用户ID/昵称列表
      */
-    List<String> listUnbindUserIds();
+    List<Map<String, Object>> listUnbindUserInfos();
 }

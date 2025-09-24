@@ -10,7 +10,8 @@ import com.mc.system.mapper.SysUserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 学生信息Service业务层处理
@@ -94,31 +95,31 @@ public class StudentInfoServiceImpl extends ServiceImpl<StudentInfoMapper, Stude
     }
 
     /**
-     * 查询未绑定的用户ID列表
+     * 查询未绑定的用户ID/昵称列表
      *
      * @return 列表
      */
     @Override
-    public List<String> listUnbindUserIds() {
-        // 查询所有用户列表
+    public List<Map<String, Object>> listUnbindUserInfos() {
         List<SysUser> sysUsers = sysUserMapper.selectUserList(new SysUser());
-        // 提取所有用户的ID，并过滤掉空ID和ID为1的用户
-        List<String> allUserIds = sysUsers.stream()
-                .map(user -> String.valueOf(user.getUserId()))
-                .filter(id -> !id.isEmpty() && !"1".equals(id))
-                .toList();
 
-        // 查询所有已绑定的学生信息列表
-        List<Student> students = studentInfoMapper.selectStudentInfoList(new Student());
-        // 提取已绑定学生的用户ID，并过滤掉空ID
-        List<String> boundUserIds = students.stream()
-                .map(student -> String.valueOf(student.getUserId()))
-                .filter(id -> !id.isEmpty())
-                .toList();
+        Map<Long, SysUser> userMap = sysUsers.stream()
+                .filter(user -> "01".equals(user.getUserType()) && user.getUserId() != null && user.getUserId() != 1)
+                .collect(Collectors.toMap(SysUser::getUserId, user -> user));
 
-        // 返回未绑定的用户ID列表（即在所有用户ID中但不在已绑定用户ID中的ID）
-        return allUserIds.stream()
+        Set<Long> boundUserIds = studentInfoMapper.selectStudentInfoList(new Student()).stream()
+                .map(Student::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return userMap.keySet().stream()
                 .filter(id -> !boundUserIds.contains(id))
+                .map(id -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("userId", id);
+                    map.put("nickName", userMap.get(id).getNickName());
+                    return map;
+                })
                 .toList();
     }
 }

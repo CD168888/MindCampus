@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 学生信息Controller
@@ -107,13 +108,13 @@ public class StudentInfoController extends BaseController {
     }
 
     /**
-     * 查询未绑定的用户ID列表
+     * 查询未绑定的用户ID/昵称
      */
-    @Operation(summary = "查询未绑定的用户ID列表")
-    @PreAuthorize("@ss.hasPermi('student:info:listUnbindUserIds')")
-    @GetMapping("/listUnbindUserIds")
-    public R<List<String>> listUnbindUserIds() {
-        List<String> list = studentInfoService.listUnbindUserIds();
-        return R.ok(list);
+    @Operation(summary = "查询未绑定的用户ID/昵称列表")
+    @PreAuthorize("@ss.hasPermi('student:info:listUnbindUsers')")
+    @GetMapping("/listUnbindUsers")
+    public R<List<Map<String, Object>>> listUnbindUserIds() {
+        List<Map<String, Object>> maps = studentInfoService.listUnbindUserInfos();
+        return R.ok(maps);
     }
 }

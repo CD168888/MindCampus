@@ -84,9 +84,13 @@
     <!-- 添加或修改学生信息对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="infoRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="用户id" prop="userId">
-          <el-select v-model="form.userId" placeholder="请选择用户id" :disabled="isEditMode" clearable>
-            <el-option v-for="userId in unbindUserIds" :key="userId" :label="userId" :value="userId" />
+        <el-form-item label="用户ID" prop="userId">
+          <el-input v-model="form.userId" placeholder="用户ID" :disabled="true" />
+        </el-form-item>
+        <el-form-item label="用户昵称" prop="userNickName">
+          <el-select v-model="form.userId" placeholder="请选择用户昵称" :disabled="isEditMode" clearable
+            @change="handleUserChange">
+            <el-option v-for="user in unbindUsers" :key="user.userId" :label="user.nickName" :value="user.userId" />
           </el-select>
         </el-form-item>
         <el-form-item label="学号" prop="studentNo">
@@ -131,7 +135,7 @@
 </template>
 
 <script setup name="Info">
-import { listInfo, getInfo, delInfo, addInfo, updateInfo, listUnbindUserIds } from "@/api/student/info"
+import {addInfo, delInfo, getInfo, listInfo, listUnbindUsers, updateInfo} from "@/api/student/info"
 
 const { proxy } = getCurrentInstance()
 const { sys_user_sex, student_status } = proxy.useDict('sys_user_sex', 'student_status')
@@ -145,7 +149,7 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
-const unbindUserIds = ref([])
+const unbindUsers = ref([])
 const isEditMode = ref(false)
 
 const data = reactive({
@@ -250,7 +254,7 @@ function handleSelectionChange(selection) {
 function handleAdd() {
   reset()
   isEditMode.value = false
-  loadUnbindUserIds()
+  loadUnbindUsers()
   open.value = true
   title.value = "添加学生信息"
 }
@@ -306,11 +310,19 @@ function handleExport() {
   }, `info_${new Date().getTime()}.xlsx`)
 }
 
-/** 加载未绑定的用户ID列表 */
-function loadUnbindUserIds() {
-  listUnbindUserIds().then(response => {
-    unbindUserIds.value = response.data
+/** 加载未绑定的用户列表 */
+function loadUnbindUsers() {
+  listUnbindUsers().then(response => {
+    unbindUsers.value = response.data
   })
+}
+
+/** 处理用户选择变化 */
+function handleUserChange(userId) {
+  const selectedUser = unbindUsers.value.find(user => user.userId === userId)
+  if (selectedUser) {
+    form.value.userId = selectedUser.userId
+  }
 }
 
 getList()

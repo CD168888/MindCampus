@@ -43,10 +43,10 @@ export function delInfo(studentId) {
   });
 }
 
-// 查询未绑定的用户ID列表
-export function listUnbindUserIds() {
+// 查询未绑定的用户ID/昵称列表
+export function listUnbindUsers() {
   return request({
-    url: '/student/info/listUnbindUserIds',
+    url: '/student/info/listUnbindUsers',
     method: 'get',
   });
 }
