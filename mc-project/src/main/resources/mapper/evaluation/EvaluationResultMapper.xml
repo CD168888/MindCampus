@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mc.evaluation.mapper.EvaluationResultMapper">
+    
+    <resultMap type="EvaluationResult" id="EvaluationResultResult">
+        <result property="resultId"    column="result_id"    />
+        <result property="studentId"    column="student_id"    />
+        <result property="questionnaireId"    column="questionnaire_id"    />
+        <result property="totalScore"    column="total_score"    />
+        <result property="riskLevel"    column="risk_level"    />
+        <result property="aiAnalysis"    column="ai_analysis"    />
+        <result property="aiStatus"    column="ai_status"    />
+        <result property="readStatus"    column="read_status"    />
+        <result property="completionStatus"    column="completion_status"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectEvaluationResultVo">
+        select result_id, student_id, questionnaire_id, total_score, risk_level, ai_analysis, ai_status, read_status, completion_status, create_by, create_time, update_by, update_time, remark from evaluation_result
+    </sql>
+
+    <select id="selectEvaluationResultList" parameterType="EvaluationResult" resultMap="EvaluationResultResult">
+        <include refid="selectEvaluationResultVo"/>
+        <where>  
+            <if test="studentId != null "> and student_id = #{studentId}</if>
+            <if test="questionnaireId != null "> and questionnaire_id = #{questionnaireId}</if>
+            <if test="riskLevel != null  and riskLevel != ''"> and risk_level = #{riskLevel}</if>
+            <if test="aiStatus != null  and aiStatus != ''"> and ai_status = #{aiStatus}</if>
+            <if test="readStatus != null  and readStatus != ''"> and read_status = #{readStatus}</if>
+            <if test="completionStatus != null  and completionStatus != ''"> and completion_status = #{completionStatus}</if>
+        </where>
+    </select>
+    
+    <select id="selectEvaluationResultByResultId" parameterType="Long" resultMap="EvaluationResultResult">
+        <include refid="selectEvaluationResultVo"/>
+        where result_id = #{resultId}
+    </select>
+
+    <insert id="insertEvaluationResult" parameterType="EvaluationResult" useGeneratedKeys="true" keyProperty="resultId">
+        insert into evaluation_result
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="questionnaireId != null">questionnaire_id,</if>
+            <if test="totalScore != null">total_score,</if>
+            <if test="riskLevel != null and riskLevel != ''">risk_level,</if>
+            <if test="aiAnalysis != null and aiAnalysis != ''">ai_analysis,</if>
+            <if test="aiStatus != null and aiStatus != ''">ai_status,</if>
+            <if test="readStatus != null and readStatus != ''">read_status,</if>
+            <if test="completionStatus != null and completionStatus != ''">completion_status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="questionnaireId != null">#{questionnaireId},</if>
+            <if test="totalScore != null">#{totalScore},</if>
+            <if test="riskLevel != null and riskLevel != ''">#{riskLevel},</if>
+            <if test="aiAnalysis != null and aiAnalysis != ''">#{aiAnalysis},</if>
+            <if test="aiStatus != null and aiStatus != ''">#{aiStatus},</if>
+            <if test="readStatus != null and readStatus != ''">#{readStatus},</if>
+            <if test="completionStatus != null and completionStatus != ''">#{completionStatus},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateEvaluationResult" parameterType="EvaluationResult">
+        update evaluation_result
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="questionnaireId != null">questionnaire_id = #{questionnaireId},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
+            <if test="riskLevel != null and riskLevel != ''">risk_level = #{riskLevel},</if>
+            <if test="aiAnalysis != null and aiAnalysis != ''">ai_analysis = #{aiAnalysis},</if>
+            <if test="aiStatus != null and aiStatus != ''">ai_status = #{aiStatus},</if>
+            <if test="readStatus != null and readStatus != ''">read_status = #{readStatus},</if>
+            <if test="completionStatus != null and completionStatus != ''">completion_status = #{completionStatus},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where result_id = #{resultId}
+    </update>
+
+    <delete id="deleteEvaluationResultByResultId" parameterType="Long">
+        delete from evaluation_result where result_id = #{resultId}
+    </delete>
+
+    <delete id="deleteEvaluationResultByResultIds" parameterType="String">
+        delete from evaluation_result where result_id in 
+        <foreach item="resultId" collection="array" open="(" separator="," close=")">
+            #{resultId}
+        </foreach>
+    </delete>
+</mapper>
