@@ -84,6 +84,8 @@
             v-hasPermi="['questionnaire:questionnaireinfo:query']">查看</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['questionnaire:questionnaireinfo:edit']">修改</el-button>
+          <el-button link type="primary" icon="Collection" @click="handleSend(scope.row)"
+            v-hasPermi="['questionnaire:questionnaireinfo:send']">发送</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)"
             v-hasPermi="['questionnaire:questionnaireinfo:remove']">删除</el-button>
         </template>
@@ -106,11 +108,11 @@
         </el-descriptions-item>
         <el-descriptions-item label="总分">{{ viewForm.totalScore }} 分</el-descriptions-item>
         <el-descriptions-item label="开始时间">{{ parseTime(viewForm.startTime, '{y}-{m}-{d} {h}:{i}:{s}')
-        }}</el-descriptions-item>
+          }}</el-descriptions-item>
         <el-descriptions-item label="结束时间">{{ parseTime(viewForm.endTime, '{y}-{m}-{d} {h}:{i}:{s}')
-        }}</el-descriptions-item>
+          }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ parseTime(viewForm.createTime, '{y}-{m}-{d} {h}:{i}:{s}')
-        }}</el-descriptions-item>
+          }}</el-descriptions-item>
         <el-descriptions-item label="创建人">{{ viewForm.createBy }}</el-descriptions-item>
       </el-descriptions>
 
@@ -314,10 +316,83 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 发送问卷对话框 -->
+    <el-dialog title="发送问卷" v-model="sendOpen" width="1000px" append-to-body>
+      <div class="send-container">
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <div class="dept-panel">
+              <div class="panel-header">
+                <h4>选择部门</h4>
+                <el-input v-model="deptName" placeholder="请输入部门名称" clearable prefix-icon="Search"
+                  style="margin-bottom: 15px" />
+              </div>
+              <div class="dept-tree-container">
+                <el-tree :data="deptOptions" :props="{ label: 'label', children: 'children' }"
+                  :expand-on-click-node="false" :filter-node-method="filterNode" ref="deptTreeRef" node-key="id"
+                  highlight-current default-expand-all @node-click="handleDeptNodeClick" />
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="16">
+            <div class="questionnaire-panel">
+              <div class="panel-header">
+                <h4>问卷信息</h4>
+              </div>
+              <div class="questionnaire-info">
+                <el-descriptions :column="1" border>
+                  <el-descriptions-item label="问卷标题">{{ sendForm.title }}</el-descriptions-item>
+                  <el-descriptions-item label="问卷描述">{{ sendForm.description }}</el-descriptions-item>
+                  <el-descriptions-item label="状态">
+                    <dict-tag :options="questionnaire_status" :value="sendForm.status" />
+                  </el-descriptions-item>
+                  <el-descriptions-item label="类型">
+                    <dict-tag :options="questionnaire_type" :value="sendForm.type" />
+                  </el-descriptions-item>
+                  <el-descriptions-item label="开始时间">{{ parseTime(sendForm.startTime, '{y}-{m}-{d} {h}:{i}:{s}')
+                    }}</el-descriptions-item>
+                  <el-descriptions-item label="结束时间">{{ parseTime(sendForm.endTime, '{y}-{m}-{d} {h}:{i}:{s}')
+                    }}</el-descriptions-item>
+                </el-descriptions>
+                <div class="selected-dept-info" v-if="selectedDept">
+                  <el-divider>
+                    <el-icon>
+                      <Check />
+                    </el-icon>
+                    已选择部门
+                  </el-divider>
+                  <div class="selected-dept-content">
+                    <el-tag type="success" size="large" class="dept-tag">
+                      <el-icon>
+                        <OfficeBuilding />
+                      </el-icon>
+                      {{ selectedDept.label }}
+                    </el-tag>
+                    <div class="dept-details">
+                      <p class="dept-id">部门ID: {{ selectedDept.id }}</p>
+                      <p class="dept-path">{{ getDeptPath(selectedDept) }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="confirmSend" :disabled="!selectedDept">确认发送</el-button>
+          <el-button @click="sendOpen = false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="QuestionnaireInfo">
+import {watch} from 'vue'
 import {
   delQuestionnaire,
   getQuestions,
@@ -325,6 +400,7 @@ import {
   saveQuestionnaire
 } from "@/api/questionnaire/questionnaireinfo"
 import {listQuestionnairebank} from "@/api/questionnaire/questionnairebank"
+import {deptTreeSelect} from "@/api/system/user"
 
 const { proxy } = getCurrentInstance()
 const { questionnaire_status, questionnaire_type } = proxy.useDict('questionnaire_status', 'questionnaire_type')
@@ -358,6 +434,13 @@ const questionBankQuery = ref({
   type: null,
   content: null
 })
+
+// 发送相关状态
+const sendOpen = ref(false)
+const sendForm = ref({})
+const deptOptions = ref([])
+const deptName = ref("")
+const selectedDept = ref(null)
 
 const data = reactive({
   form: {},
@@ -715,6 +798,80 @@ function addSelectedQuestions() {
   proxy.$modal.msgSuccess(`成功添加 ${selectedQuestions.value.length} 道题目`)
 }
 
+// 发送问卷相关方法
+function handleSend(row) {
+  sendForm.value = {
+    questionnaireId: row.questionnaireId,
+    title: row.title,
+    description: row.description,
+    status: row.status,
+    type: row.type,
+    startTime: row.startTime,
+    endTime: row.endTime
+  }
+  selectedDept.value = null
+  sendOpen.value = true
+  getDeptTree()
+}
+
+// 获取部门树数据
+function getDeptTree() {
+  deptTreeSelect().then(response => {
+    deptOptions.value = response.data
+  })
+}
+
+// 部门节点点击事件
+function handleDeptNodeClick(data) {
+  selectedDept.value = data
+}
+
+// 部门树过滤方法
+function filterNode(value, data) {
+  if (!value) return true
+  return data.label.indexOf(value) !== -1
+}
+
+// 确认发送
+function confirmSend() {
+  if (!selectedDept.value) {
+    proxy.$modal.msgWarning("请选择要发送的部门")
+    return
+  }
+
+  // 模拟发送接口调用
+  const sendData = {
+    questionnaireId: sendForm.value.questionnaireId,
+    deptId: selectedDept.value.id,
+    deptName: selectedDept.value.label
+  }
+
+  // 这里调用实际的发送接口
+  console.log("发送问卷数据:", sendData)
+
+  // 模拟接口调用
+  setTimeout(() => {
+    proxy.$modal.msgSuccess(`问卷已成功发送到部门：${selectedDept.value.label}`)
+    sendOpen.value = false
+  }, 1000)
+}
+
+// 监听部门名称搜索
+watch(deptName, val => {
+  if (proxy.$refs["deptTreeRef"]) {
+    proxy.$refs["deptTreeRef"].filter(val)
+  }
+})
+
+// 获取部门路径
+function getDeptPath(dept) {
+  if (!dept) return ''
+
+  // 这里可以根据需要实现获取完整路径的逻辑
+  // 目前简单返回部门名称
+  return `路径: ${dept.label}`
+}
+
 /** 提交按钮 */
 function submitForm() {
   proxy.$refs["questionnaireRef"].validate(valid => {
@@ -909,5 +1066,182 @@ getList()
   font-weight: bold;
   color: #409eff;
   font-size: 14px;
+}
+
+/* 发送弹窗样式 */
+.send-container {
+  height: 450px;
+  overflow: hidden;
+}
+
+.dept-panel {
+  height: 100%;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.panel-header {
+  padding: 8px 15px;
+  border-bottom: 1px solid #e4e7ed;
+  background: white;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.panel-header h4 {
+  margin: 0 0 5px 0;
+  color: #303133;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dept-tree-container {
+  height: calc(100% - 40px);
+  overflow: hidden;
+  padding: 10px;
+  background: white;
+}
+
+.dept-tree-container .el-tree {
+  background: transparent;
+}
+
+.dept-tree-container .el-tree-node__content {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 2px 0;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.dept-tree-container .el-tree-node__content:hover {
+  background: #f0f9ff;
+  border-color: #409eff;
+  transform: translateX(3px);
+}
+
+.dept-tree-container .el-tree-node.is-current>.el-tree-node__content {
+  background: #409eff;
+  color: white;
+  border-color: #409eff;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+
+.dept-tree-container .el-tree-node__label {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.questionnaire-panel {
+  height: 100%;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  background: white;
+}
+
+.questionnaire-info {
+  padding: 10px;
+  height: calc(100% - 40px);
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.questionnaire-info .el-descriptions {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.questionnaire-info .el-descriptions__label {
+  font-weight: 600;
+  color: #606266;
+  background: #f5f7fa;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.questionnaire-info .el-descriptions__content {
+  color: #303133;
+  font-weight: 500;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.questionnaire-info .el-descriptions__table {
+  margin: 0;
+}
+
+.questionnaire-info .el-descriptions__table .el-descriptions__cell {
+  padding: 4px 8px;
+}
+
+.selected-dept-info {
+  padding: 8px 15px;
+  border-top: 1px solid #e4e7ed;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  border-radius: 0 0 8px 8px;
+  min-height: 80px;
+}
+
+.selected-dept-info .el-divider {
+  margin: 0 0 8px 0;
+  border-color: #409eff;
+}
+
+.selected-dept-info .el-divider__text {
+  color: #409eff;
+  font-weight: 600;
+  font-size: 12px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  padding: 0 10px;
+}
+
+.selected-dept-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.dept-tag {
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.dept-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(64, 158, 255, 0.3);
+}
+
+.dept-tag .el-icon {
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+.dept-details {
+  text-align: center;
+  color: #606266;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.dept-id {
+  margin: 0 0 3px 0;
+  font-weight: 500;
+  color: #909399;
+}
+
+.dept-path {
+  margin: 0;
+  color: #909399;
+  font-style: italic;
 }
 </style>
