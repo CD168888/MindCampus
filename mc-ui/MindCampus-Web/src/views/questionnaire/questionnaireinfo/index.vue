@@ -397,7 +397,8 @@ import {
   delQuestionnaire,
   getQuestions,
   listQuestionnaire,
-  saveQuestionnaire
+  saveQuestionnaire,
+  sendQuestionnaire
 } from "@/api/questionnaire/questionnaireinfo"
 import {listQuestionnairebank} from "@/api/questionnaire/questionnairebank"
 import {deptTreeSelect} from "@/api/system/user"
@@ -839,21 +840,24 @@ function confirmSend() {
     return
   }
 
-  // 模拟发送接口调用
-  const sendData = {
-    questionnaireId: sendForm.value.questionnaireId,
-    deptId: selectedDept.value.id,
-    deptName: selectedDept.value.label
-  }
+  // 显示加载状态
+  const loading = proxy.$loading({
+    lock: true,
+    text: '正在发送问卷...',
+    spinner: 'el-icon-loading',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
 
-  // 这里调用实际的发送接口
-  console.log("发送问卷数据:", sendData)
-
-  // 模拟接口调用
-  setTimeout(() => {
+  // 调用发送接口
+  sendQuestionnaire(sendForm.value.questionnaireId, selectedDept.value.id).then(response => {
+    loading.close()
     proxy.$modal.msgSuccess(`问卷已成功发送到部门：${selectedDept.value.label}`)
     sendOpen.value = false
-  }, 1000)
+  }).catch(error => {
+    loading.close()
+    console.error('发送问卷失败:', error)
+    proxy.$modal.msgError('发送失败，请重试')
+  })
 }
 
 // 监听部门名称搜索

@@ -1,8 +1,9 @@
 package com.mc.system.service;
 
+import com.mc.common.core.domain.entity.SysUser;
+
 import java.util.Date;
 import java.util.List;
-import com.mc.common.core.domain.entity.SysUser;
 
 /**
  * 用户 业务层
@@ -214,4 +215,12 @@ public interface ISysUserService
      * @return 结果
      */
     public String importUser(List<SysUser> userList, Boolean isUpdateSupport, String operName);
+
+    /**
+     * 根据部门ID查询用户
+     *
+     * @param deptId 部门ID
+     * @return 用户列表
+     */
+    List<SysUser> selectUserListByDeptId(Long deptId);
 }

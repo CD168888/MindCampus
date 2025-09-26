@@ -33,3 +33,15 @@ export function delQuestionnaire(questionnaireId) {
     method: 'delete',
   });
 }
+
+// 发送问卷给指定部门学生
+export function sendQuestionnaire(questionnaireId, deptId) {
+  return request({
+    url: '/questionnaire/info/send',
+    method: 'post',
+    params: {
+      questionnaireId: questionnaireId,
+      deptId: deptId,
+    },
+  });
+}

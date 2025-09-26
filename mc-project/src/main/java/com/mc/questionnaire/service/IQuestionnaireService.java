@@ -30,4 +30,9 @@ public interface IQuestionnaireService {
      * 删除问卷及题目
      */
     void deleteQuestionnaire(Long[] questionnaireIds);
+
+    /**
+     * 发送问卷给指定学生
+     */
+    void sendQuestionnaire(Long questionnaireId, Long studentId);
 }

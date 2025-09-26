@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mc.common.utils.DateUtils;
 import com.mc.common.utils.SecurityUtils;
+import com.mc.evaluation.domain.EvaluationResult;
+import com.mc.evaluation.mapper.EvaluationResultMapper;
 import com.mc.questionnaire.domain.Question;
 import com.mc.questionnaire.domain.Questionnaire;
 import com.mc.questionnaire.domain.dto.QuestionnaireDTO;
@@ -25,6 +27,8 @@ public class QuestionnaireServiceImpl extends ServiceImpl<QuestionnaireMapper, Q
     private QuestionMapper questionMapper;
     @Autowired
     private final QuestionnaireMapper questionnaireMapper;
+    @Autowired
+    private final EvaluationResultMapper evaluationResultMapper;
 
     @Override
     public List<Questionnaire> selectQuestionnaireList(Questionnaire questionnaire) {
@@ -109,5 +113,13 @@ public class QuestionnaireServiceImpl extends ServiceImpl<QuestionnaireMapper, Q
         questionMapper.delete(new LambdaQueryWrapper<Question>().in(Question::getQuestionnaireId, questionnaireIds));
         // 删除问卷
         this.removeByIds(List.of(questionnaireIds));
+    }
+
+    @Override
+    public void sendQuestionnaire(Long questionnaireId, Long studentId) {
+        evaluationResultMapper.insertEvaluationResult(new EvaluationResult() {{
+            setQuestionnaireId(questionnaireId);
+            setStudentId(studentId);
+        }});
     }
 }

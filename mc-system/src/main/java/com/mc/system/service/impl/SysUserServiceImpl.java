@@ -1,16 +1,5 @@
 package com.mc.system.service.impl;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-import jakarta.validation.Validator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import com.mc.common.annotation.DataScope;
 import com.mc.common.constant.UserConstants;
 import com.mc.common.core.domain.entity.SysRole;
@@ -23,14 +12,22 @@ import com.mc.common.utils.spring.SpringUtils;
 import com.mc.system.domain.SysPost;
 import com.mc.system.domain.SysUserPost;
 import com.mc.system.domain.SysUserRole;
-import com.mc.system.mapper.SysPostMapper;
-import com.mc.system.mapper.SysRoleMapper;
-import com.mc.system.mapper.SysUserMapper;
-import com.mc.system.mapper.SysUserPostMapper;
-import com.mc.system.mapper.SysUserRoleMapper;
+import com.mc.system.mapper.*;
 import com.mc.system.service.ISysConfigService;
 import com.mc.system.service.ISysDeptService;
 import com.mc.system.service.ISysUserService;
+import jakarta.validation.Validator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 用户 业务层处理
@@ -561,5 +558,19 @@ public class SysUserServiceImpl implements ISysUserService
             successMsg.insert(0, "恭喜您，数据已全部导入成功！共 " + successNum + " 条，数据如下：");
         }
         return successMsg.toString();
+    }
+
+    /**
+     * 查询指定部门下的所有学生用户
+     *
+     * @param deptId 部门ID
+     * @return 用户列表
+     */
+    @Override
+    public List<SysUser> selectUserListByDeptId(Long deptId) {
+        SysUser user = new SysUser();
+        user.setDeptId(deptId);
+        user.setUserType("01");
+        return userMapper.selectUserList(user);
     }
 }
