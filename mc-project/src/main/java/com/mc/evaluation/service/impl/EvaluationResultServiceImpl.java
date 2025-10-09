@@ -4,6 +4,10 @@ import com.mc.common.utils.DateUtils;
 import com.mc.evaluation.domain.EvaluationResult;
 import com.mc.evaluation.mapper.EvaluationResultMapper;
 import com.mc.evaluation.service.IEvaluationResultService;
+import com.mc.questionnaire.domain.Questionnaire;
+import com.mc.questionnaire.mapper.QuestionnaireMapper;
+import com.mc.student.domain.Student;
+import com.mc.student.mapper.StudentInfoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +23,10 @@ import java.util.List;
 public class EvaluationResultServiceImpl implements IEvaluationResultService {
     @Autowired
     private EvaluationResultMapper evaluationResultMapper;
+    @Autowired
+    private StudentInfoMapper studentInfoMapper;
+    @Autowired
+    private QuestionnaireMapper questionnaireMapper;
 
     /**
      * 查询心理测评结果
@@ -39,7 +47,20 @@ public class EvaluationResultServiceImpl implements IEvaluationResultService {
      */
     @Override
     public List<EvaluationResult> selectEvaluationResultList(EvaluationResult evaluationResult) {
-        return evaluationResultMapper.selectEvaluationResultList(evaluationResult);
+        List<EvaluationResult> evaluationResults = evaluationResultMapper.selectEvaluationResultList(evaluationResult);
+
+        return evaluationResults.stream()
+                .peek(result -> {
+                    Student student = studentInfoMapper.selectStudentInfoByStudentId(result.getStudentId());
+                    if (student != null) {
+                        result.setStudentName(student.getName());
+                    }
+                    Questionnaire questionnaire = questionnaireMapper.selectById(result.getQuestionnaireId());
+                    if (questionnaire != null) {
+                        result.setQuestionnaireTitle(questionnaire.getTitle());
+                    }
+                })
+                .toList();
     }
 
     /**

@@ -26,10 +26,22 @@ public class EvaluationResult extends BaseEntity {
     private Long studentId;
 
     /**
+     * 学生姓名
+     */
+    @Excel(name = "学生姓名")
+    private String studentName;
+
+    /**
      * 问卷ID
      */
     @Excel(name = "问卷ID")
     private Long questionnaireId;
+
+    /**
+     * 问卷标题
+     */
+    @Excel(name = "问卷标题")
+    private String questionnaireTitle;
 
     /**
      * 总得分
@@ -83,12 +95,28 @@ public class EvaluationResult extends BaseEntity {
         return studentId;
     }
 
+    public void setStudentName(String studentName) {
+        this.studentName = studentName;
+    }
+
+    public String getStudentName() {
+        return studentName;
+    }
+
     public void setQuestionnaireId(Long questionnaireId) {
         this.questionnaireId = questionnaireId;
     }
 
     public Long getQuestionnaireId() {
         return questionnaireId;
+    }
+
+    public void setQuestionnaireTitle(String questionnaireTitle) {
+        this.questionnaireTitle = questionnaireTitle;
+    }
+
+    public String getQuestionnaireTitle() {
+        return questionnaireTitle;
     }
 
     public void setTotalScore(Long totalScore) {
@@ -144,7 +172,9 @@ public class EvaluationResult extends BaseEntity {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("resultId", getResultId())
                 .append("studentId", getStudentId())
+                .append("studentName", getStudentName())
                 .append("questionnaireId", getQuestionnaireId())
+                .append("questionnaireTitle", getQuestionnaireTitle())
                 .append("totalScore", getTotalScore())
                 .append("riskLevel", getRiskLevel())
                 .append("aiAnalysis", getAiAnalysis())

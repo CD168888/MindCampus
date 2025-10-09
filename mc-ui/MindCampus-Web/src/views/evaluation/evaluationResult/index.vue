@@ -56,8 +56,8 @@
     <el-table v-loading="loading" :data="evaluationResultList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="测评结果ID" align="center" prop="resultId" />
-      <el-table-column label="学生ID" align="center" prop="studentId" />
-      <el-table-column label="问卷ID" align="center" prop="questionnaireId" />
+      <el-table-column label="学生名称" align="center" prop="studentName" />
+      <el-table-column label="问卷标题" align="center" prop="questionnaireTitle" />
       <el-table-column label="总得分" align="center" prop="totalScore" />
       <el-table-column label="风险等级" align="center" prop="riskLevel">
         <template #default="scope">
