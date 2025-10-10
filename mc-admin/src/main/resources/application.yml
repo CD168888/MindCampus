@@ -89,6 +89,19 @@ spring:
           # #连接池最大阻塞等待时间（使用负值表示没有限制）
           max-wait: -1ms
 
+  ai:
+    dashscope:
+      # DashScope 的 API Key
+      api-key: sk-7b671ef9eed54705a350cb20e7b30fff
+
+      # 百炼的 Agent 应用，可以配置 app-id
+      agent:
+        app-id: 2027848
+
+      # 可选：业务空间 ID（如果使用主账号空间可不配）
+      # workspace-id: your-workspace-id
+
+
 # token配置
 token:
   # 令牌自定义标识

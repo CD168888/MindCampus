@@ -1,6 +1,9 @@
 package com.mc.framework.security.filter;
 
-import java.io.IOException;
+import com.mc.common.core.domain.model.LoginUser;
+import com.mc.common.utils.SecurityUtils;
+import com.mc.common.utils.StringUtils;
+import com.mc.framework.web.service.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,14 +14,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import com.mc.common.core.domain.model.LoginUser;
-import com.mc.common.utils.SecurityUtils;
-import com.mc.common.utils.StringUtils;
-import com.mc.framework.web.service.TokenService;
+
+import java.io.IOException;
 
 /**
  * token过滤器 验证token有效性
- * 
+ *
  * @author caidu
  */
 @Component
@@ -40,5 +41,18 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         }
         chain.doFilter(request, response);
+    }
+
+    /**
+     * 关键：确保过滤器在异步请求中也执行
+     */
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
+    }
+
+    @Override
+    protected boolean shouldNotFilterErrorDispatch() {
+        return false;
     }
 }

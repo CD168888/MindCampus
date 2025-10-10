@@ -66,6 +66,11 @@
             <artifactId>mc-project</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.mc</groupId>
+            <artifactId>mc-ai</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
