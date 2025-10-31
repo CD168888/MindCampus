@@ -47,5 +47,5 @@ nbdist/
 !*/build/*.xml
 
 
-.DS_Store
-mc-ui/MindCampus-App
+#.DS_Store
+#mc-ui/MindCampus-App
