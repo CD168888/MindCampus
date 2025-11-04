@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mc.evaluation.mapper.QuestionnaireAnswerMapper">
+
+    <resultMap type="com.mc.evaluation.domain.QuestionnaireAnswer" id="QuestionnaireAnswerResult">
+        <id property="answerId" column="answer_id"/>
+        <result property="resultId" column="result_id"/>
+        <result property="questionnaireId" column="questionnaire_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="type" column="type"/>
+        <result property="content" column="content"/>
+        <result property="options" column="options"/>
+        <result property="standardAnswer" column="standard_answer"/>
+        <result property="score" column="score"/>
+        <result property="userAnswer" column="user_answer"/>
+        <result property="isCorrect" column="is_correct"/>
+        <result property="obtainScore" column="obtain_score"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <!-- 批量插入答题记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO questionnaire_answer (
+            result_id,
+            questionnaire_id,
+            question_id,
+            type,
+            content,
+            options,
+            standard_answer,
+            score,
+            user_answer,
+            is_correct,
+            obtain_score,
+            create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.resultId},
+                #{item.questionnaireId},
+                #{item.questionId},
+                #{item.type},
+                #{item.content},
+                #{item.options},
+                #{item.standardAnswer},
+                #{item.score},
+                #{item.userAnswer},
+                #{item.isCorrect},
+                #{item.obtainScore},
+                NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据结果ID查询答题记录 -->
+    <select id="selectByResultId" parameterType="Long" resultMap="QuestionnaireAnswerResult">
+        SELECT
+            answer_id,
+            result_id,
+            questionnaire_id,
+            question_id,
+            type,
+            content,
+            options,
+            standard_answer,
+            score,
+            user_answer,
+            is_correct,
+            obtain_score,
+            create_by,
+            create_time,
+            update_by,
+            update_time,
+            remark
+        FROM questionnaire_answer
+        WHERE result_id = #{resultId}
+        ORDER BY answer_id ASC
+    </select>
+
+    <!-- 根据结果ID删除答题记录 -->
+    <delete id="deleteByResultId" parameterType="Long">
+        DELETE FROM questionnaire_answer WHERE result_id = #{resultId}
+    </delete>
+
+</mapper>

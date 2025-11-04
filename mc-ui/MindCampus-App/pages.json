@@ -76,6 +76,18 @@
       "navigationBarTitleText": "心理测评",
       "navigationStyle": "custom"
     }
+  }, {
+    "path": "pages/assessment/detail",
+    "style": {
+      "navigationBarTitleText": "问卷详情",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/assessment/result",
+    "style": {
+      "navigationBarTitleText": "测评结果",
+      "navigationStyle": "custom"
+    }
   }],
   "tabBar": {
     "color": "#6b7280",

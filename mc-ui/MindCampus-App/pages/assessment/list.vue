@@ -35,8 +35,8 @@
       </view>
 
       <view class="questionnaire-list">
-        <view v-for="item in pendingList" :key="item.id" class="questionnaire-card pending-card"
-          @tap="startQuestionnaire(item)">
+        <view v-for="item in pendingList" :key="item.questionnaireId" class="questionnaire-card pending-card"
+          :class="{ 'expired-card': item.status === 'expired' }" @tap="handleCardClick(item)">
           <view class="card-body">
             <view class="card-title">{{ item.title }}</view>
             <view class="card-desc">{{ item.description }}</view>
@@ -57,8 +57,10 @@
           </view>
 
           <view class="card-footer">
-            <view class="deadline">截止时间：{{ item.deadline }}</view>
-            <view class="action-badge pending-badge">待填写</view>
+            <view class="deadline">截止时间：{{ formatDate(item.deadline) }}</view>
+            <view class="action-badge" :class="item.status === 'expired' ? 'expired-badge' : 'pending-badge'">
+              {{ item.status === 'expired' ? '已截止' : '待填写' }}
+            </view>
           </view>
         </view>
       </view>
@@ -77,10 +79,10 @@
       </view>
 
       <view class="questionnaire-list">
-        <view v-for="item in completedList" :key="item.id" class="questionnaire-card completed-card">
+        <view v-for="item in completedList" :key="item.questionnaireId" class="questionnaire-card completed-card">
           <view class="card-body">
             <view class="card-title">{{ item.title }}</view>
-            <view class="completed-time">已于 {{ item.completedTime }} 完成</view>
+            <view class="completed-time">已于 {{ formatDate(item.completedTime) }} 完成</view>
           </view>
 
           <view class="card-meta">
@@ -98,8 +100,10 @@
           </view>
 
           <view class="card-footer">
-            <view class="action-badge completed-badge">已完成</view>
-            <view class="view-result-btn" @tap="viewResult(item)">查看结果</view>
+            <view class="action-badge" :class="item.status === 'analyzing' ? 'analyzing-badge' : 'completed-badge'">
+              {{ item.status === 'analyzing' ? '待分析' : '已完成' }}
+            </view>
+            <view class="view-result-btn" @tap.stop="viewResult(item)">查看结果</view>
           </view>
         </view>
       </view>
@@ -113,64 +117,22 @@
 </template>
 
 <script>
+import {getStatistics, listQuestionnaires} from '@/api/assessment'
+
 export default {
   data() {
     return {
       statusBarHeight: 0,
+      loading: false,
       stats: {
-        pending: 3,
-        completed: 5,
-        total: 8
+        pending: 0,
+        completed: 0,
+        total: 0
       },
       // 待填问卷列表
-      pendingList: [
-        {
-          id: 1,
-          title: '抑郁症筛查量表 (PHQ-9)',
-          description: '评估近两周的情绪状态，帮助识别抑郁症状',
-          questionCount: 10,
-          duration: 5,
-          publisher: '张老师',
-          deadline: '2024-01-25'
-        },
-        {
-          id: 2,
-          title: '焦虑自评量表 (SAS)',
-          description: '了解你的焦虑程度，提供针对性建议',
-          questionCount: 8,
-          duration: 4,
-          publisher: '李老师',
-          deadline: '2024-01-28'
-        },
-        {
-          id: 3,
-          title: '压力感知量表 (PSS)',
-          description: '评估你感受到的压力水平及应对能力',
-          questionCount: 12,
-          duration: 6,
-          publisher: '王老师',
-          deadline: '2024-01-30'
-        }
-      ],
+      pendingList: [],
       // 已完成问卷列表
-      completedList: [
-        {
-          id: 101,
-          title: '睡眠质量评估量表',
-          completedTime: '2024-01-10',
-          questionCount: 7,
-          score: 68,
-          publisher: '张老师'
-        },
-        {
-          id: 102,
-          title: '人际关系应对量表',
-          completedTime: '2024-01-05',
-          questionCount: 9,
-          score: 72,
-          publisher: '李老师'
-        }
-      ]
+      completedList: []
     }
   },
   onLoad() {
@@ -178,10 +140,53 @@ export default {
     const systemInfo = uni.getSystemInfoSync()
     this.statusBarHeight = systemInfo.statusBarHeight || 0
 
-    // TODO: 从后端加载问卷数据
-    // this.loadQuestionnaires()
+    // 加载数据
+    this.loadData()
+  },
+  onShow() {
+    // 每次显示页面时刷新数据
+    this.loadData()
   },
   methods: {
+    // 加载数据
+    async loadData() {
+      try {
+        this.loading = true
+
+        // 并行请求统计数据和问卷列表
+        const [statsRes, listRes] = await Promise.all([
+          getStatistics(),
+          listQuestionnaires()
+        ])
+
+        if (statsRes.code === 200) {
+          this.stats = statsRes.data
+        }
+
+        if (listRes.code === 200) {
+          console.log('问卷列表数据:', listRes.data)
+          this.pendingList = listRes.data.pendingList || []
+          this.completedList = listRes.data.completedList || []
+          console.log('待填问卷:', this.pendingList)
+          console.log('已完成问卷:', this.completedList)
+        } else {
+          console.error('获取问卷列表失败:', listRes)
+          uni.showToast({
+            title: listRes.msg || '获取问卷列表失败',
+            icon: 'none'
+          })
+        }
+      } catch (error) {
+        console.error('加载数据失败:', error)
+        uni.showToast({
+          title: '加载失败，请稍后重试',
+          icon: 'none'
+        })
+      } finally {
+        this.loading = false
+      }
+    },
+
     // 返回上一页
     goBack() {
       uni.navigateBack()
@@ -201,28 +206,71 @@ export default {
       })
     },
 
+    // 处理卡片点击
+    handleCardClick(item) {
+      if (item.status === 'expired') {
+        uni.showToast({
+          title: '该问卷已截止',
+          icon: 'none'
+        })
+        return
+      }
+      this.startQuestionnaire(item)
+    },
+
     // 开始填写问卷
     startQuestionnaire(item) {
-      uni.showToast({
-        title: '开始填写：' + item.title,
-        icon: 'none'
+      console.log('点击卡片 - questionnaireId:', item.questionnaireId)
+      console.log('点击卡片 - title:', item.title)
+      console.log('点击卡片 - resultId:', item.resultId)
+      console.log('点击卡片 - 完整数据:', JSON.stringify(item))
+
+      if (!item || !item.questionnaireId) {
+        uni.showToast({
+          title: '问卷信息错误',
+          icon: 'none'
+        })
+        return
+      }
+
+      console.log('准备跳转到答题页面，URL:', '/pages/assessment/detail?id=' + item.questionnaireId)
+      uni.navigateTo({
+        url: '/pages/assessment/detail?id=' + item.questionnaireId,
+        success: function () {
+          console.log('跳转成功')
+        },
+        fail: function (err) {
+          console.error('跳转失败:', err)
+          uni.showToast({
+            title: '页面跳转失败',
+            icon: 'none'
+          })
+        }
       })
-      // TODO: 跳转到问卷详情页
-      // uni.navigateTo({
-      //   url: '/pages/assessment/detail?id=' + item.id
-      // })
     },
 
     // 查看结果
     viewResult(item) {
-      uni.showToast({
-        title: '查看结果：' + item.title,
-        icon: 'none'
+      uni.navigateTo({
+        url: '/pages/assessment/result?id=' + item.resultId
       })
-      // TODO: 跳转到结果页面
-      // uni.navigateTo({
-      //   url: '/pages/assessment/result?id=' + item.id
-      // })
+    },
+
+    // 下拉刷新
+    onPullDownRefresh() {
+      this.loadData().then(() => {
+        uni.stopPullDownRefresh()
+      })
+    },
+
+    // 格式化日期
+    formatDate(date) {
+      if (!date) return ''
+      const d = new Date(date)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
     }
   }
 }
@@ -535,6 +583,21 @@ export default {
 .completed-badge {
   background: rgba(16, 185, 129, 0.1);
   color: $success-color;
+}
+
+.expired-badge {
+  background: rgba(156, 163, 175, 0.1);
+  color: #9ca3af;
+}
+
+.analyzing-badge {
+  background: rgba(251, 191, 36, 0.1);
+  color: #f59e0b;
+}
+
+.expired-card {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .view-result-btn {
