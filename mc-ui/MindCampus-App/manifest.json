@@ -1,7 +1,7 @@
 {
-    "name" : "若依移动端",
+    "name" : "MindCampus",
     "appid" : "__UNI__25A9D80",
-    "description" : "",
+    "description" : "专业的大学生心理健康服务平台",
     "versionName" : "1.2.0",
     "versionCode" : "100",
     "transformPx" : false,
@@ -60,7 +60,7 @@
             "port" : 9090,
             "https" : false
         },
-        "title" : "RuoYi-App",
+        "title" : "MindCampus",
         "router" : {
             "mode" : "hash",
             "base" : "./"

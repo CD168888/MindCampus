@@ -1,0 +1,146 @@
+/**
+ * MindCampus - 全局主题颜色变量
+ * 设计理念：简洁克制、清晰层级、统一交互
+ * 参考：大厂级设计规范（深蓝主色 + 低饱和度配色）
+ */
+
+/* ==================== 主色调 ==================== */
+// 主品牌色 - 柔和绿色（降低饱和度，更高级）
+$primary-color: #34d399;
+$primary-light: #6ee7b7;
+$primary-lighter: #a7f3d0;
+$primary-dark: #10b981;
+
+// 辅助色 - 柔和紫色（梦幻、优雅）
+$secondary-color: #a78bfa;
+$secondary-light: #c4b5fd;
+$secondary-lighter: #ddd6fe;
+
+// 强调色 - 柔和粉橙（温暖点缀）
+$accent-color: #fda4af;
+$accent-light: #fecdd3;
+
+/* ==================== 中性色系统 ==================== */
+// 文字颜色
+$text-primary: #1f2937;      // 主标题
+$text-secondary: #4b5563;    // 副标题
+$text-tertiary: #6b7280;     // 描述文字
+$text-quaternary: #9ca3af;   // 辅助信息
+
+// 背景颜色
+$bg-white: #ffffff;
+$bg-gray-50: #f9fafb;
+$bg-gray-100: #f3f4f6;
+$bg-gray-200: #e5e7eb;
+
+// 边框颜色
+$border-light: #f3f4f6;
+$border-base: #e5e7eb;
+$border-dark: #d1d5db;
+
+/* ==================== 功能色 ==================== */
+$success-color: #10b981;
+$warning-color: #fbbf24;
+$error-color: #f87171;
+$info-color: #34d399;
+
+/* ==================== 渐变色（高级微妙渐变）==================== */
+// 主渐变 - 薄荷绿到紫色（梦幻渐变）
+$gradient-primary: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 100%);
+
+// 英雄区域 - 多色柔和渐变
+$gradient-hero: linear-gradient(135deg, #a7f3d0 0%, #c4b5fd 50%, #fecdd3 100%);
+
+// 卡片渐变 - 极淡渐变（透明度）
+$gradient-card: linear-gradient(135deg, rgba(110, 231, 183, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+
+// 玻璃态渐变 - 白色透明渐变
+$gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.3) 100%);
+
+// 极淡背景渐变
+$gradient-soft: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+
+// 音乐播放器渐变 - 柔和紫到粉
+$gradient-music: linear-gradient(135deg, #c4b5fd 0%, #fda4af 100%);
+
+/* ==================== 阴影系统（更柔和精致）==================== */
+$shadow-xs: 0 2rpx 4rpx 0 rgba(0, 0, 0, 0.03);
+$shadow-sm: 0 4rpx 12rpx 0 rgba(0, 0, 0, 0.04);
+$shadow-base: 0 8rpx 24rpx 0 rgba(0, 0, 0, 0.06);
+$shadow-md: 0 12rpx 32rpx 0 rgba(0, 0, 0, 0.08);
+$shadow-lg: 0 16rpx 40rpx 0 rgba(0, 0, 0, 0.10);
+$shadow-xl: 0 20rpx 60rpx 0 rgba(0, 0, 0, 0.12);
+
+// 彩色阴影（高级感）
+$shadow-primary: 0 8rpx 24rpx 0 rgba(110, 231, 183, 0.25);
+$shadow-secondary: 0 8rpx 24rpx 0 rgba(167, 139, 250, 0.25);
+$shadow-glass: 0 8rpx 32rpx 0 rgba(31, 38, 135, 0.15);
+
+/* ==================== 圆角系统（更大圆角）==================== */
+$radius-sm: 12rpx;
+$radius-base: 16rpx;
+$radius-md: 20rpx;
+$radius-lg: 24rpx;
+$radius-xl: 32rpx;
+$radius-2xl: 40rpx;
+$radius-full: 9999rpx;
+
+/* ==================== 间距系统（紧凑优化 - iPhone 15）==================== */
+$spacing-xs: 8rpx;
+$spacing-sm: 12rpx;
+$spacing-base: 16rpx;
+$spacing-md: 20rpx;
+$spacing-lg: 24rpx;
+$spacing-xl: 32rpx;
+$spacing-2xl: 48rpx;
+$spacing-3xl: 64rpx;
+
+/* ==================== 字体系统（紧凑优化）==================== */
+// 字体大小
+$font-xs: 20rpx;
+$font-sm: 24rpx;
+$font-base: 26rpx;
+$font-md: 28rpx;
+$font-lg: 30rpx;
+$font-xl: 32rpx;
+$font-2xl: 36rpx;
+$font-3xl: 42rpx;
+
+// 字体粗细
+$font-normal: 400;
+$font-medium: 500;
+$font-semibold: 600;
+$font-bold: 700;
+
+// 行高
+$line-height-tight: 1.2;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+/* ==================== 过渡动画 ==================== */
+$transition-fast: 0.15s;
+$transition-base: 0.25s;
+$transition-slow: 0.35s;
+
+$ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+$ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+/* ==================== 特殊效果 ==================== */
+// 毛玻璃效果（Glassmorphism）
+$blur-sm: blur(10rpx);
+$blur-base: blur(20rpx);
+$blur-lg: blur(40rpx);
+
+// 透明度
+$opacity-disabled: 0.5;
+$opacity-hover: 0.8;
+$opacity-active: 0.6;
+
+// 玻璃态效果
+$glass-background: rgba(255, 255, 255, 0.7);
+$glass-border: rgba(255, 255, 255, 0.18);
+$glass-shadow: 0 8rpx 32rpx 0 rgba(31, 38, 135, 0.37);
+
+// 背景模糊度
+$backdrop-blur: blur(20rpx);
+

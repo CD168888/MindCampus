@@ -12,7 +12,7 @@
   }, {
     "path": "pages/index",
     "style": {
-      "navigationBarTitleText": "若依移动端框架",
+      "navigationBarTitleText": "MindCampus",
       "navigationStyle": "custom"
     }
   }, {
@@ -70,10 +70,16 @@
     "style": {
       "navigationBarTitleText": "浏览文本"
     }
+  }, {
+    "path": "pages/assessment/list",
+    "style": {
+      "navigationBarTitleText": "心理测评",
+      "navigationStyle": "custom"
+    }
   }],
   "tabBar": {
-    "color": "#000000",
-    "selectedColor": "#000000",
+    "color": "#6b7280",
+    "selectedColor": "#10b981",
     "borderStyle": "white",
     "backgroundColor": "#ffffff",
     "list": [{
@@ -96,7 +102,8 @@
   },
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "RuoYi",
-    "navigationBarBackgroundColor": "#FFFFFF"
+    "navigationBarTitleText": "MindCampus",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#FFFFFF"
   }
 }
