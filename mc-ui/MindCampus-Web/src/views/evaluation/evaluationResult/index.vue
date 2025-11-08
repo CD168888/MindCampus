@@ -1,11 +1,11 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="学生ID" prop="studentId">
-        <el-input v-model="queryParams.studentId" placeholder="请输入学生ID" clearable @keyup.enter="handleQuery" />
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="88px">
+      <el-form-item label="学生姓名" prop="studentName">
+        <el-input v-model="queryParams.studentName" placeholder="请输入学生姓名" clearable @keyup.enter="handleQuery" />
       </el-form-item>
-      <el-form-item label="问卷ID" prop="questionnaireId">
-        <el-input v-model="queryParams.questionnaireId" placeholder="请输入问卷ID" clearable @keyup.enter="handleQuery" />
+      <el-form-item label="问卷标题" prop="questionnaireTitle">
+        <el-input v-model="queryParams.questionnaireTitle" placeholder="请输入问卷标题" clearable @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="风险等级" prop="riskLevel" style="width: 250px">
         <el-select v-model="queryParams.riskLevel" placeholder="请选择风险等级" clearable>
@@ -185,7 +185,9 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     studentId: null,
+    studentName: null,
     questionnaireId: null,
+    questionnaireTitle: null,
     riskLevel: null,
     aiStatus: null,
     readStatus: null,

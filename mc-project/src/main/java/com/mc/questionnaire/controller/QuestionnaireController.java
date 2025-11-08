@@ -58,7 +58,7 @@ public class QuestionnaireController extends BaseController {
     @PreAuthorize("@ss.hasPermi('questionnaire:questionnaireinfo:edit')")
     @Log(title = "心理测评问卷管理", businessType = BusinessType.INSERT)
     @PostMapping
-    public R save(@RequestBody QuestionnaireDTO questionnaireDTO) {
+    public R<Void> save(@RequestBody QuestionnaireDTO questionnaireDTO) {
         questionnaireService.saveQuestionnaire(questionnaireDTO);
         return R.ok();
     }
@@ -81,7 +81,7 @@ public class QuestionnaireController extends BaseController {
     @PreAuthorize("@ss.hasPermi('questionnaire:questionnaireinfo:remove')")
     @Log(title = "心理测评问卷管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{questionnaireIds}")
-    public R remove(@PathVariable Long[] questionnaireIds) {
+    public R<Void> remove(@PathVariable Long[] questionnaireIds) {
         questionnaireService.deleteQuestionnaire(questionnaireIds);
         return R.ok();
     }
@@ -93,19 +93,47 @@ public class QuestionnaireController extends BaseController {
     @PreAuthorize("@ss.hasPermi('questionnaire:questionnaireinfo:send')")
     @Log(title = "心理测评问卷管理", businessType = BusinessType.INSERT)
     @PostMapping("/send")
-    public R send(@RequestParam(value = "questionnaireId") Long questionnaireId,
-                  @RequestParam(value = "deptId") Long deptId) {
+    public R<java.util.Map<String, Object>> send(@RequestParam(value = "questionnaireId") Long questionnaireId,
+            @RequestParam(value = "deptId") Long deptId) {
         List<SysUser> sysUsers = sysUserService.selectUserListByDeptId(deptId);
-        sysUsers.parallelStream().forEach(sysUser -> {
+
+        // 统计发送结果
+        int totalUsers = sysUsers.size();
+        int sentCount = 0;
+        int skippedCount = 0;
+        int noStudentCount = 0;
+
+        for (SysUser sysUser : sysUsers) {
             // 通过用户ID查询学生信息
             Student student = new Student();
             student.setUserId(sysUser.getUserId());
             List<Student> students = studentInfoService.selectStudentInfoList(student);
+
             if (!students.isEmpty()) {
                 Student studentInfo = students.get(0);
-                questionnaireService.sendQuestionnaire(questionnaireId, studentInfo.getStudentId());
+                boolean isSent = questionnaireService.sendQuestionnaire(questionnaireId, studentInfo.getStudentId());
+                if (isSent) {
+                    sentCount++;
+                } else {
+                    // 跳过的原因可能是：1.已存在记录 2.用户被禁用
+                    // 这里统一计入skippedCount，包含了禁用用户
+                    skippedCount++;
+                }
+            } else {
+                noStudentCount++; // 用户未关联学生信息
             }
-        });
-        return R.ok();
+        }
+
+        // 构建返回数据
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("totalUsers", totalUsers);
+        result.put("sentCount", sentCount);
+        result.put("skippedCount", skippedCount);
+        result.put("noStudentCount", noStudentCount);
+        result.put("message", String.format("发送完成：成功 %d 人，跳过 %d 人（已存在记录或用户被禁用），无学生信息 %d 人",
+                sentCount, skippedCount, noStudentCount));
+
+        // 返回详细的发送结果
+        return R.ok(result);
     }
 }

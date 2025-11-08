@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mc.questionnaire.mapper.QuestionnaireAnswerMapper">
+    
+    <resultMap type="QuestionnaireAnswerRecord" id="QuestionnaireAnswerResult">
+        <result property="answerId"    column="answer_id"    />
+        <result property="resultId"    column="result_id"    />
+        <result property="questionnaireId"    column="questionnaire_id"    />
+        <result property="questionnaireTitle"    column="questionnaire_title"    />
+        <result property="questionId"    column="question_id"    />
+        <result property="type"    column="type"    />
+        <result property="content"    column="content"    />
+        <result property="options"    column="options"    />
+        <result property="standardAnswer"    column="standard_answer"    />
+        <result property="score"    column="score"    />
+        <result property="userAnswer"    column="user_answer"    />
+        <result property="isCorrect"    column="is_correct"    />
+        <result property="obtainScore"    column="obtain_score"    />
+        <result property="studentId"    column="student_id"    />
+        <result property="studentName"    column="student_name"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectQuestionnaireAnswerVo">
+        select 
+            qa.answer_id, 
+            qa.result_id, 
+            qa.questionnaire_id, 
+            qa.question_id, 
+            qa.type, 
+            qa.content, 
+            qa.options, 
+            qa.standard_answer, 
+            qa.score, 
+            qa.user_answer, 
+            qa.is_correct, 
+            qa.obtain_score, 
+            qa.create_by, 
+            qa.create_time, 
+            qa.update_by, 
+            qa.update_time, 
+            qa.remark,
+            q.title as questionnaire_title,
+            er.student_id,
+            s.name as student_name,
+            qu.order_num as question_order_num
+        from questionnaire_answer qa
+        left join evaluation_result er on qa.result_id = er.result_id
+        left join student_info s on er.student_id = s.student_id
+        left join questionnaire q on qa.questionnaire_id = q.questionnaire_id
+        left join question qu on qa.question_id = qu.question_id
+    </sql>
+
+    <select id="selectQuestionnaireAnswerList" parameterType="QuestionnaireAnswer" resultMap="QuestionnaireAnswerResult">
+        <include refid="selectQuestionnaireAnswerVo"/>
+        <where>  
+            <if test="resultId != null "> and qa.result_id = #{resultId}</if>
+            <if test="questionnaireId != null "> and qa.questionnaire_id = #{questionnaireId}</if>
+            <if test="questionnaireTitle != null and questionnaireTitle != ''"> and q.title like concat('%', #{questionnaireTitle}, '%')</if>
+            <if test="questionId != null "> and qa.question_id = #{questionId}</if>
+            <if test="type != null  and type != ''"> and qa.type = #{type}</if>
+            <if test="studentId != null "> and er.student_id = #{studentId}</if>
+            <if test="studentName != null and studentName != ''"> and s.name like concat('%', #{studentName}, '%')</if>
+            <if test="isCorrect != null "> and qa.is_correct = #{isCorrect}</if>
+        </where>
+        order by qa.result_id, qa.questionnaire_id, qu.order_num, qa.question_id
+    </select>
+    
+    <select id="selectQuestionnaireAnswerByAnswerId" parameterType="Long" resultMap="QuestionnaireAnswerResult">
+        <include refid="selectQuestionnaireAnswerVo"/>
+        where qa.answer_id = #{answerId}
+    </select>
+
+    <insert id="insertQuestionnaireAnswer" parameterType="QuestionnaireAnswer" useGeneratedKeys="true" keyProperty="answerId">
+        insert into questionnaire_answer
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="resultId != null">result_id,</if>
+            <if test="questionnaireId != null">questionnaire_id,</if>
+            <if test="questionId != null">question_id,</if>
+            <if test="type != null and type != ''">type,</if>
+            <if test="content != null and content != ''">content,</if>
+            <if test="options != null">options,</if>
+            <if test="standardAnswer != null">standard_answer,</if>
+            <if test="score != null">score,</if>
+            <if test="userAnswer != null">user_answer,</if>
+            <if test="isCorrect != null">is_correct,</if>
+            <if test="obtainScore != null">obtain_score,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="resultId != null">#{resultId},</if>
+            <if test="questionnaireId != null">#{questionnaireId},</if>
+            <if test="questionId != null">#{questionId},</if>
+            <if test="type != null and type != ''">#{type},</if>
+            <if test="content != null and content != ''">#{content},</if>
+            <if test="options != null">#{options},</if>
+            <if test="standardAnswer != null">#{standardAnswer},</if>
+            <if test="score != null">#{score},</if>
+            <if test="userAnswer != null">#{userAnswer},</if>
+            <if test="isCorrect != null">#{isCorrect},</if>
+            <if test="obtainScore != null">#{obtainScore},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateQuestionnaireAnswer" parameterType="QuestionnaireAnswer">
+        update questionnaire_answer
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="resultId != null">result_id = #{resultId},</if>
+            <if test="questionnaireId != null">questionnaire_id = #{questionnaireId},</if>
+            <if test="questionId != null">question_id = #{questionId},</if>
+            <if test="type != null and type != ''">type = #{type},</if>
+            <if test="content != null and content != ''">content = #{content},</if>
+            <if test="options != null">options = #{options},</if>
+            <if test="standardAnswer != null">standard_answer = #{standardAnswer},</if>
+            <if test="score != null">score = #{score},</if>
+            <if test="userAnswer != null">user_answer = #{userAnswer},</if>
+            <if test="isCorrect != null">is_correct = #{isCorrect},</if>
+            <if test="obtainScore != null">obtain_score = #{obtainScore},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where answer_id = #{answerId}
+    </update>
+
+    <delete id="deleteQuestionnaireAnswerByAnswerId" parameterType="Long">
+        delete from questionnaire_answer where answer_id = #{answerId}
+    </delete>
+
+    <delete id="deleteQuestionnaireAnswerByAnswerIds" parameterType="String">
+        delete from questionnaire_answer where answer_id in 
+        <foreach item="answerId" collection="array" open="(" separator="," close=")">
+            #{answerId}
+        </foreach>
+    </delete>
+</mapper>
+

@@ -7,7 +7,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="EvaluationResult" id="EvaluationResultResult">
         <result property="resultId"    column="result_id"    />
         <result property="studentId"    column="student_id"    />
+        <result property="studentName"    column="student_name"    />
         <result property="questionnaireId"    column="questionnaire_id"    />
+        <result property="questionnaireTitle"    column="questionnaire_title"    />
         <result property="totalScore"    column="total_score"    />
         <result property="riskLevel"    column="risk_level"    />
         <result property="aiAnalysis"    column="ai_analysis"    />
@@ -22,24 +24,46 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectEvaluationResultVo">
-        select result_id, student_id, questionnaire_id, total_score, risk_level, ai_analysis, ai_status, read_status, completion_status, create_by, create_time, update_by, update_time, remark from evaluation_result
+        select 
+            er.result_id, 
+            er.student_id, 
+            er.questionnaire_id, 
+            er.total_score, 
+            er.risk_level, 
+            er.ai_analysis, 
+            er.ai_status, 
+            er.read_status, 
+            er.completion_status, 
+            er.create_by, 
+            er.create_time, 
+            er.update_by, 
+            er.update_time, 
+            er.remark,
+            s.name as student_name,
+            q.title as questionnaire_title
+        from evaluation_result er
+        left join student_info s on er.student_id = s.student_id
+        left join questionnaire q on er.questionnaire_id = q.questionnaire_id
     </sql>
 
     <select id="selectEvaluationResultList" parameterType="EvaluationResult" resultMap="EvaluationResultResult">
         <include refid="selectEvaluationResultVo"/>
         <where>  
-            <if test="studentId != null "> and student_id = #{studentId}</if>
-            <if test="questionnaireId != null "> and questionnaire_id = #{questionnaireId}</if>
-            <if test="riskLevel != null  and riskLevel != ''"> and risk_level = #{riskLevel}</if>
-            <if test="aiStatus != null  and aiStatus != ''"> and ai_status = #{aiStatus}</if>
-            <if test="readStatus != null  and readStatus != ''"> and read_status = #{readStatus}</if>
-            <if test="completionStatus != null  and completionStatus != ''"> and completion_status = #{completionStatus}</if>
+            <if test="studentId != null "> and er.student_id = #{studentId}</if>
+            <if test="studentName != null and studentName != ''"> and s.name like concat('%', #{studentName}, '%')</if>
+            <if test="questionnaireId != null "> and er.questionnaire_id = #{questionnaireId}</if>
+            <if test="questionnaireTitle != null and questionnaireTitle != ''"> and q.title like concat('%', #{questionnaireTitle}, '%')</if>
+            <if test="riskLevel != null  and riskLevel != ''"> and er.risk_level = #{riskLevel}</if>
+            <if test="aiStatus != null  and aiStatus != ''"> and er.ai_status = #{aiStatus}</if>
+            <if test="readStatus != null  and readStatus != ''"> and er.read_status = #{readStatus}</if>
+            <if test="completionStatus != null  and completionStatus != ''"> and er.completion_status = #{completionStatus}</if>
         </where>
+        order by er.create_time desc
     </select>
     
     <select id="selectEvaluationResultByResultId" parameterType="Long" resultMap="EvaluationResultResult">
         <include refid="selectEvaluationResultVo"/>
-        where result_id = #{resultId}
+        where er.result_id = #{resultId}
     </select>
 
     <insert id="insertEvaluationResult" parameterType="EvaluationResult" useGeneratedKeys="true" keyProperty="resultId">

@@ -2,6 +2,8 @@ package com.mc.questionnaire.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.mc.common.constant.UserConstants;
+import com.mc.common.core.domain.entity.SysUser;
 import com.mc.common.utils.DateUtils;
 import com.mc.common.utils.SecurityUtils;
 import com.mc.evaluation.domain.EvaluationResult;
@@ -12,6 +14,9 @@ import com.mc.questionnaire.domain.dto.QuestionnaireDTO;
 import com.mc.questionnaire.mapper.QuestionMapper;
 import com.mc.questionnaire.mapper.QuestionnaireMapper;
 import com.mc.questionnaire.service.IQuestionnaireService;
+import com.mc.student.domain.Student;
+import com.mc.student.mapper.StudentInfoMapper;
+import com.mc.system.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,12 +34,17 @@ public class QuestionnaireServiceImpl extends ServiceImpl<QuestionnaireMapper, Q
     private final QuestionnaireMapper questionnaireMapper;
     @Autowired
     private final EvaluationResultMapper evaluationResultMapper;
+    @Autowired
+    private final StudentInfoMapper studentInfoMapper;
+    @Autowired
+    private final SysUserMapper sysUserMapper;
 
     @Override
     public List<Questionnaire> selectQuestionnaireList(Questionnaire questionnaire) {
         return this.lambdaQuery()
                 .like(questionnaire.getTitle() != null, Questionnaire::getTitle, questionnaire.getTitle())
-                .like(questionnaire.getDescription() != null, Questionnaire::getDescription, questionnaire.getDescription())
+                .like(questionnaire.getDescription() != null, Questionnaire::getDescription,
+                        questionnaire.getDescription())
                 .eq(questionnaire.getStatus() != null, Questionnaire::getStatus, questionnaire.getStatus())
                 .eq(questionnaire.getType() != null, Questionnaire::getType, questionnaire.getType())
                 // 开始时间 >= 查询条件
@@ -116,10 +126,46 @@ public class QuestionnaireServiceImpl extends ServiceImpl<QuestionnaireMapper, Q
     }
 
     @Override
-    public void sendQuestionnaire(Long questionnaireId, Long studentId) {
-        evaluationResultMapper.insertEvaluationResult(new EvaluationResult() {{
-            setQuestionnaireId(questionnaireId);
-            setStudentId(studentId);
-        }});
+    public boolean sendQuestionnaire(Long questionnaireId, Long studentId) {
+        // 1. 根据学生ID查询学生信息，获取用户ID
+        Student student = studentInfoMapper.selectById(studentId);
+        if (student == null || student.getUserId() == null) {
+            return false; // 学生信息不存在或未关联用户
+        }
+
+        // 2. 根据用户ID查询用户信息，检查用户状态
+        SysUser user = sysUserMapper.selectUserById(student.getUserId());
+        if (user == null) {
+            return false; // 用户不存在
+        }
+
+        // 3. 检查用户是否被禁用（状态为1表示禁用）
+        if (UserConstants.USER_DISABLE.equals(user.getStatus())) {
+            return false; // 用户已禁用，不发送问卷
+        }
+
+        // 4. 检查是否已存在该学生的该问卷测评记录
+        EvaluationResult query = new EvaluationResult();
+        query.setStudentId(studentId);
+        query.setQuestionnaireId(questionnaireId);
+        List<EvaluationResult> existingResults = evaluationResultMapper.selectEvaluationResultList(query);
+
+        // 如果已存在记录，则不重复插入
+        if (existingResults != null && !existingResults.isEmpty()) {
+            return false; // 返回 false 表示跳过
+        }
+
+        // 5. 插入新的测评记录
+        evaluationResultMapper.insertEvaluationResult(new EvaluationResult() {
+            {
+                setQuestionnaireId(questionnaireId);
+                setStudentId(studentId);
+                setCompletionStatus("0"); // 0-未完成
+                setReadStatus("0"); // 0-未读
+                setAiStatus("0"); // 0-未分析
+            }
+        });
+
+        return true; // 返回 true 表示发送成功
     }
 }

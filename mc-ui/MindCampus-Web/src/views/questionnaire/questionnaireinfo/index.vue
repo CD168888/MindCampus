@@ -851,7 +851,49 @@ function confirmSend() {
   // 调用发送接口
   sendQuestionnaire(sendForm.value.questionnaireId, selectedDept.value.id).then(response => {
     loading.close()
-    proxy.$modal.msgSuccess(`问卷已成功发送到部门：${selectedDept.value.label}`)
+
+    // 显示详细的发送结果
+    const data = response.data || {}
+
+    // 如果有详细统计信息
+    if (data.sentCount !== undefined) {
+      const { totalUsers, sentCount, skippedCount, noStudentCount } = data
+
+      // 如果全部跳过（已存在或被禁用）
+      if (sentCount === 0 && skippedCount === totalUsers) {
+        proxy.$modal.msgWarning(`该部门的 ${totalUsers} 名学生无法发送问卷（可能已发送过或用户被禁用）`)
+      }
+      // 如果全部成功
+      else if (sentCount === totalUsers) {
+        proxy.$modal.msgSuccess(`问卷发送成功！已向 ${selectedDept.value.label} 的 ${sentCount} 名学生发送问卷`)
+      }
+      // 如果部分成功
+      else if (sentCount > 0) {
+        let message = `发送完成！成功 ${sentCount} 人`
+        if (skippedCount > 0) {
+          message += `，跳过 ${skippedCount} 人`
+        }
+        if (noStudentCount > 0) {
+          message += `，${noStudentCount} 人无学生信息`
+        }
+        proxy.$modal.msgSuccess(message)
+      }
+      // 如果一个都没成功
+      else {
+        let message = '未发送任何问卷'
+        if (skippedCount > 0) {
+          message += `，${skippedCount} 人被跳过`
+        }
+        if (noStudentCount > 0) {
+          message += `，${noStudentCount} 人无学生信息`
+        }
+        proxy.$modal.msgWarning(message)
+      }
+    } else {
+      // 兼容旧版本返回格式
+      proxy.$modal.msgSuccess(data.message || `问卷已成功发送到部门：${selectedDept.value.label}`)
+    }
+
     sendOpen.value = false
   }).catch(error => {
     loading.close()

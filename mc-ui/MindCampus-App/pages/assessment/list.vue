@@ -220,11 +220,6 @@ export default {
 
     // 开始填写问卷
     startQuestionnaire(item) {
-      console.log('点击卡片 - questionnaireId:', item.questionnaireId)
-      console.log('点击卡片 - title:', item.title)
-      console.log('点击卡片 - resultId:', item.resultId)
-      console.log('点击卡片 - 完整数据:', JSON.stringify(item))
-
       if (!item || !item.questionnaireId) {
         uni.showToast({
           title: '问卷信息错误',

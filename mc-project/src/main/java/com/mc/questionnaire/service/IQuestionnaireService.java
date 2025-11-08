@@ -33,6 +33,7 @@ public interface IQuestionnaireService {
 
     /**
      * 发送问卷给指定学生
+     * @return true-发送成功，false-已存在跳过
      */
-    void sendQuestionnaire(Long questionnaireId, Long studentId);
+    boolean sendQuestionnaire(Long questionnaireId, Long studentId);
 }
