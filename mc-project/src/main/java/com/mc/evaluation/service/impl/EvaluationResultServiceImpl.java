@@ -3,13 +3,16 @@ package com.mc.evaluation.service.impl;
 import com.mc.common.utils.DateUtils;
 import com.mc.evaluation.domain.EvaluationResult;
 import com.mc.evaluation.mapper.EvaluationResultMapper;
+import com.mc.evaluation.mapper.QuestionnaireAnswerMapper;
 import com.mc.evaluation.service.IEvaluationResultService;
 import com.mc.questionnaire.domain.Questionnaire;
 import com.mc.questionnaire.mapper.QuestionnaireMapper;
 import com.mc.student.domain.Student;
 import com.mc.student.mapper.StudentInfoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,6 +30,9 @@ public class EvaluationResultServiceImpl implements IEvaluationResultService {
     private StudentInfoMapper studentInfoMapper;
     @Autowired
     private QuestionnaireMapper questionnaireMapper;
+    @Autowired
+    @Qualifier("questionnaireAnswerMapper")  // 明确指定使用 evaluation 包下的 Mapper
+    private QuestionnaireAnswerMapper questionnaireAnswerMapper;
 
     /**
      * 查询心理测评结果
@@ -89,23 +95,35 @@ public class EvaluationResultServiceImpl implements IEvaluationResultService {
 
     /**
      * 批量删除心理测评结果
+     * 同时级联删除关联的答题记录
      *
      * @param resultIds 需要删除的心理测评结果主键
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int deleteEvaluationResultByResultIds(Long[] resultIds) {
+        // 先删除关联的答题记录
+        for (Long resultId : resultIds) {
+            questionnaireAnswerMapper.deleteByResultId(resultId);
+        }
+        // 再删除测评结果
         return evaluationResultMapper.deleteEvaluationResultByResultIds(resultIds);
     }
 
     /**
      * 删除心理测评结果信息
+     * 同时级联删除关联的答题记录
      *
      * @param resultId 心理测评结果主键
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int deleteEvaluationResultByResultId(Long resultId) {
+        // 先删除关联的答题记录
+        questionnaireAnswerMapper.deleteByResultId(resultId);
+        // 再删除测评结果
         return evaluationResultMapper.deleteEvaluationResultByResultId(resultId);
     }
 }
