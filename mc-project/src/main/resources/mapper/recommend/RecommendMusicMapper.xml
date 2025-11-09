@@ -28,6 +28,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectRecommendMusicList" parameterType="RecommendMusic" resultMap="RecommendMusicResult">
         <include refid="selectRecommendMusicVo"/>
         <where>  
+            <if test="keyword != null and keyword != ''">
+                and (title like concat('%', #{keyword}, '%') or artist like concat('%', #{keyword}, '%'))
+            </if>
             <if test="title != null and title != ''"> and title like concat('%', #{title}, '%')</if>
             <if test="artist != null and artist != ''"> and artist like concat('%', #{artist}, '%')</if>
             <if test="genre != null and genre != ''"> and genre like concat('%', #{genre}, '%')</if>
