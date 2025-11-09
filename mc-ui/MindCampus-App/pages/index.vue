@@ -37,28 +37,20 @@
         <view class="section-more" @tap="goToMusicList">更多 ›</view>
       </view>
 
-      <!-- 正在播放 -->
-      <view class="music-player">
-        <view class="music-controls">
-          <view class="play-btn" @tap="toggleMusic">
-            <text class="play-icon">{{ isPlaying ? '⏸' : '▶' }}</text>
-          </view>
+      <!-- 推荐音乐列表（3个） -->
+      <view class="music-list">
+        <view class="music-item" v-for="(item, index) in recommendedMusicList" :key="item.musicId" @tap="playMusic(item)">
+          <image v-if="item.coverUrl" class="music-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill"></image>
+          <view v-else class="music-cover-placeholder">🎵</view>
           <view class="music-info">
-            <view class="music-title">{{ currentMusic.title }}</view>
-            <view class="music-artist">{{ currentMusic.artist }} · {{ currentMusic.duration }}</view>
+            <view class="music-title">{{ item.title }}</view>
+            <view class="music-artist">{{ item.artist || '未知' }} · {{ formatDuration(item.duration) }}</view>
           </view>
         </view>
       </view>
-
-      <!-- 音乐列表 -->
-      <view class="music-list">
-        <view class="music-item" v-for="(item, index) in musicList" :key="index" @tap="playMusic(item)">
-          <view class="music-item-icon">{{ item.icon }}</view>
-          <view class="music-info">
-            <view class="music-title">{{ item.title }}</view>
-            <view class="music-artist">{{ item.artist }} · {{ item.duration }}</view>
-          </view>
-        </view>
+      
+      <view v-if="recommendedMusicList.length === 0" class="empty-music">
+        <text class="empty-text">暂无推荐音乐</text>
       </view>
     </view>
 
@@ -89,6 +81,8 @@
 <script>
 import DailyQuote from '@/components/daily-quote/daily-quote.vue'
 import AssessmentCard from '@/components/assessment-card/assessment-card.vue'
+import { getRecommendedMusic } from '@/api/music'
+import config from '@/config'
 
 export default {
   components: {
@@ -127,32 +121,13 @@ export default {
 
       // 当前播放音乐
       currentMusic: {
-        title: '雨声冥想',
-        artist: '自然音效',
-        duration: '12:35'
+        title: '',
+        artist: '',
+        duration: ''
       },
 
-      // 音乐列表
-      musicList: [
-        {
-          icon: '🌲',
-          title: '森林晨曦',
-          artist: '白噪音系列',
-          duration: '15:20'
-        },
-        {
-          icon: '🌊',
-          title: '海浪轻抚',
-          artist: '放松音乐',
-          duration: '18:45'
-        },
-        {
-          icon: '🎹',
-          title: '钢琴轻语',
-          artist: '古典音乐',
-          duration: '10:15'
-        }
-      ],
+      // 推荐音乐列表（首页显示3个）
+      recommendedMusicList: [],
 
       // 文章列表
       articleList: [
@@ -183,6 +158,7 @@ export default {
 
   onLoad() {
     this.getUserInfo()
+    this.loadRecommendedMusic()
   },
 
   methods: {
@@ -192,6 +168,42 @@ export default {
       if (name) {
         this.userName = name
       }
+    },
+
+    // 加载推荐音乐
+    loadRecommendedMusic() {
+      getRecommendedMusic().then(res => {
+        if (res.code === 200 && res.data) {
+          this.recommendedMusicList = res.data
+          // 如果有推荐音乐，设置第一个为当前播放
+          if (this.recommendedMusicList.length > 0) {
+            this.currentMusic = {
+              title: this.recommendedMusicList[0].title,
+              artist: this.recommendedMusicList[0].artist || '未知',
+              duration: this.formatDuration(this.recommendedMusicList[0].duration)
+            }
+          }
+        }
+      }).catch(err => {
+        console.error('加载推荐音乐失败:', err)
+      })
+    },
+
+    // 格式化时长（秒转分:秒）
+    formatDuration(seconds) {
+      if (!seconds) return '0:00'
+      const mins = Math.floor(seconds / 60)
+      const secs = seconds % 60
+      return `${mins}:${secs.toString().padStart(2, '0')}`
+    },
+
+    // 获取图片完整URL
+    getImageUrl(url) {
+      if (!url) return ''
+      if (url.startsWith('http')) return url
+      // 从 config 获取 baseUrl
+      const baseUrl = config.baseUrl || 'http://localhost:8080'
+      return url.startsWith('/') ? baseUrl + url : baseUrl + '/' + url
     },
 
     // 轮播图点击
@@ -223,15 +235,18 @@ export default {
 
     // 播放指定音乐
     playMusic(item) {
-      this.currentMusic = item
-      this.isPlaying = true
-      this.$modal.showToast('正在播放：' + item.title)
+      // 跳转到播放页面
+      const musicList = JSON.stringify(this.recommendedMusicList)
+      uni.navigateTo({
+        url: `/pages/music/player?musicId=${item.musicId}&musicList=${encodeURIComponent(musicList)}`
+      })
     },
 
     // 前往音乐列表
     goToMusicList() {
-      this.$modal.showToast('前往音乐列表')
-      // TODO: 跳转到音乐列表页面
+      uni.navigateTo({
+        url: '/pages/music/list'
+      })
     },
 
     // 打开文章详情
@@ -473,21 +488,25 @@ export default {
 
 .music-info {
   flex: 1;
+  min-width: 0;
 }
 
 .music-title {
-  font-size: $font-lg;
-  font-weight: $font-bold;
-  color: $bg-white;
+  font-size: $font-base;
+  font-weight: $font-semibold;
+  color: $text-primary;
   margin-bottom: $spacing-xs;
-  letter-spacing: -0.5rpx;
-  text-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .music-artist {
   font-size: $font-sm;
-  color: rgba(255, 255, 255, 0.90);
-  font-weight: $font-medium;
+  color: $text-secondary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .music-list {
@@ -512,10 +531,36 @@ export default {
   }
 }
 
-.music-item-icon {
-  font-size: 48rpx;
+.music-cover {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: $radius-base;
   margin-right: $spacing-md;
-  filter: drop-shadow(0 1rpx 3rpx rgba(0, 0, 0, 0.08));
+  background: #f0f0f0;
+  flex-shrink: 0;
+}
+
+.music-cover-placeholder {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: $radius-base;
+  margin-right: $spacing-md;
+  background: $gradient-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  flex-shrink: 0;
+}
+
+.empty-music {
+  padding: $spacing-lg;
+  text-align: center;
+}
+
+.empty-text {
+  font-size: $font-sm;
+  color: #999;
 }
 
 /* ==================== 文章推荐（统一音乐模块样式）==================== */

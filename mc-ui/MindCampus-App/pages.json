@@ -88,6 +88,18 @@
       "navigationBarTitleText": "测评结果",
       "navigationStyle": "custom"
     }
+  }, {
+    "path": "pages/music/list",
+    "style": {
+      "navigationBarTitleText": "音乐疗愈",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/music/player",
+    "style": {
+      "navigationBarTitleText": "正在播放",
+      "navigationStyle": "custom"
+    }
   }],
   "tabBar": {
     "color": "#6b7280",
