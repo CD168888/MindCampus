@@ -29,6 +29,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectRecommendCourseList" parameterType="RecommendCourse" resultMap="RecommendCourseResult">
         <include refid="selectRecommendCourseVo"/>
         <where>  
+            <if test="keyword != null and keyword != ''">
+                and (title like concat('%', #{keyword}, '%') or lecturer like concat('%', #{keyword}, '%'))
+            </if>
             <if test="title != null and title != ''"> and title like concat('%', #{title}, '%')</if>
             <if test="lecturer != null and lecturer != ''"> and lecturer like concat('%', #{lecturer}, '%')</if>
             <if test="level != null and level != ''"> and level = #{level}</if>
@@ -110,4 +113,3 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 </mapper>
-

@@ -1,8 +1,6 @@
 package com.mc.recommend.mapper;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.mc.recommend.domain.RecommendCourse;
-import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
@@ -12,15 +10,14 @@ import java.util.List;
  * @author caidu
  * @date 2025-11-08
  */
-@Mapper
-public interface RecommendCourseMapper extends BaseMapper<RecommendCourse> {
+public interface RecommendCourseMapper {
     /**
      * 查询心理课程推荐列表
      *
      * @param recommendCourse 心理课程推荐
      * @return 心理课程推荐集合
      */
-    List<RecommendCourse> selectRecommendCourseList(RecommendCourse recommendCourse);
+    public List<RecommendCourse> selectRecommendCourseList(RecommendCourse recommendCourse);
 
     /**
      * 查询心理课程推荐
@@ -28,7 +25,7 @@ public interface RecommendCourseMapper extends BaseMapper<RecommendCourse> {
      * @param courseId 心理课程推荐主键
      * @return 心理课程推荐
      */
-    RecommendCourse selectRecommendCourseByCourseId(Long courseId);
+    public RecommendCourse selectRecommendCourseByCourseId(Long courseId);
 
     /**
      * 新增心理课程推荐
@@ -36,7 +33,7 @@ public interface RecommendCourseMapper extends BaseMapper<RecommendCourse> {
      * @param recommendCourse 心理课程推荐
      * @return 结果
      */
-    int insertRecommendCourse(RecommendCourse recommendCourse);
+    public int insertRecommendCourse(RecommendCourse recommendCourse);
 
     /**
      * 修改心理课程推荐
@@ -44,7 +41,7 @@ public interface RecommendCourseMapper extends BaseMapper<RecommendCourse> {
      * @param recommendCourse 心理课程推荐
      * @return 结果
      */
-    int updateRecommendCourse(RecommendCourse recommendCourse);
+    public int updateRecommendCourse(RecommendCourse recommendCourse);
 
     /**
      * 删除心理课程推荐
@@ -52,7 +49,7 @@ public interface RecommendCourseMapper extends BaseMapper<RecommendCourse> {
      * @param courseId 心理课程推荐主键
      * @return 结果
      */
-    int deleteRecommendCourseByCourseId(Long courseId);
+    public int deleteRecommendCourseByCourseId(Long courseId);
 
     /**
      * 批量删除心理课程推荐
@@ -60,6 +57,5 @@ public interface RecommendCourseMapper extends BaseMapper<RecommendCourse> {
      * @param courseIds 需要删除的数据主键集合
      * @return 结果
      */
-    int deleteRecommendCourseByCourseIds(Long[] courseIds);
+    public int deleteRecommendCourseByCourseIds(Long[] courseIds);
 }
-

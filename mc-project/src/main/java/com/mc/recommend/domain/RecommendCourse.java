@@ -1,6 +1,7 @@
 package com.mc.recommend.domain;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mc.common.annotation.Excel;
@@ -51,7 +52,7 @@ public class RecommendCourse extends BaseEntity {
     private Integer chapters;
 
     /** 课程难度（初级/中级/高级） */
-    @Excel(name = "课程难度", readConverterExp = "初级=初级,中级=中级,高级=高级")
+    @Excel(name = "课程难度")
     private String level;
 
     /** 课程简介 */
@@ -61,5 +62,8 @@ public class RecommendCourse extends BaseEntity {
     /** 状态（0正常 1下架） */
     @Excel(name = "状态", readConverterExp = "0=正常,1=下架")
     private String status;
-}
 
+    /** 搜索关键词（用于模糊搜索 title 或 lecturer，非数据库字段） */
+    @TableField(exist = false)
+    private String keyword;
+}

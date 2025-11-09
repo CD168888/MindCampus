@@ -112,6 +112,18 @@
       "navigationBarTitleText": "文章详情",
       "navigationStyle": "custom"
     }
+  }, {
+    "path": "pages/course/list",
+    "style": {
+      "navigationBarTitleText": "心理课程",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/course/detail",
+    "style": {
+      "navigationBarTitleText": "课程详情",
+      "navigationStyle": "custom"
+    }
   }],
   "tabBar": {
     "color": "#6b7280",

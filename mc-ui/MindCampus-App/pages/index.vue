@@ -79,6 +79,32 @@
         <text class="empty-text">暂无推荐文章</text>
       </view>
     </view>
+
+    <!-- 心理课程推荐 -->
+    <view class="course-section">
+      <view class="section-header">
+        <view class="section-title">🎬 推荐课程</view>
+        <view class="section-more" @tap="goToCourseList">更多 ›</view>
+      </view>
+
+      <view class="course-list">
+        <view class="course-item" v-for="item in courseList" :key="item.courseId" @tap="openCourse(item)">
+          <image v-if="item.coverUrl" class="course-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill"></image>
+          <view v-else class="course-cover-placeholder">🎬</view>
+          <view class="course-info">
+            <view class="course-title">{{ item.title }}</view>
+            <view class="course-meta">
+              <text class="meta-item">👤 {{ item.lecturer || '未知' }}</text>
+              <text class="meta-item">⏱️ {{ formatDuration(item.duration) }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view v-if="courseList.length === 0" class="empty-course">
+        <text class="empty-text">暂无推荐课程</text>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -87,6 +113,7 @@ import DailyQuote from '@/components/daily-quote/daily-quote.vue'
 import AssessmentCard from '@/components/assessment-card/assessment-card.vue'
 import {getRecommendedMusic} from '@/api/music'
 import {getRecommendedArticles} from '@/api/article'
+import {getRecommendedCourses} from '@/api/course'
 import config from '@/config'
 
 export default {
@@ -135,7 +162,10 @@ export default {
       recommendedMusicList: [],
 
       // 文章列表
-      articleList: []
+      articleList: [],
+
+      // 课程列表
+      courseList: []
     }
   },
 
@@ -143,6 +173,7 @@ export default {
     this.getUserInfo()
     this.loadRecommendedMusic()
     this.loadRecommendedArticles()
+    this.loadRecommendedCourses()
   },
 
   methods: {
@@ -255,6 +286,31 @@ export default {
     goToArticleList() {
       uni.navigateTo({
         url: '/pages/article/list'
+      })
+    },
+
+    // 加载推荐课程
+    loadRecommendedCourses() {
+      getRecommendedCourses().then(res => {
+        if (res.code === 200 && res.data) {
+          this.courseList = res.data
+        }
+      }).catch(err => {
+        console.error('加载推荐课程失败:', err)
+      })
+    },
+
+    // 打开课程详情
+    openCourse(item) {
+      uni.navigateTo({
+        url: `/pages/course/detail?courseId=${item.courseId}`
+      })
+    },
+
+    // 前往课程列表
+    goToCourseList() {
+      uni.navigateTo({
+        url: '/pages/course/list'
       })
     },
 
@@ -425,7 +481,8 @@ export default {
 
 /* ==================== 音乐疗愈（玻璃态设计）==================== */
 .music-section,
-.article-section {
+.article-section,
+.course-section {
   padding: 0 $spacing-lg $spacing-lg;
 }
 
@@ -582,11 +639,6 @@ export default {
   text-align: center;
 }
 
-.empty-text {
-  font-size: $font-sm;
-  color: #999;
-}
-
 /* ==================== 文章推荐（统一音乐模块样式）==================== */
 .article-list {
   display: flex;
@@ -691,6 +743,114 @@ export default {
 }
 
 .empty-article {
+  padding: $spacing-2xl 0;
+  text-align: center;
+}
+
+/* ==================== 课程推荐（统一音乐模块样式）==================== */
+.course-section {
+  padding: 0 $spacing-lg $spacing-lg;
+}
+
+.course-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.course-item {
+  display: flex;
+  background: $bg-white;
+  border-radius: $radius-base;
+  padding: $spacing-md;
+  box-shadow: $shadow-xs;
+  transition: all $transition-base $ease-out;
+  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: hidden;
+
+  // 悬停渐变装饰
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: $gradient-card;
+    opacity: 0;
+    transition: opacity $transition-base $ease-out;
+  }
+
+  &:active {
+    transform: translateY(-2rpx);
+    box-shadow: $shadow-sm;
+
+    &::before {
+      opacity: 1;
+    }
+  }
+}
+
+.course-cover {
+  width: 160rpx;
+  height: 100rpx;
+  border-radius: $radius-base;
+  margin-right: $spacing-md;
+  background: $bg-gray-100;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.course-cover-placeholder {
+  width: 160rpx;
+  height: 100rpx;
+  border-radius: $radius-base;
+  margin-right: $spacing-md;
+  background: $gradient-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.course-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.course-title {
+  font-size: $font-base;
+  font-weight: $font-semibold;
+  color: $text-primary;
+  margin-bottom: $spacing-xs;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-family: $font-family-base;
+}
+
+.course-meta {
+  display: flex;
+  gap: $spacing-md;
+  font-size: $font-xs;
+  color: $text-quaternary;
+  font-weight: $font-normal;
+}
+
+.empty-course {
   padding: $spacing-2xl 0;
   text-align: center;
 }
