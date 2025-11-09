@@ -1,4 +1,4 @@
-package com.mc.app.controller;
+package com.mc.recommend.controller;
 
 import com.mc.common.annotation.Anonymous;
 import com.mc.common.core.controller.BaseController;
