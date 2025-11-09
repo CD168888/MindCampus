@@ -15,7 +15,9 @@
     <view class="search-section">
       <view class="search-box">
         <input class="search-input" v-model="searchKeyword" placeholder="搜索课程、讲师" @confirm="handleSearch" />
-        <text class="search-icon" @tap="handleSearch">🔍</text>
+        <view class="search-icon" @tap="handleSearch">
+          <uni-icons type="search" size="18" color="#999999"></uni-icons>
+        </view>
       </view>
     </view>
 
@@ -26,12 +28,14 @@
         <view class="course-item" v-for="item in courseList" :key="item.courseId" @tap="viewCourse(item)">
           <image v-if="item.coverUrl" class="course-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill"
             :lazy-load="true"></image>
-          <view v-else class="course-cover-placeholder">🎬</view>
+          <view v-else class="course-cover-placeholder">
+            <uni-icons type="videocam-filled" size="56" color="#FFFFFF"></uni-icons>
+          </view>
           <view class="course-info">
             <view class="course-header">
               <view class="course-level" v-if="item.level">{{ item.level }}</view>
               <view class="course-duration">
-                <text class="duration-icon">⏱️</text>
+                <uni-icons type="clock" size="12" color="#999999"></uni-icons>
                 <text class="duration-text">{{ formatDuration(item.duration) }}</text>
               </view>
             </view>
@@ -39,11 +43,11 @@
             <view class="course-description" v-if="item.description">{{ item.description }}</view>
             <view class="course-footer">
               <view class="course-lecturer">
-                <text class="lecturer-icon">👤</text>
+                <uni-icons type="person" size="12" color="#999999"></uni-icons>
                 <text class="lecturer-text">{{ item.lecturer || '未知' }}</text>
               </view>
               <view class="course-chapters" v-if="item.chapters">
-                <text class="chapters-icon">📚</text>
+                <uni-icons type="bars" size="12" color="#CCCCCC"></uni-icons>
                 <text class="chapters-text">{{ item.chapters }}章</text>
               </view>
             </view>
@@ -64,7 +68,9 @@
 
       <!-- 空状态 -->
       <view v-if="courseList.length === 0 && !loading" class="empty-state">
-        <text class="empty-icon">🎬</text>
+        <view class="empty-icon">
+          <uni-icons type="videocam-filled" size="80" color="#CCCCCC"></uni-icons>
+        </view>
         <text class="empty-text">暂无课程</text>
       </view>
     </scroll-view>
@@ -218,7 +224,7 @@ export default {
     z-index: 0;
   }
 
-  > * {
+  >* {
     position: relative;
     z-index: 1;
   }
@@ -312,9 +318,10 @@ export default {
 }
 
 .search-icon {
-  font-size: $font-md;
   margin-left: $spacing-md;
-  color: $text-tertiary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 滚动区域 */
@@ -376,11 +383,10 @@ export default {
     height: 140rpx;
     border-radius: $radius-base;
     margin-right: $spacing-lg;
-    background: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 50%, #fda4af 100%);
+    background: linear-gradient(135deg, #1CD07E 0%, #52E09D 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 60rpx;
     position: relative;
     z-index: 1;
     flex-shrink: 0;
@@ -415,14 +421,10 @@ export default {
   .course-duration {
     display: flex;
     align-items: center;
-    gap: 6rpx;
+    gap: 4rpx;
     font-size: $font-xs;
     color: $text-tertiary;
     font-family: $font-family-english;
-  }
-
-  .duration-icon {
-    font-size: 20rpx;
   }
 
   .course-title {
@@ -463,27 +465,19 @@ export default {
   .course-lecturer {
     display: flex;
     align-items: center;
-    gap: 8rpx;
+    gap: 4rpx;
     font-size: $font-xs;
     color: $text-tertiary;
     font-family: $font-family-base;
   }
 
-  .lecturer-icon {
-    font-size: 22rpx;
-  }
-
   .course-chapters {
     display: flex;
     align-items: center;
-    gap: 6rpx;
+    gap: 4rpx;
     font-size: $font-xs;
     color: $text-quaternary;
     font-family: $font-family-base;
-  }
-
-  .chapters-icon {
-    font-size: 20rpx;
   }
 }
 
@@ -532,11 +526,13 @@ export default {
 }
 
 .empty-icon {
-  font-size: 120rpx;
   margin-bottom: $spacing-2xl;
   filter: grayscale(30%);
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-text {
@@ -547,4 +543,3 @@ export default {
   z-index: 1;
 }
 </style>
-

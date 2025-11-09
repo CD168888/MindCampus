@@ -27,7 +27,7 @@
             object-fit="contain"
           ></video>
           <view v-else class="video-placeholder">
-            <text class="placeholder-icon">🎬</text>
+            <uni-icons type="videocam-filled" size="60" color="#FFFFFF"></uni-icons>
             <text class="placeholder-text">视频加载中...</text>
           </view>
         </view>
@@ -37,15 +37,15 @@
           <view class="course-title">{{ course.title }}</view>
           <view class="course-meta">
             <view class="meta-item">
-              <text class="meta-icon">👤</text>
+              <uni-icons type="person" size="14" color="#999999"></uni-icons>
               <text class="meta-text">{{ course.lecturer || '未知' }}</text>
             </view>
             <view class="meta-item">
-              <text class="meta-icon">⏱️</text>
+              <uni-icons type="clock" size="14" color="#999999"></uni-icons>
               <text class="meta-text">{{ formatDuration(course.duration) }}</text>
             </view>
             <view class="meta-item" v-if="course.chapters">
-              <text class="meta-icon">📚</text>
+              <uni-icons type="list" size="14" color="#999999"></uni-icons>
               <text class="meta-text">{{ course.chapters }}章</text>
             </view>
             <view class="course-level" v-if="course.level">{{ course.level }}</view>
@@ -66,7 +66,7 @@
 
       <!-- 空状态 -->
       <view class="empty-state" v-if="!course && !loading">
-        <text class="empty-icon">🎬</text>
+        <uni-icons type="videocam-filled" size="80" color="#CCCCCC"></uni-icons>
         <text class="empty-text">课程不存在</text>
       </view>
     </scroll-view>
@@ -272,11 +272,10 @@ export default {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 50%, #fda4af 100%);
-}
 
-.placeholder-icon {
-  font-size: 80rpx;
-  margin-bottom: $spacing-md;
+  uni-icons {
+    margin-bottom: $spacing-md;
+  }
 }
 
 .placeholder-text {
@@ -321,9 +320,6 @@ export default {
   font-family: $font-family-base;
 }
 
-.meta-icon {
-  font-size: 22rpx;
-}
 
 .course-level {
   display: inline-block;
@@ -382,10 +378,10 @@ export default {
   padding: 200rpx 0;
 }
 
-.empty-icon {
-  font-size: 120rpx;
-  margin-bottom: $spacing-2xl;
-  filter: grayscale(30%);
+.empty-state {
+  uni-icons {
+    margin-bottom: $spacing-2xl;
+  }
 }
 
 .empty-text {

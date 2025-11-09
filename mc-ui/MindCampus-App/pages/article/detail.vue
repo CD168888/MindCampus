@@ -19,15 +19,15 @@
           <view class="article-title">{{ article.title }}</view>
           <view class="article-meta">
             <view class="meta-item">
-              <text class="meta-icon">👤</text>
+              <uni-icons type="person" size="14" color="#999999"></uni-icons>
               <text class="meta-text">{{ article.author || '匿名' }}</text>
             </view>
             <view class="meta-item">
-              <text class="meta-icon">👁</text>
+              <uni-icons type="eye" size="14" color="#999999"></uni-icons>
               <text class="meta-text">{{ article.readCount || 0 }}</text>
             </view>
             <view class="meta-item">
-              <text class="meta-icon">📅</text>
+              <uni-icons type="calendar" size="14" color="#999999"></uni-icons>
               <text class="meta-text">{{ formatDate(article.createTime) }}</text>
             </view>
             <view class="article-category" v-if="article.category">{{ article.category }}</view>
@@ -53,7 +53,7 @@
 
       <!-- 空状态 -->
       <view class="empty-state" v-if="!article && !loading">
-        <text class="empty-icon">📖</text>
+        <uni-icons type="compose" size="80" color="#CCCCCC"></uni-icons>
         <text class="empty-text">文章不存在</text>
       </view>
     </scroll-view>
@@ -292,9 +292,6 @@ export default {
   font-family: $font-family-base;
 }
 
-.meta-icon {
-  font-size: 22rpx;
-}
 
 /* 文章摘要 */
 .article-summary {
@@ -353,10 +350,10 @@ export default {
   padding: 200rpx 0;
 }
 
-.empty-icon {
-  font-size: 120rpx;
-  margin-bottom: $spacing-2xl;
-  filter: grayscale(30%);
+.empty-state {
+  uni-icons {
+    margin-bottom: $spacing-2xl;
+  }
 }
 
 .empty-text {

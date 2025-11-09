@@ -15,7 +15,9 @@
     <view class="search-section">
       <view class="search-box">
         <input class="search-input" v-model="searchKeyword" placeholder="搜索文章、作者" @confirm="handleSearch" />
-        <text class="search-icon" @tap="handleSearch">🔍</text>
+        <view class="search-icon" @tap="handleSearch">
+          <uni-icons type="search" size="18" color="#999999"></uni-icons>
+        </view>
       </view>
     </view>
 
@@ -27,7 +29,7 @@
           <view class="article-header">
             <view class="article-category" v-if="item.category">{{ item.category }}</view>
             <view class="article-read-count">
-              <text class="read-icon">👁</text>
+              <uni-icons type="eye" size="12" color="#999999"></uni-icons>
               <text class="read-text">{{ formatReadCount(item.readCount) }}</text>
             </view>
           </view>
@@ -35,7 +37,7 @@
           <view class="article-summary" v-if="item.summary">{{ item.summary }}</view>
           <view class="article-footer">
             <view class="article-author">
-              <text class="author-icon">👤</text>
+              <uni-icons type="person" size="12" color="#999999"></uni-icons>
               <text class="author-text">{{ item.author || '匿名' }}</text>
             </view>
             <view class="article-time">{{ formatTime(item.createTime) }}</view>
@@ -56,7 +58,9 @@
 
       <!-- 空状态 -->
       <view v-if="articleList.length === 0 && !loading" class="empty-state">
-        <text class="empty-icon">📖</text>
+        <view class="empty-icon">
+          <uni-icons type="compose" size="80" color="#CCCCCC"></uni-icons>
+        </view>
         <text class="empty-text">暂无文章</text>
       </view>
     </scroll-view>
@@ -320,9 +324,10 @@ export default {
 }
 
 .search-icon {
-  font-size: $font-md;
   margin-left: $spacing-md;
-  color: $text-tertiary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 滚动区域 */
@@ -389,14 +394,10 @@ export default {
   .article-read-count {
     display: flex;
     align-items: center;
-    gap: 6rpx;
+    gap: 4rpx;
     font-size: $font-xs;
     color: $text-tertiary;
     font-family: $font-family-english;
-  }
-
-  .read-icon {
-    font-size: 20rpx;
   }
 
   .article-title {
@@ -419,6 +420,7 @@ export default {
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     font-family: $font-family-base;
     position: relative;
@@ -436,14 +438,10 @@ export default {
   .article-author {
     display: flex;
     align-items: center;
-    gap: 8rpx;
+    gap: 4rpx;
     font-size: $font-xs;
     color: $text-tertiary;
     font-family: $font-family-base;
-  }
-
-  .author-icon {
-    font-size: 22rpx;
   }
 
   .article-time {
@@ -498,11 +496,13 @@ export default {
 }
 
 .empty-icon {
-  font-size: 120rpx;
   margin-bottom: $spacing-2xl;
   filter: grayscale(30%);
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-text {

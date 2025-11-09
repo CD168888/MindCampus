@@ -15,7 +15,9 @@
     <view class="search-section">
       <view class="search-box">
         <input class="search-input" v-model="searchKeyword" placeholder="搜索音乐、演唱者" @confirm="handleSearch" />
-        <text class="search-icon" @tap="handleSearch">🔍</text>
+        <view class="search-icon" @tap="handleSearch">
+          <uni-icons type="search" size="18" color="#999999"></uni-icons>
+        </view>
       </view>
     </view>
 
@@ -26,14 +28,18 @@
         <view class="music-item" v-for="item in musicList" :key="item.musicId" @tap="playMusic(item)">
           <image v-if="item.coverUrl" class="music-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill"
             :lazy-load="true"></image>
-          <view v-else class="music-cover-placeholder">🎵</view>
+          <view v-else class="music-cover-placeholder">
+            <uni-icons type="sound-filled" size="48" color="#FFFFFF"></uni-icons>
+          </view>
           <view class="music-info">
             <view class="music-title">{{ item.title }}</view>
             <view class="music-artist">{{ item.artist || '未知' }} · {{ formatDuration(item.duration) }}</view>
             <view v-if="item.genre" class="music-genre">{{ item.genre }}</view>
           </view>
           <view class="music-action">
-            <text class="play-icon">▶</text>
+            <view class="play-icon">
+              <uni-icons type="right" size="20" color="#FFFFFF"></uni-icons>
+            </view>
           </view>
         </view>
       </view>
@@ -51,7 +57,9 @@
 
       <!-- 空状态 -->
       <view v-if="musicList.length === 0 && !loading" class="empty-state">
-        <text class="empty-icon">🎵</text>
+        <view class="empty-icon">
+          <uni-icons type="sound-filled" size="80" color="#CCCCCC"></uni-icons>
+        </view>
         <text class="empty-text">暂无音乐</text>
       </view>
     </scroll-view>
@@ -304,9 +312,10 @@ export default {
 }
 
 .search-icon {
-  font-size: $font-md;
   margin-left: $spacing-md;
-  color: $text-tertiary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 滚动区域 */
@@ -372,11 +381,10 @@ export default {
     height: 120rpx;
     border-radius: $radius-base;
     margin-right: $spacing-lg;
-    background: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 50%, #fda4af 100%);
+    background: linear-gradient(135deg, #1677FF 0%, #4D94FF 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 60rpx;
     position: relative;
     z-index: 1;
   }
@@ -424,16 +432,15 @@ export default {
   }
 
   .play-icon {
-    font-size: 48rpx;
     width: 72rpx;
     height: 72rpx;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 50%, #fda4af 100%);
+    background: linear-gradient(135deg, #1677FF 0%, #4D94FF 100%);
     color: #FFFFFF;
-    box-shadow: 0 4rpx 12rpx rgba(167, 139, 250, 0.3);
+    box-shadow: 0 4rpx 12rpx rgba(22, 119, 255, 0.3);
     transition: all 0.2s ease;
 
     &:active {
@@ -487,11 +494,13 @@ export default {
 }
 
 .empty-icon {
-  font-size: 120rpx;
   margin-bottom: $spacing-2xl;
   filter: grayscale(30%);
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-text {

@@ -17,18 +17,25 @@
     <!-- 心灵鸡汤 -->
     <daily-quote @click="goToQuoteList"></daily-quote>
 
-    <!-- 心理音乐疗愈 -->
+    <!-- 心理音乐推荐 -->
     <view class="music-section">
       <view class="section-header">
-        <view class="section-title">🎵 音乐疗愈</view>
+        <view class="section-title">
+          <uni-icons type="sound-filled" size="20" color="#1677FF"></uni-icons>
+          <text class="title-text">推荐音乐</text>
+        </view>
         <view class="section-more" @tap="goToMusicList">更多 ›</view>
       </view>
 
       <!-- 推荐音乐列表（3个） -->
       <view class="music-list">
         <view class="music-item" v-for="item in recommendedMusicList" :key="item.musicId" @tap="playMusic(item)">
-          <image v-if="item.coverUrl" class="music-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill"></image>
-          <view v-else class="music-cover-placeholder">🎵</view>
+          <view class="music-icon-wrapper">
+            <image v-if="item.coverUrl" class="music-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill"></image>
+            <view v-else class="music-cover-placeholder">
+              <uni-icons type="sound-filled" size="24" color="#FFFFFF"></uni-icons>
+            </view>
+          </view>
           <view class="music-info">
             <view class="music-title">{{ item.title }}</view>
             <view class="music-artist">{{ item.artist || '未知' }} · {{ formatDuration(item.duration) }}</view>
@@ -41,48 +48,36 @@
       </view>
     </view>
 
-    <!-- 心理文章推荐 -->
-    <view class="article-section">
-      <view class="section-header">
-        <view class="section-title">📖 推荐阅读</view>
-        <view class="section-more" @tap="goToArticleList">更多 ›</view>
-      </view>
-
-      <view class="article-list">
-        <view class="article-item" v-for="item in articleList" :key="item.articleId" @tap="openArticle(item)">
-          <view class="article-cover">{{ getCategoryEmoji(item.category) }}</view>
-          <view class="article-content">
-            <view class="article-title">{{ item.title }}</view>
-            <view class="article-excerpt">{{ item.summary || '暂无摘要' }}</view>
-            <view class="article-meta">
-              <text class="meta-item">👁 {{ formatReadCount(item.readCount) }}</text>
-              <text class="meta-item">👤 {{ item.author || '匿名' }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view v-if="articleList.length === 0" class="empty-article">
-        <text class="empty-text">暂无推荐文章</text>
-      </view>
-    </view>
-
     <!-- 心理课程推荐 -->
     <view class="course-section">
       <view class="section-header">
-        <view class="section-title">🎬 推荐课程</view>
+        <view class="section-title">
+          <uni-icons type="videocam-filled" size="20" color="#1CD07E"></uni-icons>
+          <text class="title-text">推荐课程</text>
+        </view>
         <view class="section-more" @tap="goToCourseList">更多 ›</view>
       </view>
 
       <view class="course-list">
         <view class="course-item" v-for="item in courseList" :key="item.courseId" @tap="openCourse(item)">
-          <image v-if="item.coverUrl" class="course-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill"></image>
-          <view v-else class="course-cover-placeholder">🎬</view>
+          <view class="course-cover-wrapper">
+            <image v-if="item.coverUrl" class="course-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill">
+            </image>
+            <view v-else class="course-cover-placeholder">
+              <uni-icons type="videocam-filled" size="28" color="#FFFFFF"></uni-icons>
+            </view>
+          </view>
           <view class="course-info">
             <view class="course-title">{{ item.title }}</view>
             <view class="course-meta">
-              <text class="meta-item">👤 {{ item.lecturer || '未知' }}</text>
-              <text class="meta-item">⏱️ {{ formatDuration(item.duration) }}</text>
+              <view class="meta-item">
+                <uni-icons type="person" size="12" color="#CCCCCC"></uni-icons>
+                <text>{{ item.lecturer || '未知' }}</text>
+              </view>
+              <view class="meta-item">
+                <uni-icons type="clock" size="12" color="#CCCCCC"></uni-icons>
+                <text>{{ formatDuration(item.duration) }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -90,6 +85,43 @@
 
       <view v-if="courseList.length === 0" class="empty-course">
         <text class="empty-text">暂无推荐课程</text>
+      </view>
+    </view>
+
+    <!-- 心理文章推荐 -->
+    <view class="article-section">
+      <view class="section-header">
+        <view class="section-title">
+          <uni-icons type="compose" size="20" color="#FF8D3E"></uni-icons>
+          <text class="title-text">推荐阅读</text>
+        </view>
+        <view class="section-more" @tap="goToArticleList">更多 ›</view>
+      </view>
+
+      <view class="article-list">
+        <view class="article-item" v-for="item in articleList" :key="item.articleId" @tap="openArticle(item)">
+          <view class="article-icon-wrapper">
+            <uni-icons :type="getCategoryIcon(item.category)" size="18" color="#FF8D3E"></uni-icons>
+          </view>
+          <view class="article-content">
+            <view class="article-title">{{ item.title }}</view>
+            <view class="article-excerpt">{{ item.summary || '暂无摘要' }}</view>
+            <view class="article-meta">
+              <view class="meta-item">
+                <uni-icons type="eye" size="12" color="#CCCCCC"></uni-icons>
+                <text>{{ formatReadCount(item.readCount) }}</text>
+              </view>
+              <view class="meta-item">
+                <uni-icons type="person" size="12" color="#CCCCCC"></uni-icons>
+                <text>{{ item.author || '匿名' }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view v-if="articleList.length === 0" class="empty-article">
+        <text class="empty-text">暂无推荐文章</text>
       </view>
     </view>
   </view>
@@ -190,7 +222,7 @@ export default {
       console.log('轮播图点击:', banner)
       // 可以在这里处理没有链接的轮播图点击事件
     },
-    
+
     // 轮播图链接点击（自定义链接处理）
     onBannerLinkClick(linkUrl) {
       console.log('轮播图链接点击:', linkUrl)
@@ -283,19 +315,19 @@ export default {
       })
     },
 
-    // 根据分类返回对应的 emoji
-    getCategoryEmoji(category) {
+    // 根据分类返回对应的图标
+    getCategoryIcon(category) {
       const categoryMap = {
-        '压力管理': '💪',
-        '情绪调节': '😊',
-        '人际关系': '🤝',
-        '学习方法': '📚',
-        '心理健康': '💚',
-        '正念冥想': '🧘',
-        '睡眠改善': '😴',
-        '自我成长': '🌱',
+        '压力管理': 'fire',
+        '情绪调节': 'heart',
+        '人际关系': 'hand-up',
+        '学习方法': 'book',
+        '心理健康': 'staff',
+        '正念冥想': 'flower',
+        '睡眠改善': 'moon',
+        '自我成长': 'seedling',
       }
-      return categoryMap[category] || '📖'
+      return categoryMap[category] || 'book-filled'
     },
 
     // 格式化阅读量
@@ -381,7 +413,7 @@ export default {
 }
 
 
-/* ==================== 音乐疗愈（玻璃态设计）==================== */
+/* ==================== 推荐模块通用样式 ==================== */
 .music-section,
 .article-section,
 .course-section {
@@ -393,85 +425,126 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: $spacing-md;
+  padding: 0 $spacing-xs;
 }
 
 .section-title {
-  font-size: $font-xl;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-lg;
   font-weight: $font-bold;
   color: $text-primary;
   letter-spacing: -0.5rpx;
+
+  .title-text {
+    font-family: $font-family-base;
+  }
 }
 
 .section-more {
   font-size: $font-sm;
   color: $primary-color;
-  font-weight: $font-semibold;
+  font-weight: $font-bold;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  transition: all $transition-fast $ease-out;
 
   &:active {
     opacity: $opacity-hover;
+    background: rgba(22, 119, 255, 0.05);
   }
 }
 
-.music-player {
-  background: $gradient-music;
-  border-radius: $radius-xl;
+/* ==================== 音乐推荐（蓝色主题）==================== */
+.music-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.music-item {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(22, 119, 255, 0.06) 0%, rgba(77, 148, 255, 0.04) 100%);
+  backdrop-filter: blur(10rpx);
+  border-radius: $radius-lg;
   padding: $spacing-lg;
-  margin-bottom: $spacing-md;
-  box-shadow: $shadow-secondary;
+  transition: all $transition-base $ease-out;
+  box-shadow: 0 4rpx 16rpx rgba(22, 119, 255, 0.08), 0 2rpx 8rpx rgba(22, 119, 255, 0.04);
+  border: 1rpx solid rgba(22, 119, 255, 0.12);
   position: relative;
   overflow: hidden;
 
-  // 装饰性光晕（缩小）
+  // 装饰性渐变层
   &::before {
     content: '';
     position: absolute;
-    top: -40%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(22, 119, 255, 0.12) 0%, rgba(77, 148, 255, 0.08) 100%);
+    opacity: 0;
+    transition: opacity $transition-base $ease-out;
+  }
+
+  // 装饰性光晕
+  &::after {
+    content: '';
+    position: absolute;
+    top: -30%;
     right: -15%;
-    width: 150rpx;
-    height: 150rpx;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    width: 120rpx;
+    height: 120rpx;
+    background: radial-gradient(circle, rgba(22, 119, 255, 0.12) 0%, transparent 70%);
     border-radius: $radius-full;
+    pointer-events: none;
+  }
+
+  &:active {
+    transform: translateY(-2rpx) scale(0.99);
+    box-shadow: 0 8rpx 24rpx rgba(22, 119, 255, 0.12), 0 4rpx 12rpx rgba(22, 119, 255, 0.08);
+
+    &::before {
+      opacity: 1;
+    }
   }
 }
 
-.music-controls {
-  display: flex;
-  align-items: center;
+.music-icon-wrapper {
   position: relative;
   z-index: 1;
 }
 
-.play-btn {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: $radius-full;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: $blur-sm;
+.music-cover {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: $radius-md;
+  margin-right: $spacing-md;
+  background: $bg-gray-100;
+  flex-shrink: 0;
+  box-shadow: 0 2rpx 8rpx rgba(22, 119, 255, 0.15);
+}
+
+.music-cover-placeholder {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: $radius-md;
+  margin-right: $spacing-md;
+  background: linear-gradient(135deg, #1677FF 0%, #4D94FF 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: $spacing-md;
-  transition: all $transition-base $ease-out;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.12);
-
-  &:active {
-    transform: scale(0.95);
-    box-shadow: 0 1rpx 6rpx rgba(0, 0, 0, 0.15);
-  }
-}
-
-.play-icon {
-  font-size: $font-xl;
-  background: $gradient-primary;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-left: 4rpx;
+  flex-shrink: 0;
+  box-shadow: 0 2rpx 8rpx rgba(22, 119, 255, 0.25);
 }
 
 .music-info {
   flex: 1;
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .music-title {
@@ -482,84 +555,43 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: $font-family-base;
 }
 
 .music-artist {
   font-size: $font-sm;
-  color: $text-secondary;
+  color: $text-tertiary;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.music-list {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-sm;
-}
-
-.music-item {
-  display: flex;
-  align-items: center;
-  background: $bg-white;
-  border-radius: $radius-base;
-  padding: $spacing-md;
-  transition: all $transition-base $ease-out;
-  box-shadow: $shadow-xs;
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
-
-  &:active {
-    transform: translateY(-2rpx);
-    box-shadow: $shadow-sm;
-  }
-}
-
-.music-cover {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: $radius-base;
-  margin-right: $spacing-md;
-  background: #f0f0f0;
-  flex-shrink: 0;
-}
-
-.music-cover-placeholder {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: $radius-base;
-  margin-right: $spacing-md;
-  background: $gradient-primary;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48rpx;
-  flex-shrink: 0;
+  font-family: $font-family-base;
 }
 
 .empty-music {
-  padding: $spacing-lg;
+  padding: $spacing-2xl;
   text-align: center;
 }
 
-/* ==================== 文章推荐（统一音乐模块样式）==================== */
+/* ==================== 文章推荐（橙色主题）==================== */
 .article-list {
   display: flex;
   flex-direction: column;
-  gap: $spacing-sm;
+  gap: $spacing-md;
 }
 
 .article-item {
   display: flex;
-  background: $bg-white;
-  border-radius: $radius-base;
-  padding: $spacing-md;
-  box-shadow: $shadow-xs;
+  background: linear-gradient(135deg, rgba(255, 141, 62, 0.06) 0%, rgba(255, 179, 125, 0.04) 100%);
+  backdrop-filter: blur(10rpx);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: 0 4rpx 16rpx rgba(255, 141, 62, 0.08), 0 2rpx 8rpx rgba(255, 141, 62, 0.04);
   transition: all $transition-base $ease-out;
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  border: 1rpx solid rgba(255, 141, 62, 0.12);
   position: relative;
   overflow: hidden;
 
-  // 悬停渐变装饰
+  // 装饰性渐变层
   &::before {
     content: '';
     position: absolute;
@@ -567,14 +599,27 @@ export default {
     left: 0;
     width: 100%;
     height: 100%;
-    background: $gradient-card;
+    background: linear-gradient(135deg, rgba(255, 141, 62, 0.12) 0%, rgba(255, 179, 125, 0.08) 100%);
     opacity: 0;
     transition: opacity $transition-base $ease-out;
   }
 
+  // 装饰性光晕
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -50%;
+    left: -20%;
+    width: 120rpx;
+    height: 120rpx;
+    background: radial-gradient(circle, rgba(255, 141, 62, 0.15) 0%, transparent 70%);
+    border-radius: $radius-full;
+    pointer-events: none;
+  }
+
   &:active {
-    transform: translateY(-2rpx);
-    box-shadow: $shadow-sm;
+    transform: translateY(-2rpx) scale(0.99);
+    box-shadow: 0 8rpx 24rpx rgba(255, 141, 62, 0.12), 0 4rpx 12rpx rgba(255, 141, 62, 0.08);
 
     &::before {
       opacity: 1;
@@ -582,10 +627,11 @@ export default {
   }
 }
 
-.article-cover {
-  font-size: 48rpx;
-  width: 48rpx;
-  height: 48rpx;
+.article-icon-wrapper {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: $radius-md;
+  background: linear-gradient(135deg, rgba(255, 141, 62, 0.15) 0%, rgba(255, 179, 125, 0.12) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -593,7 +639,7 @@ export default {
   flex-shrink: 0;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 1rpx 3rpx rgba(110, 231, 183, 0.12));
+  box-shadow: 0 2rpx 8rpx rgba(255, 141, 62, 0.15);
 }
 
 .article-content {
@@ -602,6 +648,7 @@ export default {
   flex-direction: column;
   position: relative;
   z-index: 1;
+  min-width: 0;
 }
 
 .article-title {
@@ -616,6 +663,7 @@ export default {
   -webkit-line-clamp: 1;
   line-clamp: 1;
   -webkit-box-orient: vertical;
+  font-family: $font-family-base;
 }
 
 .article-excerpt {
@@ -629,6 +677,7 @@ export default {
   -webkit-line-clamp: 1;
   line-clamp: 1;
   -webkit-box-orient: vertical;
+  font-family: $font-family-base;
 }
 
 .article-meta {
@@ -637,41 +686,40 @@ export default {
   font-size: $font-xs;
   color: $text-quaternary;
   font-weight: $font-normal;
-}
 
-.meta-item {
-  display: inline-flex;
-  align-items: center;
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4rpx;
+    font-family: $font-family-base;
+  }
 }
 
 .empty-article {
-  padding: $spacing-2xl 0;
+  padding: $spacing-2xl;
   text-align: center;
 }
 
-/* ==================== 课程推荐（统一音乐模块样式）==================== */
-.course-section {
-  padding: 0 $spacing-lg $spacing-lg;
-}
-
+/* ==================== 课程推荐（绿色主题）==================== */
 .course-list {
   display: flex;
   flex-direction: column;
-  gap: $spacing-sm;
+  gap: $spacing-md;
 }
 
 .course-item {
   display: flex;
-  background: $bg-white;
-  border-radius: $radius-base;
-  padding: $spacing-md;
-  box-shadow: $shadow-xs;
+  background: linear-gradient(135deg, rgba(28, 208, 126, 0.06) 0%, rgba(82, 224, 157, 0.04) 100%);
+  backdrop-filter: blur(10rpx);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: 0 4rpx 16rpx rgba(28, 208, 126, 0.08), 0 2rpx 8rpx rgba(28, 208, 126, 0.04);
   transition: all $transition-base $ease-out;
-  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  border: 1rpx solid rgba(28, 208, 126, 0.12);
   position: relative;
   overflow: hidden;
 
-  // 悬停渐变装饰
+  // 装饰性渐变层
   &::before {
     content: '';
     position: absolute;
@@ -679,14 +727,27 @@ export default {
     left: 0;
     width: 100%;
     height: 100%;
-    background: $gradient-card;
+    background: linear-gradient(135deg, rgba(28, 208, 126, 0.12) 0%, rgba(82, 224, 157, 0.08) 100%);
     opacity: 0;
     transition: opacity $transition-base $ease-out;
   }
 
+  // 装饰性光晕
+  &::after {
+    content: '';
+    position: absolute;
+    top: -30%;
+    left: 50%;
+    width: 150rpx;
+    height: 150rpx;
+    background: radial-gradient(circle, rgba(28, 208, 126, 0.12) 0%, transparent 70%);
+    border-radius: $radius-full;
+    pointer-events: none;
+  }
+
   &:active {
-    transform: translateY(-2rpx);
-    box-shadow: $shadow-sm;
+    transform: translateY(-2rpx) scale(0.99);
+    box-shadow: 0 8rpx 24rpx rgba(28, 208, 126, 0.12), 0 4rpx 12rpx rgba(28, 208, 126, 0.08);
 
     &::before {
       opacity: 1;
@@ -694,30 +755,32 @@ export default {
   }
 }
 
+.course-cover-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
 .course-cover {
   width: 160rpx;
   height: 100rpx;
-  border-radius: $radius-base;
+  border-radius: $radius-md;
   margin-right: $spacing-md;
   background: $bg-gray-100;
   flex-shrink: 0;
-  position: relative;
-  z-index: 1;
+  box-shadow: 0 2rpx 8rpx rgba(28, 208, 126, 0.15);
 }
 
 .course-cover-placeholder {
   width: 160rpx;
   height: 100rpx;
-  border-radius: $radius-base;
+  border-radius: $radius-md;
   margin-right: $spacing-md;
-  background: $gradient-primary;
+  background: linear-gradient(135deg, #1CD07E 0%, #52E09D 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48rpx;
   flex-shrink: 0;
-  position: relative;
-  z-index: 1;
+  box-shadow: 0 2rpx 8rpx rgba(28, 208, 126, 0.25);
 }
 
 .course-info {
@@ -742,6 +805,7 @@ export default {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   font-family: $font-family-base;
+  line-height: $line-height-tight;
 }
 
 .course-meta {
@@ -750,10 +814,17 @@ export default {
   font-size: $font-xs;
   color: $text-quaternary;
   font-weight: $font-normal;
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4rpx;
+    font-family: $font-family-base;
+  }
 }
 
 .empty-course {
-  padding: $spacing-2xl 0;
+  padding: $spacing-2xl;
   text-align: center;
 }
 
