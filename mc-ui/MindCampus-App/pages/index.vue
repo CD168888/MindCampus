@@ -6,20 +6,7 @@
       <view class="hero-desc">欢迎来到心理健康服务平台</view>
 
       <!-- 轮播图 -->
-      <swiper class="hero-swiper" :indicator-dots="true" :autoplay="true" :interval="4000" :duration="500"
-        :circular="true">
-        <swiper-item v-for="(banner, index) in bannerList" :key="index">
-          <view class="swiper-item" @tap="onBannerClick(banner)">
-            <view class="banner-content" :style="{ background: banner.gradient }">
-              <view class="banner-icon">{{ banner.icon }}</view>
-              <view class="banner-info">
-                <view class="banner-title">{{ banner.title }}</view>
-                <view class="banner-desc">{{ banner.desc }}</view>
-              </view>
-            </view>
-          </view>
-        </swiper-item>
-      </swiper>
+      <banner-carousel @click="onBannerClick" @link-click="onBannerLinkClick"></banner-carousel>
 
     </view>
 
@@ -111,6 +98,7 @@
 <script>
 import DailyQuote from '@/components/daily-quote/daily-quote.vue'
 import AssessmentCard from '@/components/assessment-card/assessment-card.vue'
+import BannerCarousel from '@/components/banner-carousel/banner-carousel.vue'
 import {getRecommendedMusic} from '@/api/music'
 import {getRecommendedArticles} from '@/api/article'
 import {getRecommendedCourses} from '@/api/course'
@@ -119,37 +107,13 @@ import config from '@/config'
 export default {
   components: {
     DailyQuote,
-    AssessmentCard
+    AssessmentCard,
+    BannerCarousel
   },
   data() {
     return {
       userName: '同学',
       isPlaying: false,
-
-      // 轮播图数据
-      bannerList: [
-        {
-          icon: '🧘',
-          title: '正念冥想',
-          desc: '每日10分钟，放松身心',
-          gradient: 'linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%)',
-          link: '/pages/meditation/index'
-        },
-        {
-          icon: '💪',
-          title: '压力管理',
-          desc: '科学方法应对压力',
-          gradient: 'linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%)',
-          link: '/pages/stress/index'
-        },
-        {
-          icon: '😊',
-          title: '情绪日记',
-          desc: '记录每一天的心情',
-          gradient: 'linear-gradient(135deg, #fecdd3 0%, #fda4af 100%)',
-          link: '/pages/diary/index'
-        }
-      ],
 
       // 当前播放音乐
       currentMusic: {
@@ -221,11 +185,16 @@ export default {
       return url.startsWith('/') ? baseUrl + url : baseUrl + '/' + url
     },
 
-    // 轮播图点击
+    // 轮播图点击（没有链接时触发）
     onBannerClick(banner) {
-      this.$modal.showToast('跳转：' + banner.title)
-      // TODO: 跳转到对应页面
-      // this.$tab.navigateTo(banner.link)
+      console.log('轮播图点击:', banner)
+      // 可以在这里处理没有链接的轮播图点击事件
+    },
+    
+    // 轮播图链接点击（自定义链接处理）
+    onBannerLinkClick(linkUrl) {
+      console.log('轮播图链接点击:', linkUrl)
+      // 可以在这里处理自定义链接
     },
 
     // 打开心理测评
@@ -408,73 +377,6 @@ export default {
   margin-bottom: $spacing-lg;
   position: relative;
   z-index: 1;
-  font-weight: $font-medium;
-}
-
-
-
-/* ==================== 轮播图 ==================== */
-.hero-swiper {
-  height: 160rpx;
-  margin-bottom: $spacing-md;
-  border-radius: $radius-lg;
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
-}
-
-.swiper-item {
-  height: 100%;
-}
-
-.banner-content {
-  height: 100%;
-  border-radius: $radius-lg;
-  padding: $spacing-lg;
-  display: flex;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-
-  // 装饰光晕
-  &::before {
-    content: '';
-    position: absolute;
-    top: -30%;
-    right: -10%;
-    width: 120rpx;
-    height: 120rpx;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-    border-radius: $radius-full;
-  }
-}
-
-.banner-icon {
-  font-size: 56rpx;
-  margin-right: $spacing-md;
-  filter: drop-shadow(0 2rpx 6rpx rgba(0, 0, 0, 0.1));
-  position: relative;
-  z-index: 1;
-}
-
-.banner-info {
-  flex: 1;
-  position: relative;
-  z-index: 1;
-}
-
-.banner-title {
-  font-size: $font-xl;
-  font-weight: $font-bold;
-  color: $bg-white;
-  margin-bottom: $spacing-xs;
-  letter-spacing: -0.5rpx;
-  text-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.1);
-}
-
-.banner-desc {
-  font-size: $font-sm;
-  color: rgba(255, 255, 255, 0.90);
   font-weight: $font-medium;
 }
 
