@@ -101,6 +101,16 @@ spring:
       # 可选：业务空间 ID（如果使用主账号空间可不配）
       # workspace-id: your-workspace-id
 
+  # Jackson 配置
+  jackson:
+    # 日期格式
+    date-format: yyyy-MM-dd HH:mm:ss
+    # 时区
+    time-zone: GMT+8
+    # 反序列化配置
+    deserialization:
+      # 忽略未知属性
+      fail-on-unknown-properties: false
 
 # token配置
 token:
