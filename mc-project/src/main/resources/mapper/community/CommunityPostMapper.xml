@@ -6,8 +6,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <resultMap type="com.mc.community.domain.CommunityPost" id="CommunityPostResult">
         <result property="postId"    column="post_id"    />
-        <result property="studentId"    column="student_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="userName"    column="user_name"    />
+        <result property="userAvatar"    column="user_avatar"    />
+        <result property="title"    column="title"    />
         <result property="content"    column="content"    />
+        <result property="images"    column="images"    />
+        <result property="likeCount"    column="like_count"    />
+        <result property="commentCount"    column="comment_count"    />
+        <result property="viewCount"    column="view_count"    />
+        <result property="studentId"    column="student_id"    />
         <result property="isAnonymous"    column="is_anonymous"    />
         <result property="status"    column="status"    />
         <result property="createBy"    column="create_by"    />
@@ -16,13 +24,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateTime"    column="update_time"    />
         <result property="remark"    column="remark"    />
         <result property="studentName"    column="student_name"    />
-        <result property="commentCount"    column="comment_count"    />
     </resultMap>
 
     <sql id="selectCommunityPostVo">
-        select p.post_id, p.student_id, p.content, p.is_anonymous, p.status, p.create_by, p.create_time, p.update_by, p.update_time, p.remark,
-               s.name as student_name,
-               (select count(*) from community_comment c where c.post_id = p.post_id) as comment_count
+        select p.post_id, p.user_id, p.user_name, p.user_avatar, p.title, p.content, p.images,
+               p.like_count, p.comment_count, p.view_count,
+               p.student_id, p.is_anonymous, p.status,
+               p.create_by, p.create_time, p.update_by, p.update_time, p.remark,
+               s.name as student_name
         from community_post p
         left join student_info s on p.student_id = s.student_id
     </sql>
@@ -47,8 +56,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <insert id="insertCommunityPost" parameterType="com.mc.community.domain.CommunityPost" useGeneratedKeys="true" keyProperty="postId">
         insert into community_post
         <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="studentId != null">student_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="userName != null">user_name,</if>
+            <if test="userAvatar != null">user_avatar,</if>
+            <if test="title != null">title,</if>
             <if test="content != null">content,</if>
+            <if test="images != null">images,</if>
+            <if test="likeCount != null">like_count,</if>
+            <if test="commentCount != null">comment_count,</if>
+            <if test="viewCount != null">view_count,</if>
+            <if test="studentId != null">student_id,</if>
             <if test="isAnonymous != null">is_anonymous,</if>
             <if test="status != null">status,</if>
             <if test="createBy != null">create_by,</if>
@@ -58,8 +75,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="remark != null">remark,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="studentId != null">#{studentId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="userName != null">#{userName},</if>
+            <if test="userAvatar != null">#{userAvatar},</if>
+            <if test="title != null">#{title},</if>
             <if test="content != null">#{content},</if>
+            <if test="images != null">#{images},</if>
+            <if test="likeCount != null">#{likeCount},</if>
+            <if test="commentCount != null">#{commentCount},</if>
+            <if test="viewCount != null">#{viewCount},</if>
+            <if test="studentId != null">#{studentId},</if>
             <if test="isAnonymous != null">#{isAnonymous},</if>
             <if test="status != null">#{status},</if>
             <if test="createBy != null">#{createBy},</if>
@@ -73,8 +98,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="updateCommunityPost" parameterType="com.mc.community.domain.CommunityPost">
         update community_post
         <trim prefix="SET" suffixOverrides=",">
-            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="userName != null">user_name = #{userName},</if>
+            <if test="userAvatar != null">user_avatar = #{userAvatar},</if>
+            <if test="title != null">title = #{title},</if>
             <if test="content != null">content = #{content},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="likeCount != null">like_count = #{likeCount},</if>
+            <if test="commentCount != null">comment_count = #{commentCount},</if>
+            <if test="viewCount != null">view_count = #{viewCount},</if>
+            <if test="studentId != null">student_id = #{studentId},</if>
             <if test="isAnonymous != null">is_anonymous = #{isAnonymous},</if>
             <if test="status != null">status = #{status},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
@@ -96,6 +129,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{postId}
         </foreach>
     </delete>
+
+    <!-- 增加帖子浏览量 -->
+    <update id="incrementViewCount" parameterType="Long">
+        update community_post set view_count = view_count + 1 where post_id = #{postId}
+    </update>
+
+    <!-- 增加帖子评论数 -->
+    <update id="incrementCommentCount" parameterType="Long">
+        update community_post set comment_count = comment_count + 1 where post_id = #{postId}
+    </update>
 </mapper>
 
 

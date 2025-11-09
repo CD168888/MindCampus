@@ -100,6 +100,66 @@ public class CommunityPostServiceImpl implements ICommunityPostService {
         // 再删除帖子
         return communityPostMapper.deleteCommunityPostByPostId(postId);
     }
+
+    /**
+     * 增加帖子浏览量
+     *
+     * @param postId 帖子ID
+     * @return 结果
+     */
+    @Override
+    public int incrementViewCount(Long postId) {
+        return communityPostMapper.incrementViewCount(postId);
+    }
+
+    /**
+     * 增加帖子评论数
+     *
+     * @param postId 帖子ID
+     * @return 结果
+     */
+    @Override
+    public int incrementCommentCount(Long postId) {
+        return communityPostMapper.incrementCommentCount(postId);
+    }
+
+    /**
+     * 点赞帖子
+     * 注意：这里简化实现，直接增加点赞数
+     * 实际项目中应该维护一个点赞记录表，避免重复点赞
+     *
+     * @param postId 帖子ID
+     * @param userId 用户ID
+     * @return 结果
+     */
+    @Override
+    public boolean likePost(Long postId, Long userId) {
+        // TODO: 实际项目中应该先检查用户是否已点赞，并记录到点赞表
+        CommunityPost post = communityPostMapper.selectCommunityPostByPostId(postId);
+        if (post != null) {
+            post.setLikeCount(post.getLikeCount() + 1);
+            return communityPostMapper.updateCommunityPost(post) > 0;
+        }
+        return false;
+    }
+
+    /**
+     * 取消点赞帖子
+     *
+     * @param postId 帖子ID
+     * @param userId 用户ID
+     * @return 结果
+     */
+    @Override
+    public boolean unlikePost(Long postId, Long userId) {
+        // TODO: 实际项目中应该从点赞表中删除记录
+        CommunityPost post = communityPostMapper.selectCommunityPostByPostId(postId);
+        if (post != null && post.getLikeCount() > 0) {
+            post.setLikeCount(post.getLikeCount() - 1);
+            return communityPostMapper.updateCommunityPost(post) > 0;
+        }
+        return false;
+    }
 }
 
 

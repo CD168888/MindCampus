@@ -66,6 +66,24 @@ public interface ICommunityCommentService {
      * @return 结果
      */
     public int deleteCommunityCommentByCommentId(Long commentId);
+
+    /**
+     * 点赞评论
+     *
+     * @param commentId 评论ID
+     * @param userId 用户ID
+     * @return 结果
+     */
+    public boolean likeComment(Long commentId, Long userId);
+
+    /**
+     * 取消点赞评论
+     *
+     * @param commentId 评论ID
+     * @param userId 用户ID
+     * @return 结果
+     */
+    public boolean unlikeComment(Long commentId, Long userId);
 }
 
 

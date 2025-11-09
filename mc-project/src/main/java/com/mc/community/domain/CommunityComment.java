@@ -23,13 +23,33 @@ public class CommunityComment extends BaseEntity {
     @Excel(name = "帖子ID")
     private Long postId;
 
-    /** 评论人ID */
-    @Excel(name = "评论人ID")
-    private Long studentId;
+    /** 用户ID */
+    @Excel(name = "用户ID")
+    private Long userId;
+
+    /** 用户名 */
+    @Excel(name = "用户名")
+    private String userName;
+
+    /** 用户头像 */
+    private String userAvatar;
 
     /** 评论内容 */
     @Excel(name = "评论内容")
     private String content;
+
+    /** 父评论ID（用于实现评论回复） */
+    private Long parentId;
+
+    /** 回复的用户ID */
+    private Long replyToUserId;
+
+    /** 回复的用户名 */
+    private String replyToUserName;
+
+    /** 点赞数 */
+    @Excel(name = "点赞数")
+    private Long likeCount;
 
     /** 是否匿名（0否 1是） */
     @Excel(name = "是否匿名", readConverterExp = "0=否,1=是")
@@ -39,14 +59,17 @@ public class CommunityComment extends BaseEntity {
     @Excel(name = "状态", readConverterExp = "0=正常,1=屏蔽")
     private String status;
 
+    /** 评论人ID（兼容旧字段） */
+    private Long studentId;
+
     /** 学生姓名（非数据库字段，用于显示） */
     private String studentName;
 
-    /** 父评论ID（用于实现评论回复，扩展字段） */
-    private Long parentId;
+    /** 是否已点赞（非数据库字段） */
+    private Boolean isLiked;
 
     /** 子评论列表（用于树状结构展示） */
-    private List<CommunityComment> children;
+    private List<CommunityComment> replies;
 
     public void setCommentId(Long commentId) {
         this.commentId = commentId;
@@ -112,12 +135,68 @@ public class CommunityComment extends BaseEntity {
         this.parentId = parentId;
     }
 
-    public List<CommunityComment> getChildren() {
-        return children;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setChildren(List<CommunityComment> children) {
-        this.children = children;
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getUserAvatar() {
+        return userAvatar;
+    }
+
+    public void setUserAvatar(String userAvatar) {
+        this.userAvatar = userAvatar;
+    }
+
+    public Long getReplyToUserId() {
+        return replyToUserId;
+    }
+
+    public void setReplyToUserId(Long replyToUserId) {
+        this.replyToUserId = replyToUserId;
+    }
+
+    public String getReplyToUserName() {
+        return replyToUserName;
+    }
+
+    public void setReplyToUserName(String replyToUserName) {
+        this.replyToUserName = replyToUserName;
+    }
+
+    public Long getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(Long likeCount) {
+        this.likeCount = likeCount;
+    }
+
+    public Boolean getIsLiked() {
+        return isLiked;
+    }
+
+    public void setIsLiked(Boolean isLiked) {
+        this.isLiked = isLiked;
+    }
+
+    public List<CommunityComment> getReplies() {
+        return replies;
+    }
+
+    public void setReplies(List<CommunityComment> replies) {
+        this.replies = replies;
     }
 
     @Override
@@ -125,8 +204,15 @@ public class CommunityComment extends BaseEntity {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("commentId", getCommentId())
                 .append("postId", getPostId())
-                .append("studentId", getStudentId())
+                .append("userId", getUserId())
+                .append("userName", getUserName())
+                .append("userAvatar", getUserAvatar())
                 .append("content", getContent())
+                .append("parentId", getParentId())
+                .append("replyToUserId", getReplyToUserId())
+                .append("replyToUserName", getReplyToUserName())
+                .append("likeCount", getLikeCount())
+                .append("studentId", getStudentId())
                 .append("isAnonymous", getIsAnonymous())
                 .append("status", getStatus())
                 .append("createBy", getCreateBy())
@@ -135,7 +221,7 @@ public class CommunityComment extends BaseEntity {
                 .append("updateTime", getUpdateTime())
                 .append("remark", getRemark())
                 .append("studentName", getStudentName())
-                .append("parentId", getParentId())
+                .append("isLiked", getIsLiked())
                 .toString();
     }
 }

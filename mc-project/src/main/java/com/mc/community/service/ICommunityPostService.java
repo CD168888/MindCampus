@@ -58,6 +58,40 @@ public interface ICommunityPostService {
      * @return 结果
      */
     public int deleteCommunityPostByPostId(Long postId);
+
+    /**
+     * 增加帖子浏览量
+     *
+     * @param postId 帖子ID
+     * @return 结果
+     */
+    public int incrementViewCount(Long postId);
+
+    /**
+     * 增加帖子评论数
+     *
+     * @param postId 帖子ID
+     * @return 结果
+     */
+    public int incrementCommentCount(Long postId);
+
+    /**
+     * 点赞帖子
+     *
+     * @param postId 帖子ID
+     * @param userId 用户ID
+     * @return 结果
+     */
+    public boolean likePost(Long postId, Long userId);
+
+    /**
+     * 取消点赞帖子
+     *
+     * @param postId 帖子ID
+     * @param userId 用户ID
+     * @return 结果
+     */
+    public boolean unlikePost(Long postId, Long userId);
 }
 
 

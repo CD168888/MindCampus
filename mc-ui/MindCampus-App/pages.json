@@ -124,6 +124,24 @@
       "navigationBarTitleText": "课程详情",
       "navigationStyle": "custom"
     }
+  }, {
+    "path": "pages/community/index",
+    "style": {
+      "navigationBarTitleText": "校园社区",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/community/publish",
+    "style": {
+      "navigationBarTitleText": "发布帖子",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/community/detail",
+    "style": {
+      "navigationBarTitleText": "帖子详情",
+      "navigationStyle": "custom"
+    }
   }],
   "tabBar": {
     "color": "#6b7280",
@@ -135,6 +153,11 @@
         "iconPath": "static/images/tabbar/home.png",
         "selectedIconPath": "static/images/tabbar/home_.png",
         "text": "首页"
+      }, {
+        "pagePath": "pages/community/index",
+        "iconPath": "static/images/tabbar/work.png",
+        "selectedIconPath": "static/images/tabbar/work_.png",
+        "text": "社区"
       }, {
         "pagePath": "pages/work/index",
         "iconPath": "static/images/tabbar/work.png",

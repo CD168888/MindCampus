@@ -102,6 +102,44 @@ public class CommunityCommentServiceImpl implements ICommunityCommentService {
     public int deleteCommunityCommentByCommentId(Long commentId) {
         return communityCommentMapper.deleteCommunityCommentByCommentId(commentId);
     }
+
+    /**
+     * 点赞评论
+     * 注意：这里简化实现，直接增加点赞数
+     * 实际项目中应该维护一个点赞记录表，避免重复点赞
+     *
+     * @param commentId 评论ID
+     * @param userId 用户ID
+     * @return 结果
+     */
+    @Override
+    public boolean likeComment(Long commentId, Long userId) {
+        // TODO: 实际项目中应该先检查用户是否已点赞，并记录到点赞表
+        CommunityComment comment = communityCommentMapper.selectCommunityCommentByCommentId(commentId);
+        if (comment != null) {
+            comment.setLikeCount(comment.getLikeCount() + 1);
+            return communityCommentMapper.updateCommunityComment(comment) > 0;
+        }
+        return false;
+    }
+
+    /**
+     * 取消点赞评论
+     *
+     * @param commentId 评论ID
+     * @param userId 用户ID
+     * @return 结果
+     */
+    @Override
+    public boolean unlikeComment(Long commentId, Long userId) {
+        // TODO: 实际项目中应该从点赞表中删除记录
+        CommunityComment comment = communityCommentMapper.selectCommunityCommentByCommentId(commentId);
+        if (comment != null && comment.getLikeCount() > 0) {
+            comment.setLikeCount(comment.getLikeCount() - 1);
+            return communityCommentMapper.updateCommunityComment(comment) > 0;
+        }
+        return false;
+    }
 }
 
 

@@ -58,6 +58,22 @@ public interface CommunityPostMapper {
      * @return 结果
      */
     public int deleteCommunityPostByPostIds(Long[] postIds);
+
+    /**
+     * 增加帖子浏览量
+     *
+     * @param postId 帖子ID
+     * @return 结果
+     */
+    public int incrementViewCount(Long postId);
+
+    /**
+     * 增加帖子评论数
+     *
+     * @param postId 帖子ID
+     * @return 结果
+     */
+    public int incrementCommentCount(Long postId);
 }
 
 

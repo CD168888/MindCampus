@@ -17,13 +17,39 @@ public class CommunityPost extends BaseEntity {
     /** 帖子ID */
     private Long postId;
 
-    /** 学生ID */
-    @Excel(name = "学生ID")
-    private Long studentId;
+    /** 用户ID */
+    @Excel(name = "用户ID")
+    private Long userId;
+
+    /** 用户名 */
+    @Excel(name = "用户名")
+    private String userName;
+
+    /** 用户头像 */
+    private String userAvatar;
+
+    /** 帖子标题 */
+    @Excel(name = "帖子标题")
+    private String title;
 
     /** 帖子内容 */
     @Excel(name = "帖子内容")
     private String content;
+
+    /** 图片列表（逗号分隔） */
+    private String images;
+
+    /** 点赞数 */
+    @Excel(name = "点赞数")
+    private Long likeCount;
+
+    /** 评论数 */
+    @Excel(name = "评论数")
+    private Long commentCount;
+
+    /** 浏览数 */
+    @Excel(name = "浏览数")
+    private Long viewCount;
 
     /** 是否匿名（0否 1是） */
     @Excel(name = "是否匿名", readConverterExp = "0=否,1=是")
@@ -33,11 +59,14 @@ public class CommunityPost extends BaseEntity {
     @Excel(name = "状态", readConverterExp = "0=正常,1=屏蔽")
     private String status;
 
+    /** 学生ID（兼容旧字段） */
+    private Long studentId;
+
     /** 学生姓名（非数据库字段，用于显示和搜索） */
     private String studentName;
 
-    /** 评论数量（非数据库字段，用于显示） */
-    private Integer commentCount;
+    /** 是否已点赞（非数据库字段，用于前端显示） */
+    private Boolean isLiked;
 
     public void setPostId(Long postId) {
         this.postId = postId;
@@ -79,6 +108,70 @@ public class CommunityPost extends BaseEntity {
         return status;
     }
 
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getUserAvatar() {
+        return userAvatar;
+    }
+
+    public void setUserAvatar(String userAvatar) {
+        this.userAvatar = userAvatar;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getImages() {
+        return images;
+    }
+
+    public void setImages(String images) {
+        this.images = images;
+    }
+
+    public Long getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(Long likeCount) {
+        this.likeCount = likeCount;
+    }
+
+    public Long getCommentCount() {
+        return commentCount;
+    }
+
+    public void setCommentCount(Long commentCount) {
+        this.commentCount = commentCount;
+    }
+
+    public Long getViewCount() {
+        return viewCount;
+    }
+
+    public void setViewCount(Long viewCount) {
+        this.viewCount = viewCount;
+    }
+
     public String getStudentName() {
         return studentName;
     }
@@ -87,20 +180,28 @@ public class CommunityPost extends BaseEntity {
         this.studentName = studentName;
     }
 
-    public Integer getCommentCount() {
-        return commentCount;
+    public Boolean getIsLiked() {
+        return isLiked;
     }
 
-    public void setCommentCount(Integer commentCount) {
-        this.commentCount = commentCount;
+    public void setIsLiked(Boolean isLiked) {
+        this.isLiked = isLiked;
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("postId", getPostId())
-                .append("studentId", getStudentId())
+                .append("userId", getUserId())
+                .append("userName", getUserName())
+                .append("userAvatar", getUserAvatar())
+                .append("title", getTitle())
                 .append("content", getContent())
+                .append("images", getImages())
+                .append("likeCount", getLikeCount())
+                .append("commentCount", getCommentCount())
+                .append("viewCount", getViewCount())
+                .append("studentId", getStudentId())
                 .append("isAnonymous", getIsAnonymous())
                 .append("status", getStatus())
                 .append("createBy", getCreateBy())
@@ -109,7 +210,7 @@ public class CommunityPost extends BaseEntity {
                 .append("updateTime", getUpdateTime())
                 .append("remark", getRemark())
                 .append("studentName", getStudentName())
-                .append("commentCount", getCommentCount())
+                .append("isLiked", getIsLiked())
                 .toString();
     }
 }
