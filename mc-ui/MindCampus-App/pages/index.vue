@@ -39,7 +39,7 @@
 
       <!-- 推荐音乐列表（3个） -->
       <view class="music-list">
-        <view class="music-item" v-for="(item, index) in recommendedMusicList" :key="item.musicId" @tap="playMusic(item)">
+        <view class="music-item" v-for="item in recommendedMusicList" :key="item.musicId" @tap="playMusic(item)">
           <image v-if="item.coverUrl" class="music-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill"></image>
           <view v-else class="music-cover-placeholder">🎵</view>
           <view class="music-info">
@@ -48,7 +48,7 @@
           </view>
         </view>
       </view>
-      
+
       <view v-if="recommendedMusicList.length === 0" class="empty-music">
         <text class="empty-text">暂无推荐音乐</text>
       </view>
@@ -62,17 +62,21 @@
       </view>
 
       <view class="article-list">
-        <view class="article-item" v-for="(item, index) in articleList" :key="index" @tap="openArticle(item)">
-          <view class="article-cover">{{ item.cover }}</view>
+        <view class="article-item" v-for="item in articleList" :key="item.articleId" @tap="openArticle(item)">
+          <view class="article-cover">{{ getCategoryEmoji(item.category) }}</view>
           <view class="article-content">
             <view class="article-title">{{ item.title }}</view>
-            <view class="article-excerpt">{{ item.excerpt }}</view>
+            <view class="article-excerpt">{{ item.summary || '暂无摘要' }}</view>
             <view class="article-meta">
-              <text class="meta-item">👁 {{ item.views }}</text>
-              <text class="meta-item">❤️ {{ item.likes }}</text>
+              <text class="meta-item">👁 {{ formatReadCount(item.readCount) }}</text>
+              <text class="meta-item">👤 {{ item.author || '匿名' }}</text>
             </view>
           </view>
         </view>
+      </view>
+
+      <view v-if="articleList.length === 0" class="empty-article">
+        <text class="empty-text">暂无推荐文章</text>
       </view>
     </view>
   </view>
@@ -81,7 +85,8 @@
 <script>
 import DailyQuote from '@/components/daily-quote/daily-quote.vue'
 import AssessmentCard from '@/components/assessment-card/assessment-card.vue'
-import { getRecommendedMusic } from '@/api/music'
+import {getRecommendedMusic} from '@/api/music'
+import {getRecommendedArticles} from '@/api/article'
 import config from '@/config'
 
 export default {
@@ -130,35 +135,14 @@ export default {
       recommendedMusicList: [],
 
       // 文章列表
-      articleList: [
-        {
-          cover: '📚',
-          title: '如何管理考试焦虑',
-          excerpt: '考试焦虑是大学生常见的心理问题。通过科学的方法，我们可以有效地管理和缓解这种焦虑情绪...',
-          views: '2.3k',
-          likes: '156'
-        },
-        {
-          cover: '🤝',
-          title: '建立健康的人际关系',
-          excerpt: '良好的人际关系是心理健康的重要组成部分。学会有效沟通和设定边界是关键...',
-          views: '1.8k',
-          likes: '203'
-        },
-        {
-          cover: '🧘',
-          title: '正念冥想入门指南',
-          excerpt: '正念冥想是一种简单而有效的减压方法。每天10分钟的练习就能带来显著改善...',
-          views: '3.1k',
-          likes: '287'
-        }
-      ]
+      articleList: []
     }
   },
 
   onLoad() {
     this.getUserInfo()
     this.loadRecommendedMusic()
+    this.loadRecommendedArticles()
   },
 
   methods: {
@@ -249,16 +233,56 @@ export default {
       })
     },
 
+    // 加载推荐文章
+    loadRecommendedArticles() {
+      getRecommendedArticles().then(res => {
+        if (res.code === 200 && res.data) {
+          this.articleList = res.data
+        }
+      }).catch(err => {
+        console.error('加载推荐文章失败:', err)
+      })
+    },
+
     // 打开文章详情
     openArticle(item) {
-      this.$modal.showToast('打开文章：' + item.title)
-      // TODO: 跳转到文章详情页
+      uni.navigateTo({
+        url: `/pages/article/detail?articleId=${item.articleId}`
+      })
     },
 
     // 前往文章列表
     goToArticleList() {
-      this.$modal.showToast('前往文章列表')
-      // TODO: 跳转到文章列表页面
+      uni.navigateTo({
+        url: '/pages/article/list'
+      })
+    },
+
+    // 根据分类返回对应的 emoji
+    getCategoryEmoji(category) {
+      const categoryMap = {
+        '压力管理': '💪',
+        '情绪调节': '😊',
+        '人际关系': '🤝',
+        '学习方法': '📚',
+        '心理健康': '💚',
+        '正念冥想': '🧘',
+        '睡眠改善': '😴',
+        '自我成长': '🌱',
+      }
+      return categoryMap[category] || '📖'
+    },
+
+    // 格式化阅读量
+    formatReadCount(count) {
+      if (!count) return '0'
+      if (count >= 10000) {
+        return (count / 10000).toFixed(1) + 'w'
+      }
+      if (count >= 1000) {
+        return (count / 1000).toFixed(1) + 'k'
+      }
+      return count.toString()
     }
   }
 }
@@ -664,5 +688,16 @@ export default {
 .meta-item {
   display: inline-flex;
   align-items: center;
+}
+
+.empty-article {
+  padding: $spacing-2xl 0;
+  text-align: center;
+}
+
+.empty-text {
+  font-size: $font-sm;
+  color: $text-tertiary;
+  font-family: $font-family-base;
 }
 </style>

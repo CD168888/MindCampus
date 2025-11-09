@@ -100,6 +100,18 @@
       "navigationBarTitleText": "正在播放",
       "navigationStyle": "custom"
     }
+  }, {
+    "path": "pages/article/list",
+    "style": {
+      "navigationBarTitleText": "心理文章",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/article/detail",
+    "style": {
+      "navigationBarTitleText": "文章详情",
+      "navigationStyle": "custom"
+    }
   }],
   "tabBar": {
     "color": "#6b7280",

@@ -27,6 +27,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectRecommendArticleList" parameterType="RecommendArticle" resultMap="RecommendArticleResult">
         <include refid="selectRecommendArticleVo"/>
         <where>  
+            <if test="keyword != null and keyword != ''">
+                and (title like concat('%', #{keyword}, '%') or author like concat('%', #{keyword}, '%'))
+            </if>
             <if test="title != null and title != ''"> and title like concat('%', #{title}, '%')</if>
             <if test="author != null and author != ''"> and author like concat('%', #{author}, '%')</if>
             <if test="category != null and category != ''"> and category = #{category}</if>
@@ -101,5 +104,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{articleId}
         </foreach>
     </delete>
-</mapper>
 
+    <update id="incrementReadCount" parameterType="Long">
+        update recommend_article set read_count = read_count + 1 where article_id = #{articleId}
+    </update>
+</mapper>
