@@ -1,16 +1,8 @@
 <template>
   <view class="community-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="navbar-content">
-        <view class="navbar-left"></view>
-        <view class="navbar-title">校园社区</view>
-        <view class="navbar-right" @tap="goToPublish">
-          <view class="publish-btn">
-            <uni-icons type="compose" size="20" color="#FFFFFF"></uni-icons>
-          </view>
-        </view>
-      </view>
+    <!-- 浮动发布按钮 - 右侧圆形 -->
+    <view class="float-publish-btn" @tap="goToPublish">
+      <uni-icons type="compose" size="24" color="#FFFFFF"></uni-icons>
     </view>
 
     <!-- 帖子列表 -->
@@ -19,48 +11,51 @@
       :refresher-triggered="refreshing">
       <view class="post-list">
         <view class="post-item" v-for="item in postList" :key="item.postId" @tap="goToDetail(item.postId)">
-          <!-- 用户信息 -->
+          <!-- 用户信息头部 -->
           <view class="post-header">
             <view class="user-info">
-              <image v-if="item.userAvatar" class="user-avatar" :src="getImageUrl(item.userAvatar)"
-                mode="aspectFill"></image>
+              <image v-if="item.userAvatar" class="user-avatar" :src="getImageUrl(item.userAvatar)" mode="aspectFill">
+              </image>
               <view v-else class="user-avatar-placeholder">
-                <uni-icons type="person-filled" size="20" color="#FFFFFF"></uni-icons>
+                <uni-icons type="person-filled" size="16" color="#FFFFFF"></uni-icons>
               </view>
               <view class="user-detail">
-                <view class="user-name">{{ item.userName || '匿名用户' }}</view>
-                <view class="post-time">{{ formatTime(item.createTime) }}</view>
+                <text class="user-name">{{ item.userName || '匿名用户' }}</text>
+                <text class="post-time">{{ formatTime(item.createTime) }}</text>
               </view>
             </view>
           </view>
 
           <!-- 帖子内容 -->
           <view class="post-content">
-            <view class="post-title">{{ item.title }}</view>
-            <view class="post-text">{{ item.content }}</view>
+            <view class="post-text">{{ item.content || item.title }}</view>
+          </view>
 
-            <!-- 图片列表 -->
-            <view v-if="item.images && item.images.length > 0" class="post-images"
-              :class="'images-' + Math.min(item.images.length, 3)">
+          <!-- 帖子图片（如果有） -->
+          <view v-if="item.images && item.images.length > 0" class="post-images">
+            <image v-if="item.images.length === 1" class="post-image single" :src="getImageUrl(item.images[0])"
+              mode="aspectFill" @tap.stop="previewImage(item.images, 0)">
+            </image>
+            <view v-else class="image-grid" :class="'grid-' + Math.min(item.images.length, 3)">
               <image v-for="(img, index) in item.images.slice(0, 9)" :key="index" class="post-image"
-                :src="getImageUrl(img)" mode="aspectFill" @tap.stop="previewImage(item.images, index)"></image>
+                :src="getImageUrl(img)" mode="aspectFill" @tap.stop="previewImage(item.images, index)">
+              </image>
             </view>
           </view>
 
-          <!-- 帖子操作栏 -->
-          <view class="post-actions">
+          <!-- 帖子底部操作栏 -->
+          <view class="post-footer">
             <view class="action-item" @tap.stop="toggleLike(item)">
               <uni-icons :type="item.isLiked ? 'heart-filled' : 'heart'" size="18"
-                :color="item.isLiked ? '#FF3A3A' : '#999999'"></uni-icons>
-              <text class="action-text" :class="{ 'liked': item.isLiked }">{{ formatCount(item.likeCount) }}</text>
+                :color="item.isLiked ? '#FF3A3A' : '#999999'">
+              </uni-icons>
+              <text class="action-text" :class="{ 'liked': item.isLiked }">
+                {{ formatCount(item.likeCount) }}
+              </text>
             </view>
             <view class="action-item">
               <uni-icons type="chat" size="18" color="#999999"></uni-icons>
               <text class="action-text">{{ formatCount(item.commentCount) }}</text>
-            </view>
-            <view class="action-item">
-              <uni-icons type="eye" size="18" color="#999999"></uni-icons>
-              <text class="action-text">{{ formatCount(item.viewCount) }}</text>
             </view>
           </view>
         </view>
@@ -98,7 +93,6 @@ import config from '@/config'
 export default {
   data() {
     return {
-      statusBarHeight: 0,
       loading: false,
       refreshing: false,
       postList: [],
@@ -106,14 +100,11 @@ export default {
       pageSize: 10,
       total: 0,
       hasMore: true,
-      loadStatus: 'more' // more | loading | noMore
+      loadStatus: 'more', // more | loading | noMore
+      currentTab: 'recommend' // follow | recommend
     }
   },
   onLoad() {
-    // 获取状态栏高度
-    const systemInfo = uni.getSystemInfoSync()
-    this.statusBarHeight = systemInfo.statusBarHeight || 0
-
     // 加载数据
     this.loadPostList(true)
   },
@@ -290,113 +281,56 @@ export default {
 
 .community-page {
   min-height: 100vh;
-  position: relative;
-
-  &::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-      linear-gradient(to bottom, transparent -30px, #FFFFFF 400px),
-      linear-gradient(135deg, rgba(167, 243, 208, 0.12) 0%, rgba(196, 181, 253, 0.12) 50%, rgba(254, 205, 211, 0.12) 100%);
-    z-index: 0;
-  }
-
-  >* {
-    position: relative;
-    z-index: 1;
-  }
+  background: $bg-gray-50;
 }
 
-/* 自定义导航栏 */
-.custom-navbar {
+/* 浮动发布按钮 - 右侧圆形 */
+.float-publish-btn {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 999;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20rpx);
-  box-shadow: 0 2rpx 16rpx rgba(167, 139, 250, 0.08);
-}
-
-.navbar-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 88rpx;
-  padding: 0 30rpx;
-}
-
-.navbar-left {
-  width: 80rpx;
-}
-
-.navbar-title {
-  flex: 1;
-  text-align: center;
-  font-size: $font-base;
-  font-weight: $font-semibold;
-  color: $text-primary;
-  font-family: $font-family-base;
-}
-
-.navbar-right {
-  width: 80rpx;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.publish-btn {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  background: $gradient-primary;
+  right: $spacing-lg;
+  bottom: calc(120rpx + env(safe-area-inset-bottom));
+  z-index: 998;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 12rpx rgba(22, 119, 255, 0.3);
-  transition: all 0.2s ease;
+  width: 88rpx;
+  height: 88rpx;
+  background: linear-gradient(135deg, #FF6B9D 0%, #FFA5C0 100%);
+  border-radius: 50%;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 157, 0.4);
+  transition: all $transition-base $ease-out;
 
   &:active {
     transform: scale(0.9);
+    box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.3);
   }
 }
 
 /* 滚动区域 */
 .post-scroll {
-  height: calc(100vh - 88rpx - env(safe-area-inset-top));
-  padding: 0 $spacing-lg $spacing-xl;
-  margin-top: calc(88rpx + env(safe-area-inset-top));
+  height: 100vh;
 }
 
-/* 帖子列表 */
+/* 帖子列表 - 单列卡片布局 */
 .post-list {
-  .post-item {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10rpx);
-    border-radius: $radius-lg;
-    padding: $spacing-lg;
-    margin-bottom: $spacing-base;
-    box-shadow:
-      0 4rpx 16rpx rgba(167, 243, 208, 0.08),
-      0 2rpx 8rpx rgba(196, 181, 253, 0.08);
-    border: 1rpx solid rgba(255, 255, 255, 0.6);
-    transition: all 0.3s ease;
+  padding: $spacing-base $spacing-lg $spacing-3xl;
+}
 
-    &:active {
-      transform: translateY(-2rpx);
-      box-shadow:
-        0 8rpx 24rpx rgba(167, 243, 208, 0.12),
-        0 4rpx 12rpx rgba(196, 181, 253, 0.12);
-    }
+.post-item {
+  background: $bg-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-sm;
+  transition: all $transition-base $ease-out;
+
+  &:active {
+    transform: translateY(-2rpx);
+    box-shadow: $shadow-md;
   }
 }
 
-/* 帖子头部 */
+/* 帖子头部 - 用户信息 */
 .post-header {
   margin-bottom: $spacing-md;
 }
@@ -404,36 +338,38 @@ export default {
 .user-info {
   display: flex;
   align-items: center;
+  gap: $spacing-sm;
 }
 
 .user-avatar {
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  margin-right: $spacing-md;
   background: $bg-gray-100;
+  flex-shrink: 0;
 }
 
 .user-avatar-placeholder {
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  margin-right: $spacing-md;
   background: $gradient-primary;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .user-detail {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
 }
 
 .user-name {
   font-size: $font-sm;
   font-weight: $font-semibold;
   color: $text-primary;
-  margin-bottom: 4rpx;
   font-family: $font-family-base;
 }
 
@@ -448,68 +384,62 @@ export default {
   margin-bottom: $spacing-md;
 }
 
-.post-title {
-  font-size: $font-md;
-  font-weight: $font-semibold;
-  color: $text-primary;
-  margin-bottom: $spacing-sm;
-  line-height: $line-height-tight;
-  font-family: $font-family-base;
-}
-
 .post-text {
   font-size: $font-sm;
-  color: $text-secondary;
+  color: $text-primary;
   line-height: $line-height-normal;
-  margin-bottom: $spacing-md;
+  font-family: $font-family-base;
+  word-break: break-word;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
-  font-family: $font-family-base;
 }
 
-/* 图片列表 */
+/* 帖子图片 */
 .post-images {
-  display: grid;
-  gap: $spacing-xs;
-  margin-top: $spacing-md;
-
-  &.images-1 {
-    grid-template-columns: 1fr;
-
-    .post-image {
-      height: 400rpx;
-    }
-  }
-
-  &.images-2 {
-    grid-template-columns: repeat(2, 1fr);
-
-    .post-image {
-      height: 240rpx;
-    }
-  }
-
-  &.images-3 {
-    grid-template-columns: repeat(3, 1fr);
-
-    .post-image {
-      height: 200rpx;
-    }
-  }
+  margin-bottom: $spacing-md;
 }
 
-.post-image {
+.post-image.single {
   width: 100%;
+  max-height: 500rpx;
   border-radius: $radius-base;
   background: $bg-gray-100;
 }
 
-/* 帖子操作栏 */
-.post-actions {
+.image-grid {
+  display: grid;
+  gap: $spacing-xs;
+
+  &.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+
+    .post-image {
+      width: 100%;
+      height: 200rpx;
+    }
+  }
+
+  &.grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+
+    .post-image {
+      width: 100%;
+      height: 160rpx;
+    }
+  }
+}
+
+.image-grid .post-image {
+  border-radius: $radius-sm;
+  background: $bg-gray-100;
+}
+
+/* 帖子底部 - 操作栏 */
+.post-footer {
   display: flex;
   align-items: center;
   gap: $spacing-2xl;
@@ -521,20 +451,20 @@ export default {
   display: flex;
   align-items: center;
   gap: $spacing-xs;
-  transition: all 0.2s ease;
+  transition: all $transition-fast $ease-out;
 
   &:active {
-    transform: scale(0.95);
+    transform: scale(0.9);
   }
 }
 
 .action-text {
-  font-size: $font-xs;
+  font-size: $font-sm;
   color: $text-tertiary;
   font-family: $font-family-base;
 
   &.liked {
-    color: #FF3A3A;
+    color: $danger-color;
   }
 }
 
@@ -568,56 +498,38 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 200rpx 0;
-  position: relative;
-
-  &::before {
-    content: '';
-    position: absolute;
-    width: 200rpx;
-    height: 200rpx;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(167, 243, 208, 0.2) 0%, transparent 70%);
-    z-index: 0;
-  }
+  padding: 200rpx $spacing-lg;
 }
 
 .empty-icon {
   margin-bottom: $spacing-2xl;
-  filter: grayscale(30%);
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  opacity: 0.5;
 }
 
 .empty-text {
-  font-size: $font-sm;
+  font-size: $font-base;
   color: $text-tertiary;
   font-family: $font-family-base;
-  position: relative;
-  z-index: 1;
   margin-bottom: $spacing-xl;
 }
 
 .empty-btn {
   padding: $spacing-md $spacing-2xl;
-  background: $gradient-primary;
+  background: linear-gradient(135deg, #FF6B9D 0%, #FFA5C0 100%);
   border-radius: $radius-full;
-  box-shadow: 0 4rpx 12rpx rgba(22, 119, 255, 0.3);
-  transition: all 0.2s ease;
+  box-shadow: $shadow-sm;
+  transition: all $transition-base $ease-out;
 
   &:active {
     transform: scale(0.95);
+    box-shadow: $shadow-xs;
   }
 }
 
 .empty-btn-text {
   font-size: $font-sm;
-  color: #FFFFFF;
+  color: $bg-white;
   font-weight: $font-semibold;
   font-family: $font-family-base;
 }
 </style>
-

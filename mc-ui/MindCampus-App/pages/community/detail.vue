@@ -231,11 +231,15 @@ export default {
       listComments(this.postId, params).then(res => {
         if (res.code === 200) {
           // 构建评论树结构
-          const comments = res.rows || []
+          // 后端返回格式是 { code: 200, data: comments }
+          const comments = res.data || []
           this.commentList = this.buildCommentTree(comments)
+        } else {
+          console.error('加载评论列表失败:', res.msg)
         }
       }).catch(err => {
         console.error('加载评论列表失败:', err)
+        this.$modal.showToast('加载评论失败，请重试')
       })
     },
 
@@ -907,4 +911,5 @@ export default {
   }
 }
 </style>
+
 
