@@ -1,0 +1,1224 @@
+<template>
+  <view class="ai-chat-container">
+    <!-- 使用新的导航栏结构 -->
+    <custom-nav-bar :showSearchBtn="false">
+      <template #title>
+        <view class="nav-title">
+          <uni-icons type="back" size="24" color="#10b981" @click="goBack"></uni-icons>
+          <text class="title-text">AI 助手</text>
+          <view class="setting-btn" @click="toggleHistoryDrawer">
+            <uni-icons type="bars" size="22" color="#333"></uni-icons>
+          </view>
+        </view>
+      </template>
+    </custom-nav-bar>
+
+    <!-- 聊天区域 -->
+    <scroll-view class="chat-area" scroll-y :scroll-top="scrollTop" :scroll-with-animation="true"
+      @scrolltoupper="loadMoreMessages" upper-threshold="100" ref="chatScrollView">
+      <view class="loading-more" v-if="isLoadingMore">
+        <uni-icons type="spinner-cycle" size="16" color="#999"></uni-icons>
+        <text class="loading-text">加载更多消息...</text>
+      </view>
+
+      <!-- 聊天消息列表 -->
+      <view class="messages-wrapper">
+        <view v-for="(msg, index) in currentMessages" :key="index"
+          :class="['message-item', msg.role === 'user' ? 'user-message' : 'ai-message']">
+          <view class="message-container">
+            <image class="avatar" :src="msg.role === 'user' ? userAvatar : aiAvatar" mode="aspectFill" />
+            <view class="message-content">
+              <view class="message-header">
+                <text class="sender-name">{{ msg.role === 'user' ? '我' : 'AI 助手' }}</text>
+                <text class="message-time">{{ formatTime(msg.timestamp) }}</text>
+              </view>
+              <view class="message-body">
+                <text v-if="msg.content">{{ msg.content }}</text>
+                <view v-if="msg.role === 'assistant' && msg.content === ''" class="typing-indicator">
+                  <view class="dot"></view>
+                  <view class="dot"></view>
+                  <view class="dot"></view>
+                </view>
+              </view>
+              <!-- 附件列表 -->
+              <view class="attachments" v-if="msg.attachments && msg.attachments.length > 0">
+                <view v-for="(file, fileIndex) in msg.attachments" :key="fileIndex" class="attachment-item">
+                  <view class="attachment-icon">
+                    <uni-icons :type="getFileIcon(file.name)" size="20" color="#666"></uni-icons>
+                  </view>
+                  <view class="attachment-info">
+                    <text class="attachment-name">{{ getFileName(file.name) }}</text>
+                    <text class="attachment-size">{{ formatFileSize(file.size) }}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部空间，确保最后一条消息显示完整 -->
+      <view class="bottom-space"></view>
+    </scroll-view>
+
+    <!-- 底部输入区域 -->
+    <view class="input-area" :style="{ paddingBottom: `${safeAreaBottom}px` }">
+      <!-- 附件预览区 -->
+      <view class="attachment-preview" v-if="selectedFiles.length > 0">
+        <scroll-view scroll-x class="attachment-scroll">
+          <view v-for="(file, index) in selectedFiles" :key="index" class="preview-item">
+            <view class="preview-content">
+              <uni-icons :type="getFileIcon(file.name)" size="20" color="#666"></uni-icons>
+              <text class="preview-name">{{ getFileName(file.name) }}</text>
+            </view>
+            <view class="remove-btn" @click="removeFile(index)">
+              <uni-icons type="close" size="14" color="#fff"></uni-icons>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 输入控制区 -->
+      <view class="input-controls">
+        <view class="upload-btn" @click="handleUpload">
+          <uni-icons type="paperclip" size="24" color="#666"></uni-icons>
+        </view>
+
+        <view class="input-wrapper">
+          <textarea class="input-box" v-model="userInput" placeholder="发送消息给 AI 助手..." :disable-default-padding="true"
+            :cursor-spacing="20" confirm-type="send" :maxlength="-1" @confirm="sendMessage" :auto-height="true"
+            :style="{ height: `${textareaHeight}px` }" @input="handleAdjustHeight" @focus="handleInputFocus"
+            @blur="handleInputBlur" :show-confirm-bar="false" :hold-keyboard="true" :adjust-position="false"></textarea>
+        </view>
+
+        <view class="send-btn" :class="{ active: canSend }" @click="sendMessage">
+          <uni-icons type="paperplane-filled" size="24" color="#fff"></uni-icons>
+        </view>
+      </view>
+    </view>
+
+    <!-- 历史对话抽屉 -->
+    <view class="history-drawer-mask" v-if="showHistoryDrawer" @click="toggleHistoryDrawer"></view>
+    <view class="history-drawer" :class="{ open: showHistoryDrawer }">
+      <view class="drawer-header">
+        <text class="drawer-title">历史对话</text>
+        <view class="drawer-close" @click="toggleHistoryDrawer">
+          <uni-icons type="close" size="22" color="#333"></uni-icons>
+        </view>
+      </view>
+
+      <view class="drawer-content">
+        <!-- 新增：新建对话按钮 -->
+        <view class="new-chat-button" @click="createNewChat">
+          <view class="button-content">
+            <uni-icons type="refresh" size="18" color="#10b981"></uni-icons>
+            <text class="new-chat-text">开启新对话</text>
+          </view>
+        </view>
+
+        <view class="history-loading" v-if="isLoadingHistory">
+          <uni-icons type="spinner-cycle" size="24" color="#999"></uni-icons>
+          <text class="loading-text">加载历史记录中...</text>
+        </view>
+
+        <view class="empty-history" v-else-if="chatHistory.length === 0">
+          <uni-icons type="chat" size="40" color="#ccc"></uni-icons>
+          <text class="empty-text">暂无历史对话</text>
+        </view>
+
+        <scroll-view class="history-list" scroll-y v-else>
+          <view v-for="(chat, index) in chatHistory" :key="chat.chatId" class="history-item">
+            <view class="history-item-content" @click="loadChatHistory(chat.chatId)">
+              <view class="history-icon">
+                <uni-icons type="chat" size="24" color="#666"></uni-icons>
+              </view>
+              <view class="history-info">
+                <text class="history-title">{{ chat.firstMessage.substring(0, 10) || `对话 ${index + 1}` }}...</text>
+                <text class="history-id">{{ chat.chatId.substring(0, 8) }}...</text>
+              </view>
+            </view>
+            <view class="history-actions">
+              <view @click="handleIconClick($event, () => startEditTitle(chat))">
+                <uni-icons type="compose" size="20" color="#10b981" style="margin-right: 8px;"></uni-icons>
+              </view>
+              <view @click="handleIconClick($event, () => handleDeleteChat(chat.chatId))">
+                <uni-icons type="trash" size="20" color="#ff6b6b"></uni-icons>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import {deleteChat, getChatHistory, getChatMessages, renameChat, sendChatMessage} from '@/api/chat.js';
+import {adjustHeight, formatTime, generateUUID, goBack, onInputBlur, onInputFocus, scrollToBottom} from './ai.js';
+
+export default {
+  data() {
+    return {
+      // 基础配置
+      ChatUUID: generateUUID(),
+
+      // 响应式状态
+      userInput: '',
+      currentMessages: [],
+      selectedFiles: [],
+      scrollTop: 0,
+      isStreaming: false,
+      isLoadingMore: false,
+      fullResponse: '',
+
+      // 历史对话状态
+      showHistoryDrawer: false,
+      chatHistory: [],
+      isLoadingHistory: false,
+      editingChatId: null,
+      editingTitle: '',
+
+      // UI 相关状态
+      textareaHeight: 24,
+      keyboardHeight: 0,
+      inputAreaHeight: 60,
+      safeAreaBottom: 34,
+
+      // 头像设置
+      userAvatar: uni.getStorageSync('avatar') || '/static/images/profile.jpg',
+      aiAvatar: 'https://wallpaper-web-pro.oss-cn-beijing.aliyuncs.com/images/ai.jpg',
+
+      // 聊天类型
+      chatType: 'chat'
+    }
+  },
+
+  computed: {
+    canSend() {
+      return this.userInput.trim().length > 0 || this.selectedFiles.length > 0;
+    }
+  },
+
+  onLoad() {
+    const systemInfo = uni.getSystemInfoSync();
+    this.safeAreaBottom = systemInfo.safeAreaInsets?.bottom || 34;
+
+    uni.$on('keyboardHeightChange', async (res) => {
+      this.keyboardHeight = res.height;
+      await this.$nextTick();
+      this.scrollToBottom();
+    });
+
+    this.$nextTick(() => {
+      this.scrollToBottom();
+    });
+
+    // 添加一条欢迎消息
+    this.addWelcomeMessage();
+  },
+
+  onUnload() {
+    uni.$off('keyboardHeightChange');
+  },
+
+  methods: {
+    // 添加欢迎消息
+    addWelcomeMessage() {
+      this.currentMessages.push({
+        role: 'assistant',
+        content: '你好！我是 AI 助手，有什么我可以帮助你的吗？',
+        timestamp: Date.now()
+      });
+    },
+
+    // 滚动到底部
+    scrollToBottom() {
+      scrollToBottom(this, 'scrollTop');
+    },
+
+    // 输入框聚焦
+    handleInputFocus() {
+      onInputFocus(() => this.scrollToBottom());
+    },
+
+    // 输入框失焦
+    handleInputBlur() {
+      onInputBlur((height) => {
+        this.keyboardHeight = height;
+      });
+    },
+
+    // 调整输入框高度
+    handleAdjustHeight(e) {
+      adjustHeight(e, {
+        setTextareaHeight: (height) => {
+          this.textareaHeight = height;
+        },
+        setInputAreaHeight: (height) => {
+          this.inputAreaHeight = height;
+        },
+        scrollToBottom: () => this.scrollToBottom()
+      });
+    },
+
+    // 加载更多消息
+    loadMoreMessages() {
+      if (this.currentMessages.length < 5) return;
+
+      this.isLoadingMore = true;
+      setTimeout(() => {
+        this.isLoadingMore = false;
+      }, 1000);
+    },
+
+    // 处理文件上传
+    handleUpload() {
+      if (this.selectedFiles.length >= 5) {
+        uni.showToast({
+          title: '最多只能上传5个文件',
+          icon: 'none'
+        });
+        return;
+      }
+
+      uni.chooseFile({
+        count: 5 - this.selectedFiles.length,
+        extension: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'],
+        success: (res) => {
+          const files = res.tempFiles.map(item => ({
+            name: item.name || `file_${Date.now()}`,
+            size: item.size,
+            path: item.path,
+            file: item
+          }));
+
+          this.selectedFiles = [...this.selectedFiles, ...files];
+        },
+        fail: (err) => {
+          if (err.errMsg !== 'chooseFile:fail cancel') {
+            uni.showToast({
+              title: '选择文件失败',
+              icon: 'none'
+            });
+          }
+        }
+      });
+    },
+
+    // 移除文件
+    removeFile(index) {
+      this.selectedFiles.splice(index, 1);
+    },
+
+    // 获取文件图标
+    getFileIcon(fileName) {
+      if (!fileName) return 'paperclip';
+
+      const ext = fileName.split('.').pop().toLowerCase();
+      const iconMap = {
+        pdf: 'file-pdf',
+        doc: 'file-word',
+        docx: 'file-word',
+        xls: 'file-excel',
+        xlsx: 'file-excel',
+        jpg: 'image',
+        jpeg: 'image',
+        png: 'image',
+        gif: 'image'
+      };
+
+      return iconMap[ext] || 'file';
+    },
+
+    // 获取文件名
+    getFileName(fileName) {
+      if (!fileName) return '未命名文件';
+      return fileName.length > 15 ? fileName.substring(0, 12) + '...' + fileName.split('.').pop() : fileName;
+    },
+
+    // 格式化文件大小
+    formatFileSize(size) {
+      if (!size) return '';
+
+      if (size < 1024) {
+        return size + 'B';
+      } else if (size < 1024 * 1024) {
+        return (size / 1024).toFixed(1) + 'KB';
+      } else {
+        return (size / (1024 * 1024)).toFixed(1) + 'MB';
+      }
+    },
+
+    // 格式化时间
+    formatTime(timestamp) {
+      return formatTime(timestamp);
+    },
+
+    // 切换历史对话抽屉
+    toggleHistoryDrawer() {
+      this.showHistoryDrawer = !this.showHistoryDrawer;
+
+      if (this.showHistoryDrawer) {
+        this.fetchChatHistory();
+      }
+    },
+
+    // 获取历史对话列表
+    async fetchChatHistory() {
+      this.isLoadingHistory = true;
+
+      try {
+        const response = await getChatHistory(this.chatType);
+        if (response.code === 200) {
+          this.chatHistory = response.data || [];
+        } else {
+          uni.showToast({
+            title: response.msg || '获取历史记录失败',
+            icon: 'none'
+          });
+        }
+      } catch (error) {
+        console.error('获取历史对话失败:', error);
+        uni.showToast({
+          title: '获取历史记录失败',
+          icon: 'none'
+        });
+      } finally {
+        this.isLoadingHistory = false;
+      }
+    },
+
+    // 加载特定对话的历史消息
+    async loadChatHistory(chatId) {
+      try {
+        const response = await getChatMessages(this.chatType, chatId);
+
+        if (response.code === 200) {
+          this.ChatUUID = chatId;
+
+          const messages = response.data || [];
+          this.currentMessages = messages.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+            timestamp: msg.timestamp || Date.now(),
+            attachments: msg.attachments || []
+          }));
+
+          this.toggleHistoryDrawer();
+
+          this.$nextTick(() => {
+            this.scrollToBottom();
+          });
+        } else {
+          uni.showToast({
+            title: response.msg || '加载对话失败',
+            icon: 'none'
+          });
+        }
+      } catch (error) {
+        console.error('加载对话失败:', error);
+        uni.showToast({
+          title: '加载对话失败',
+          icon: 'none'
+        });
+      }
+    },
+
+    // 创建新对话
+    createNewChat() {
+      this.ChatUUID = generateUUID();
+      this.currentMessages = [];
+      this.addWelcomeMessage();
+      this.toggleHistoryDrawer();
+
+      this.$nextTick(() => {
+        this.scrollToBottom();
+      });
+
+      uni.showToast({
+        title: '已创建新对话',
+        icon: 'success',
+        duration: 1500
+      });
+    },
+
+    // 发送消息
+    async sendMessage() {
+      if (!this.canSend) return;
+
+      const messageText = this.userInput.trim();
+      const attachments = [...this.selectedFiles];
+
+      if (!messageText && attachments.length === 0) return;
+
+      // 添加用户消息到列表
+      this.currentMessages.push({
+        role: 'user',
+        content: messageText,
+        attachments: attachments,
+        timestamp: Date.now()
+      });
+
+      // 添加AI消息占位
+      this.currentMessages.push({
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now()
+      });
+
+      // 清空输入和附件
+      this.userInput = '';
+      this.selectedFiles = [];
+      this.textareaHeight = 24;
+      this.inputAreaHeight = 60;
+      this.fullResponse = '';
+
+      await this.$nextTick();
+      await this.scrollToBottom();
+
+      // 发送请求并处理流式响应
+      try {
+        this.isStreaming = true;
+        let lastScrollTime = 0;
+
+        await sendChatMessage({
+          prompt: messageText,
+          chatId: this.ChatUUID,
+          files: attachments,
+          onMessage: async (chunk) => {
+            this.fullResponse += chunk;
+            const lastIndex = this.currentMessages.length - 1;
+            this.currentMessages[lastIndex].content = this.fullResponse;
+
+            const now = Date.now();
+            if (now - lastScrollTime > 100) {
+              lastScrollTime = now;
+              await this.$nextTick();
+              await this.scrollToBottom();
+            }
+          }
+        });
+
+        await this.$nextTick();
+        await this.scrollToBottom();
+      } catch (error) {
+        console.error('发送消息失败:', error);
+        const lastIndex = this.currentMessages.length - 1;
+        this.currentMessages[lastIndex].content = '抱歉，发生了错误，请稍后再试。';
+
+        uni.showToast({
+          title: '发送消息失败',
+          icon: 'none'
+        });
+      } finally {
+        this.isStreaming = false;
+        await this.$nextTick();
+        await this.scrollToBottom();
+      }
+    },
+
+    // 删除对话
+    async handleDeleteChat(chatId) {
+      try {
+        uni.showModal({
+          title: '确认删除',
+          content: '确定要删除这个对话吗？',
+          success: async (res) => {
+            if (res.confirm) {
+              const response = await deleteChat(this.chatType, chatId);
+              if (response.code === 200) {
+                this.chatHistory = this.chatHistory.filter(chat => chat.chatId !== chatId);
+                uni.showToast({
+                  title: '删除成功',
+                  icon: 'success'
+                });
+
+                if (chatId === this.ChatUUID) {
+                  this.createNewChat();
+                }
+              } else {
+                uni.showToast({
+                  title: response.msg || '删除失败',
+                  icon: 'none'
+                });
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('删除对话失败:', error);
+        uni.showToast({
+          title: '删除失败',
+          icon: 'none'
+        });
+      }
+    },
+
+    // 开始编辑对话标题
+    startEditTitle(chat) {
+      this.editingChatId = chat.chatId;
+      this.editingTitle = chat.firstMessage || '';
+
+      uni.showModal({
+        title: '修改对话标题',
+        editable: true,
+        placeholderText: '请输入新的标题',
+        content: chat.firstMessage || '',
+        success: async (res) => {
+          if (res.confirm && res.content.trim()) {
+            try {
+              let data = {
+                chatId: this.editingChatId,
+                prompt: res.content.trim()
+              }
+              const response = await renameChat(this.chatType, data);
+              if (response.code === 200) {
+                const chat = this.chatHistory.find(c => c.chatId === this.editingChatId);
+                if (chat) {
+                  chat.firstMessage = res.content.trim();
+                }
+
+                uni.showToast({
+                  title: '修改成功',
+                  icon: 'success'
+                });
+              } else {
+                uni.showToast({
+                  title: response.msg || '修改失败',
+                  icon: 'none'
+                });
+              }
+            } catch (error) {
+              console.error('修改标题失败:', error);
+              uni.showToast({
+                title: '修改失败',
+                icon: 'none'
+              });
+            }
+          }
+          this.editingChatId = null;
+          this.editingTitle = '';
+        }
+      });
+    },
+
+    // 处理图标点击事件
+    handleIconClick(event, callback) {
+      if (event && event.stopPropagation) {
+        event.stopPropagation();
+      }
+      callback();
+    },
+
+    // 返回
+    goBack() {
+      goBack();
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+@import '@/static/scss/theme.scss';
+
+.ai-chat-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  background: $gradient-soft;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 自定义标题栏样式 */
+.nav-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8rpx;
+
+  .title-text {
+    font-size: $font-lg;
+    font-weight: $font-bold;
+    background: linear-gradient(135deg, #10b981, #1677FF);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    flex: 1;
+    text-align: left;
+    font-family: $font-family-base;
+  }
+
+  .setting-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: $radius-sm;
+    transition: all $transition-fast $ease-out;
+
+    &:active {
+      transform: scale(0.95);
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+/* 聊天区域样式 */
+.chat-area {
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  padding-top: $spacing-sm;
+
+  .loading-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    font-size: $font-xs;
+    color: $text-tertiary;
+
+    .loading-text {
+      margin-left: $spacing-xs;
+    }
+  }
+
+  .messages-wrapper {
+    padding: $spacing-sm $spacing-base;
+  }
+
+  .message-item {
+    margin-bottom: $spacing-lg;
+
+    &:last-child {
+      margin-bottom: $spacing-xs;
+    }
+  }
+
+  .message-container {
+    display: flex;
+    width: 100%;
+  }
+
+  .avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 19px;
+    margin-right: $spacing-sm;
+    flex-shrink: 0;
+    box-shadow: $shadow-sm;
+  }
+
+  .user-message .message-container {
+    flex-direction: row-reverse;
+
+    .avatar {
+      margin-right: 0;
+      margin-left: $spacing-sm;
+    }
+
+    .message-content {
+      align-items: flex-end;
+    }
+
+    .message-header {
+      flex-direction: row-reverse;
+    }
+
+    .message-body {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(22, 119, 255, 0.1) 100%);
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+      border-top-left-radius: $radius-base;
+      border-bottom-left-radius: $radius-base;
+      color: $text-primary;
+    }
+
+    .sender-name {
+      color: $accent-color;
+      margin-left: 6px;
+      margin-right: 0;
+    }
+  }
+
+  .message-content {
+    display: flex;
+    flex-direction: column;
+    max-width: 78%;
+  }
+
+  .message-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .sender-name {
+    font-size: $font-xs;
+    font-weight: $font-semibold;
+    color: $text-primary;
+    margin-right: 6px;
+    font-family: $font-family-base;
+  }
+
+  .message-time {
+    font-size: 11px;
+    color: $text-tertiary;
+    font-family: $font-family-base;
+  }
+
+  .message-body {
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-sm;
+    line-height: $line-height-normal;
+    background-color: $bg-white;
+    border-radius: $radius-base;
+    border-top-left-radius: 4px;
+    box-shadow: $shadow-xs;
+    font-family: $font-family-base;
+  }
+
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
+      background-color: $text-tertiary;
+      margin-right: 4px;
+      animation: pulse 1.5s infinite ease-in-out;
+
+      &:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+
+      &:nth-child(3) {
+        animation-delay: 0.4s;
+        margin-right: 0;
+      }
+    }
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(0.8);
+    }
+
+    50% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .attachments {
+    margin-top: $spacing-sm;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+
+    .attachment-item {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: $radius-sm;
+      padding: $spacing-sm;
+      transition: all $transition-base $ease-out;
+      box-shadow: $shadow-xs;
+      border: 1px solid $border-base;
+      max-width: 280px;
+
+      &:active {
+        transform: scale(0.98);
+        background: rgba(255, 255, 255, 0.95);
+      }
+    }
+
+    .attachment-icon {
+      margin-right: $spacing-sm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(22, 119, 255, 0.08) 100%);
+      border-radius: $radius-sm;
+    }
+
+    .attachment-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .attachment-name {
+      font-size: $font-xs;
+      font-weight: $font-medium;
+      color: $text-primary;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: $font-family-base;
+    }
+
+    .attachment-size {
+      font-size: 12px;
+      color: $text-tertiary;
+      font-family: $font-family-base;
+    }
+  }
+
+  .bottom-space {
+    height: 20px;
+  }
+}
+
+/* 输入区域样式 */
+.input-area {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: $backdrop-blur;
+  border-top: 1px solid $border-light;
+  padding: $spacing-xs $spacing-sm;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+
+  .attachment-preview {
+    max-height: 120px;
+    margin: $spacing-xs 0;
+    padding: 0 4px;
+
+    .attachment-scroll {
+      white-space: nowrap;
+      padding: 4px 0;
+    }
+
+    .preview-item {
+      display: inline-flex;
+      align-items: center;
+      background: linear-gradient(135deg, $bg-gray-50 0%, $bg-gray-100 100%);
+      border: 1px solid $border-base;
+      border-radius: $radius-sm;
+      padding: $spacing-xs $spacing-sm;
+      margin-right: $spacing-sm;
+      position: relative;
+      max-width: 200px;
+      transition: all $transition-base $ease-out;
+      box-shadow: $shadow-xs;
+
+      &:active {
+        transform: scale(0.98);
+      }
+
+      .preview-content {
+        display: flex;
+        align-items: center;
+        max-width: 170px;
+        gap: $spacing-xs;
+      }
+
+      .preview-name {
+        font-size: $font-xs;
+        color: $text-primary;
+        margin-left: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: $font-medium;
+        font-family: $font-family-base;
+      }
+
+      .remove-btn {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 20px;
+        height: 20px;
+        border-radius: $radius-full;
+        background: $danger-color;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: $shadow-sm;
+        border: 2px solid $bg-white;
+        transition: all $transition-fast $ease-out;
+
+        &:active {
+          transform: scale(0.9);
+        }
+      }
+    }
+  }
+
+  .input-controls {
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .upload-btn,
+  .send-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    transition: all $transition-base $ease-out;
+
+    &:active {
+      opacity: $opacity-hover;
+      transform: scale(0.95);
+    }
+  }
+
+  .upload-btn {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(22, 119, 255, 0.08) 100%);
+    margin-right: $spacing-xs;
+  }
+
+  .send-btn {
+    margin-left: $spacing-xs;
+    background-color: $bg-gray-200;
+
+    &.active {
+      background: linear-gradient(135deg, $accent-color 0%, $primary-color 100%);
+      box-shadow: $shadow-sm;
+    }
+  }
+
+  .input-wrapper {
+    flex: 1;
+    background-color: $bg-gray-100;
+    border-radius: 20px;
+    padding: $spacing-xs $spacing-sm;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .input-box {
+    width: 100%;
+    min-height: 24px;
+    font-size: $font-sm;
+    line-height: $line-height-normal;
+    background-color: transparent;
+    color: $text-primary;
+    font-family: $font-family-base;
+
+    &::placeholder {
+      color: $text-tertiary;
+    }
+  }
+}
+
+/* 历史对话抽屉样式 */
+.history-drawer-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 998;
+  animation: fadeIn 0.3s ease;
+}
+
+.history-drawer {
+  position: fixed;
+  top: 0;
+  right: -80%;
+  bottom: 0;
+  width: 80%;
+  background-color: $bg-white;
+  z-index: 999;
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
+  transition: transform $transition-slow $ease-out;
+  display: flex;
+  flex-direction: column;
+
+  &.open {
+    transform: translateX(-100%);
+  }
+
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-base;
+    border-bottom: 1px solid $border-light;
+
+    .drawer-title {
+      font-size: $font-lg;
+      font-weight: $font-semibold;
+      color: $text-primary;
+      font-family: $font-family-base;
+    }
+
+    .drawer-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: $radius-sm;
+      transition: all $transition-fast $ease-out;
+
+      &:active {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+    }
+  }
+
+  .drawer-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-sm 0;
+  }
+
+  .history-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+
+    .loading-text {
+      margin-top: $spacing-base;
+      font-size: $font-xs;
+      color: $text-tertiary;
+      font-family: $font-family-base;
+    }
+  }
+
+  .empty-history {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+
+    .empty-text {
+      margin-top: $spacing-base;
+      font-size: $font-xs;
+      color: $text-tertiary;
+      font-family: $font-family-base;
+    }
+  }
+
+  .history-list {
+    height: 100%;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-md $spacing-base;
+    border-bottom: 1px solid $border-light;
+    transition: all $transition-fast $ease-out;
+
+    &:active {
+      background-color: $bg-gray-50;
+    }
+
+    .history-item-content {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+
+    .history-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(22, 119, 255, 0.08) 100%);
+      margin-right: $spacing-sm;
+    }
+
+    .history-info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+
+      .history-title {
+        font-size: $font-sm;
+        font-weight: $font-medium;
+        color: $text-primary;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-family: $font-family-base;
+      }
+
+      .history-id {
+        font-size: 12px;
+        color: $text-tertiary;
+        font-family: $font-family-base;
+      }
+    }
+
+    .history-actions {
+      display: flex;
+      align-items: center;
+      padding-left: $spacing-sm;
+    }
+  }
+}
+
+.new-chat-button {
+  margin: $spacing-base;
+  margin-bottom: $spacing-md;
+
+  .button-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(22, 119, 255, 0.08) 100%);
+    padding: $spacing-sm;
+    border-radius: $radius-sm;
+    transition: all $transition-base $ease-out;
+    box-shadow: $shadow-xs;
+    border: 1px solid rgba(16, 185, 129, 0.1);
+
+    &:active {
+      transform: scale(0.98);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(22, 119, 255, 0.12) 100%);
+    }
+  }
+
+  .new-chat-text {
+    font-size: $font-sm;
+    font-weight: $font-medium;
+    background: linear-gradient(135deg, #10b981, #1677FF);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    font-family: $font-family-base;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+</style>

@@ -1,100 +1,112 @@
-<!-- uniapp vue3 markdown解析 -->
+<!-- uniapp vue2 markdown解析 -->
 <template>
 <view class="ua__markdown"><rich-text space="nbsp" :nodes="parseNodes(source)" @itemclick="handleItemClick"></rich-text></view>
 </template>
 
-<script setup>
+<script>
 import MarkdownIt from './lib/markdown-it.min.js'
 import hljs from './lib/highlight/uni-highlight.min.js'
 import './lib/highlight/atom-one-dark.css'
 import parseHtml from './lib/html-parser.js'
 
-const props = defineProps({
-		// 解析内容
-	source: String,
-	  showLine: { type: [Boolean, String], default: true }
-	})
-	
-	let copyCodeData = []
- const markdown = MarkdownIt({
-		 html: true,
-	 highlight: function(str, lang) {
-		let preCode = ""
-		try {
-		preCode = hljs.highlightAuto(str).value
-		} catch (err) {
-		preCode = markdown.utils.escapeHtml(str);
+export default {
+		props: {
+		  source: String,
+			 showLine: { type: [Boolean, String], default: true }
+		},
+		data() {
+			return {
+				markdown: null,
+			  copyCodeData: [],
 			}
-		const lines = preCode.split(/\n/).slice(0, -1)
-		// 添加自定义行号
-	let html = lines.map((item, index) => {
-		if( item == ''){
-			return ''
-			}
-				return '<li><span class="line-num" data-line="' + (index + 1) + '"></span>' + item +'</li>'
-			}).join('')
-		if(props.showLine) {
-			html = '<ol style="padding: 0px 30px;">' + html + '</ol>'
-			}else {
-		html = '<ol style="padding: 0px 7px;list-style:none;">' + html + '</ol>'
-			}
-	copyCodeData.push(str)
-		let htmlCode = `<div class="markdown-wrap">`
-				// #ifndef MP-WEIXIN
-			htmlCode += `<div style="color: #aaa;text-align: right;font-size: 12px;padding:8px;">`
-					htmlCode += `${lang}<a class="copy-btn" code-data-index="${copyCodeData.length - 1}" style="margin-left: 8px;">复制代码</a>`
-					htmlCode += `</div>`
-				// #endif
-		htmlCode += `<pre class="hljs" style="padding:10px 8px 0;margin-bottom:5px;overflow: auto;display: block;border-radius: 5px;"><code>${html}</code></pre>`;
-			htmlCode += '</div>'
-	return htmlCode
-	}
-	})
-const parseNodes = (value) => {
-	 if(!value) return
-		 // 解析<br />到\n
-	  value = value.replace(/<br>|<br\/>|<br \/>/g, "\n")
-	value = value.replace(/&nbsp;/g, " ")
-		 let htmlString = ''
-	if (value.split("```").length % 2) {
-		let mdtext = value
-		if(mdtext[mdtext.length-1] != '\n'){
-		mdtext += '\n'
-			}
-	  htmlString = markdown.render(mdtext)
-		} else {
-		htmlString = markdown.render(value)
-		}
-		// 解决小程序表格边框型失效问题
-htmlString = htmlString.replace(/<table/g, `<table class="table"`)
-		htmlString = htmlString.replace(/<tr/g, `<tr class="tr"`)
-	htmlString = htmlString.replace(/<th>/g, `<th class="th">`)
-htmlString = htmlString.replace(/<td/g, `<td class="td"`)
-	htmlString = htmlString.replace(/<hr>|<hr\/>|<hr \/>/g, `<hr class="hr">`)
-
-		// #ifndef APP-NVUE
-		return htmlString
-		// #endif
-		
-		// 将htmlString转成htmlArray，反之使用rich-text解析
-		// #ifdef APP-NVUE
-	return parseHtml(htmlString)
-		// #endif
-	}
-	
-// 复制代码
-const handleItemClick = (e) => {
-	let {attrs} = e.detail.node
-let {"code-data-index":codeDataIndex,"class":className} = attrs
-	if(className == 'copy-btn'){
-	uni.setClipboardData({
-		data: copyCodeData[codeDataIndex],showToast: false,
-		success() {
-			uni.showToast({
-				title: '复制成功',icon: 'none'
-				});
+		},
+		mounted() {
+			let that = this
+			let tempData = []
+		 this.markdown = MarkdownIt({
+					 html: true,
+				highlight: function(str, lang) {
+				let preCode = ""
+					try {
+				preCode = hljs.highlightAuto(str).value
+					} catch (err) {
+					preCode = that.markdown.utils.escapeHtml(str);
+						}
+					const lines = preCode.split(/\n/).slice(0, -1)
+					// 添加自定义行号
+				let html = lines.map((item, index) => {
+					if( item == ''){
+						return ''
+						}
+							return '<li><span class="line-num" data-line="' + (index + 1) + '"></span>' + item +'</li>'
+						}).join('')
+				if(that.showLine) {
+						html = '<ol style="padding: 0px 30px;">' + html + '</ol>'
+						}else {
+					html = '<ol style="padding: 0px 7px;list-style:none;">' + html + '</ol>'
+						}
+				
+			tempData.push(str)
+				that.copyCodeData = tempData
+					let htmlCode = `<div class="markdown-wrap">`
+							// #ifndef MP-WEIXIN
+						htmlCode += `<div style="color: #aaa;text-align: right;font-size: 12px;padding:8px;">`
+								htmlCode += `${lang}<a class="copy-btn" code-data-index="${tempData.length - 1}" style="margin-left: 8px;">复制代码</a>`
+								htmlCode += `</div>`
+							// #endif
+					htmlCode += `<pre class="hljs" style="padding:10px 8px 0;margin-bottom:5px;overflow: auto;display: block;border-radius: 5px;"><code>${html}</code></pre>`;
+						htmlCode += '</div>'
+				return htmlCode
 				}
 			})
+		},
+		methods: {
+		   parseNodes(value) {
+				if(!value) return
+				if(!this.markdown) return
+						 // 解析<br />到\n
+					  value = value.replace(/<br>|<br\/>|<br \/>/g, "\n")
+					value = value.replace(/&nbsp;/g, " ")
+						 let htmlString = ''
+					if (value.split("```").length % 2) {
+						let mdtext = value
+						if(mdtext[mdtext.length-1] != '\n'){
+						mdtext += '\n'
+							}
+					  htmlString = this.markdown.render(mdtext)
+						} else {
+				htmlString = this.markdown.render(value)
+						}
+						// 解决小程序表格边框型失效问题
+				htmlString = htmlString.replace(/<table/g, `<table class="table"`)
+						htmlString = htmlString.replace(/<tr/g, `<tr class="tr"`)
+					htmlString = htmlString.replace(/<th>/g, `<th class="th">`)
+				htmlString = htmlString.replace(/<td/g, `<td class="td"`)
+					htmlString = htmlString.replace(/<hr>|<hr\/>|<hr \/>/g, `<hr class="hr">`)
+				
+						// #ifndef APP-NVUE
+						return htmlString
+						// #endif
+						
+						// 将htmlString转成htmlArray，反之使用rich-text解析
+						// #ifdef APP-NVUE
+					return parseHtml(htmlString)
+						// #endif
+			},
+			handleItemClick(e) {
+				let {attrs} = e.detail.node
+			let {"code-data-index":codeDataIndex,"class":className} = attrs
+				if(className == 'copy-btn'){
+				uni.setClipboardData({
+					data: this.copyCodeData[codeDataIndex],showToast: false,
+					success() {
+						uni.showToast({
+							title: '复制成功',icon: 'none'
+							});
+							}
+						})
+					}
+			}
 		}
 	}
 </script>
