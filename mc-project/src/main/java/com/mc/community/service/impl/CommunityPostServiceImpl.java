@@ -1,10 +1,14 @@
 package com.mc.community.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.mc.common.exception.ServiceException;
 import com.mc.common.utils.DateUtils;
 import com.mc.community.domain.CommunityPost;
 import com.mc.community.mapper.CommunityCommentMapper;
 import com.mc.community.mapper.CommunityPostMapper;
 import com.mc.community.service.ICommunityPostService;
+import com.mc.student.domain.Student;
+import com.mc.student.mapper.StudentInfoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +28,31 @@ public class CommunityPostServiceImpl implements ICommunityPostService {
 
     @Autowired
     private CommunityCommentMapper communityCommentMapper;
+
+    @Autowired
+    private StudentInfoMapper studentInfoMapper;
+
+    /**
+     * 通过userId获取studentId
+     *
+     * @param userId 用户ID
+     * @return 学生ID
+     */
+    private Long getStudentIdByUserId(Long userId) {
+        if (userId == null) {
+            throw new ServiceException("用户ID不能为空");
+        }
+
+        LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Student::getUserId, userId);
+        Student student = studentInfoMapper.selectOne(wrapper);
+
+        if (student == null) {
+            throw new ServiceException("学生信息不存在，请先完善学生档案");
+        }
+
+        return student.getStudentId();
+    }
 
     /**
      * 查询帖子管理
@@ -45,6 +74,21 @@ public class CommunityPostServiceImpl implements ICommunityPostService {
     @Override
     public List<CommunityPost> selectCommunityPostList(CommunityPost communityPost) {
         return communityPostMapper.selectCommunityPostList(communityPost);
+    }
+
+    /**
+     * 处理匿名显示逻辑（供APP端使用）
+     * 如果is_anonymous='1'(匿名)，则隐藏真实用户信息
+     *
+     * @param post 帖子对象
+     */
+    public void processAnonymousDisplay(CommunityPost post) {
+        if (post != null && "1".equals(post.getIsAnonymous())) {
+            // 匿名帖子：使用默认头像和匿名用户名
+            post.setUserName("匿名用户");
+            post.setUserAvatar("/profile/avatar/default.png"); // 默认头像路径
+            // 注意：userId和studentId保留在数据库中，但可以在VO中过滤掉
+        }
     }
 
     /**
@@ -96,7 +140,7 @@ public class CommunityPostServiceImpl implements ICommunityPostService {
     @Transactional
     public int deleteCommunityPostByPostId(Long postId) {
         // 先删除关联的评论
-        communityCommentMapper.deleteCommunityCommentByPostIds(new Long[]{postId});
+        communityCommentMapper.deleteCommunityCommentByPostIds(new Long[] { postId });
         // 再删除帖子
         return communityPostMapper.deleteCommunityPostByPostId(postId);
     }
@@ -161,5 +205,3 @@ public class CommunityPostServiceImpl implements ICommunityPostService {
         return false;
     }
 }
-
-

@@ -41,9 +41,25 @@ public class CommunityCommentServiceImpl implements ICommunityCommentService {
     @Override
     public List<CommunityComment> selectCommentTreeByPostId(Long postId) {
         List<CommunityComment> allComments = communityCommentMapper.selectCommunityCommentListByPostId(postId);
+        
         // 由于当前数据表没有parent_id字段，这里返回平铺列表
         // 如果以后扩展了parent_id字段，可以构建树形结构
         return allComments;
+    }
+
+    /**
+     * 处理匿名显示逻辑（供APP端使用）
+     * 如果is_anonymous='1'(匿名)，则隐藏真实用户信息
+     *
+     * @param comment 评论对象
+     */
+    public void processAnonymousDisplay(CommunityComment comment) {
+        if (comment != null && "1".equals(comment.getIsAnonymous())) {
+            // 匿名评论：使用默认头像和匿名用户名
+            comment.setUserName("匿名用户");
+            comment.setUserAvatar("/profile/avatar/default.png"); // 默认头像路径
+            // 注意：userId和studentId保留在数据库中，但可以在VO中过滤掉
+        }
     }
 
     /**

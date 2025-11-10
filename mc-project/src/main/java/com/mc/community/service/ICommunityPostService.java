@@ -92,6 +92,12 @@ public interface ICommunityPostService {
      * @return 结果
      */
     public boolean unlikePost(Long postId, Long userId);
+
+    /**
+     * 处理匿名显示逻辑（供APP端使用）
+     * 如果is_anonymous='1'(匿名)，则隐藏真实用户信息
+     *
+     * @param post 帖子对象
+     */
+    public void processAnonymousDisplay(CommunityPost post);
 }
-
-

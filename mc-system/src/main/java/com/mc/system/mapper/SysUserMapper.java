@@ -1,17 +1,17 @@
 package com.mc.system.mapper;
 
+import com.mc.common.core.domain.entity.SysUser;
+import org.apache.ibatis.annotations.Param;
+
 import java.util.Date;
 import java.util.List;
-import org.apache.ibatis.annotations.Param;
-import com.mc.common.core.domain.entity.SysUser;
 
 /**
  * 用户表 数据层
  * 
  * @author caidu
  */
-public interface SysUserMapper
-{
+public interface SysUserMapper {
     /**
      * 根据条件分页查询用户列表
      * 

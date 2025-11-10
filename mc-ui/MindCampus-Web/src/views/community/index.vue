@@ -46,7 +46,13 @@
     <el-table v-loading="loading" :data="postList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="帖子ID" align="center" prop="postId" width="80" />
+      <el-table-column label="用户头像" align="center" width="80">
+        <template #default="scope">
+          <el-avatar :size="40" :src="getAvatarUrl(scope.row)" icon="UserFilled" />
+        </template>
+      </el-table-column>
       <el-table-column label="学生姓名" align="center" prop="studentName" width="100" />
+      <el-table-column label="帖子标题" align="center" prop="title" :show-overflow-tooltip="true" min-width="150" />
       <el-table-column label="帖子内容" align="center" prop="content" :show-overflow-tooltip="true" min-width="200" />
       <el-table-column label="是否匿名" align="center" prop="isAnonymous" width="100">
         <template #default="scope">
@@ -83,13 +89,18 @@
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
       <el-form ref="postRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生" prop="studentId">
-          <el-select v-model="form.studentId" placeholder="请选择学生" clearable filterable style="width: 100%">
+          <el-select v-model="form.studentId" placeholder="请选择学生" clearable filterable style="width: 100%"
+            @change="handleStudentChange">
             <el-option v-for="student in studentList" :key="student.studentId"
               :label="`${student.name} (${student.studentNo})`" :value="student.studentId" />
           </el-select>
         </el-form-item>
+        <el-form-item label="帖子标题" prop="title">
+          <el-input v-model="form.title" placeholder="请输入帖子标题" maxlength="100" show-word-limit />
+        </el-form-item>
         <el-form-item label="帖子内容" prop="content">
-          <el-input v-model="form.content" type="textarea" :rows="5" placeholder="请输入帖子内容" />
+          <el-input v-model="form.content" type="textarea" :rows="5" placeholder="请输入帖子内容" maxlength="2000"
+            show-word-limit />
         </el-form-item>
         <el-form-item label="是否匿名" prop="isAnonymous">
           <el-radio-group v-model="form.isAnonymous">
@@ -131,32 +142,54 @@
         <el-descriptions-item label="发布时间" :span="2">{{ parseTime(postDetail.createTime) }}</el-descriptions-item>
       </el-descriptions>
 
-      <el-divider content-position="left">评论列表</el-divider>
+      <el-divider content-position="left">评论列表 ({{ commentList.length }})</el-divider>
 
-      <div v-if="commentList.length === 0" style="text-align: center; padding: 20px; color: #999;">
-        暂无评论
+      <div v-if="commentList.length === 0" style="text-align: center; padding: 40px; color: #999;">
+        <el-empty description="暂无评论" :image-size="80" />
       </div>
 
-      <el-tree v-else :data="commentTreeData" node-key="commentId" default-expand-all :expand-on-click-node="false"
-        style="margin-top: 15px;">
-        <template #default="{ node, data }">
-          <div style="flex: 1; display: flex; align-items: center; padding: 10px 0;">
+      <div v-else style="margin-top: 15px;">
+        <el-card v-for="comment in commentList" :key="comment.commentId" shadow="hover"
+          style="margin-bottom: 15px; cursor: default;">
+          <div style="display: flex; gap: 15px;">
+            <!-- 用户头像 -->
+            <el-avatar :size="50" :src="getCommentAvatarUrl(comment)" icon="UserFilled" />
+
+            <!-- 评论内容 -->
             <div style="flex: 1;">
-              <div style="margin-bottom: 5px;">
-                <el-tag size="small" type="info">{{ data.studentName || '匿名用户' }}</el-tag>
-                <dict-tag :options="comment_is_anonymous" :value="data.isAnonymous" style="margin-left: 10px;" />
-                <dict-tag :options="comment_status" :value="data.status" style="margin-left: 5px;" />
-                <span style="margin-left: 10px; font-size: 12px; color: #999;">
-                  {{ parseTime(data.createTime) }}
-                </span>
+              <!-- 用户信息行 -->
+              <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+                <span style="font-weight: 600; color: #303133;">{{ comment.userName || '匿名用户' }}</span>
+                <el-tag size="small" v-if="comment.studentName" type="info">{{ comment.studentName }}</el-tag>
+                <dict-tag :options="comment_is_anonymous" :value="comment.isAnonymous" />
+                <dict-tag :options="comment_status" :value="comment.status" />
               </div>
-              <div style="color: #606266; white-space: pre-wrap; word-break: break-all;">
-                {{ data.content }}
+
+              <!-- 评论内容 -->
+              <div
+                style="color: #606266; line-height: 1.6; margin-bottom: 8px; white-space: pre-wrap; word-break: break-all;">
+                {{ comment.content }}
+              </div>
+
+              <!-- 时间和点赞 -->
+              <div style="display: flex; align-items: center; gap: 15px; font-size: 13px; color: #909399;">
+                <span>
+                  <el-icon>
+                    <Clock />
+                  </el-icon>
+                  {{ parseTime(comment.createTime) }}
+                </span>
+                <span v-if="comment.likeCount > 0">
+                  <el-icon>
+                    <Star />
+                  </el-icon>
+                  {{ comment.likeCount }} 点赞
+                </span>
               </div>
             </div>
           </div>
-        </template>
-      </el-tree>
+        </el-card>
+      </div>
 
       <template #footer>
         <div class="dialog-footer">
@@ -208,6 +241,9 @@ const data = reactive({
     studentId: [
       { required: true, message: "学生ID不能为空", trigger: "blur" }
     ],
+    title: [
+      { required: true, message: "帖子标题不能为空", trigger: "blur" }
+    ],
     content: [
       { required: true, message: "帖子内容不能为空", trigger: "blur" }
     ],
@@ -250,6 +286,10 @@ function reset() {
   form.value = {
     postId: null,
     studentId: null,
+    userId: null,
+    userName: null,
+    userAvatar: null,
+    title: null,
     content: null,
     isAnonymous: "1",
     status: "0",
@@ -353,6 +393,34 @@ function handleExport() {
   proxy.download('community/post/export', {
     ...queryParams.value
   }, `post_${new Date().getTime()}.xlsx`)
+}
+
+/** 学生选择变化 - 用户信息由后端自动填充 */
+function handleStudentChange(studentId) {
+  // 注意：用户信息（userId, userName, userAvatar）
+  // 将在后端提交时自动根据studentId填充，前端无需处理
+}
+
+/** 获取头像URL */
+function getAvatarUrl(row) {
+  if (!row.userAvatar || row.userAvatar.trim() === '') {
+    return ''
+  }
+  if (row.userAvatar.startsWith('http')) {
+    return row.userAvatar
+  }
+  return import.meta.env.VITE_APP_BASE_API + row.userAvatar
+}
+
+/** 获取评论头像URL */
+function getCommentAvatarUrl(comment) {
+  if (!comment.userAvatar || comment.userAvatar.trim() === '') {
+    return ''
+  }
+  if (comment.userAvatar.startsWith('http')) {
+    return comment.userAvatar
+  }
+  return import.meta.env.VITE_APP_BASE_API + comment.userAvatar
 }
 
 getList()

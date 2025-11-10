@@ -3,12 +3,16 @@ package com.mc.community.controller;
 import com.mc.common.annotation.Log;
 import com.mc.common.core.controller.BaseController;
 import com.mc.common.core.domain.AjaxResult;
+import com.mc.common.core.domain.entity.SysUser;
 import com.mc.common.core.page.TableDataInfo;
 import com.mc.common.enums.BusinessType;
 import com.mc.common.utils.poi.ExcelUtil;
 import com.mc.community.domain.CommunityPost;
 import com.mc.community.service.ICommunityCommentService;
 import com.mc.community.service.ICommunityPostService;
+import com.mc.student.domain.Student;
+import com.mc.student.mapper.StudentInfoMapper;
+import com.mc.system.mapper.SysUserMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,6 +33,12 @@ public class CommunityPostController extends BaseController {
 
     @Autowired
     private ICommunityCommentService communityCommentService;
+
+    @Autowired
+    private StudentInfoMapper studentInfoMapper;
+
+    @Autowired
+    private SysUserMapper sysUserMapper;
 
     /**
      * 查询帖子管理列表
@@ -73,6 +83,8 @@ public class CommunityPostController extends BaseController {
     @Log(title = "帖子管理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody CommunityPost communityPost) {
+        // 补充用户信息
+        fillUserInfo(communityPost);
         return toAjax(communityPostService.insertCommunityPost(communityPost));
     }
 
@@ -83,7 +95,36 @@ public class CommunityPostController extends BaseController {
     @Log(title = "帖子管理", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody CommunityPost communityPost) {
+        // 补充用户信息
+        fillUserInfo(communityPost);
         return toAjax(communityPostService.updateCommunityPost(communityPost));
+    }
+
+    /**
+     * 根据studentId填充用户信息
+     * 
+     * @param communityPost 帖子对象
+     */
+    private void fillUserInfo(CommunityPost communityPost) {
+        if (communityPost.getStudentId() != null) {
+            // 查询学生信息获取userId
+            Student student = studentInfoMapper.selectStudentInfoByStudentId(communityPost.getStudentId());
+            if (student != null && student.getUserId() != null) {
+                // 查询用户完整信息
+                SysUser sysUser = sysUserMapper.selectUserById(student.getUserId());
+                if (sysUser != null) {
+                    communityPost.setUserId(sysUser.getUserId());
+                    communityPost.setUserName(sysUser.getNickName());
+                    
+                    // 设置用户头像，如果为空则使用默认头像
+                    String avatar = sysUser.getAvatar();
+                    if (avatar == null || avatar.trim().isEmpty()) {
+                        avatar = "/profile/avatar/default.png";
+                    }
+                    communityPost.setUserAvatar(avatar);
+                }
+            }
+        }
     }
 
     /**

@@ -14,7 +14,8 @@
           <!-- 用户信息头部 -->
           <view class="post-header">
             <view class="user-info">
-              <image v-if="item.userAvatar" class="user-avatar" :src="getImageUrl(item.userAvatar)" mode="aspectFill">
+              <image v-if="item.userAvatar && item.userAvatar.trim()" class="user-avatar"
+                :src="getImageUrl(item.userAvatar)" mode="aspectFill" @error="handleImageError">
               </image>
               <view v-else class="user-avatar-placeholder">
                 <uni-icons type="person-filled" size="16" color="#FFFFFF"></uni-icons>
@@ -33,10 +34,36 @@
 
           <!-- 帖子图片（如果有） -->
           <view v-if="item.images && item.images.length > 0" class="post-images">
-            <image v-if="item.images.length === 1" class="post-image single" :src="getImageUrl(item.images[0])"
-              mode="aspectFill" @tap.stop="previewImage(item.images, 0)">
-            </image>
-            <view v-else class="image-grid" :class="'grid-' + Math.min(item.images.length, 3)">
+            <!-- 1张图片：大图展示 -->
+            <view v-if="item.images.length === 1" class="images-layout-1">
+              <image class="post-image" :src="getImageUrl(item.images[0])" mode="aspectFill"
+                @tap.stop="previewImage(item.images, 0)">
+              </image>
+            </view>
+
+            <!-- 2张图片：横向2列 -->
+            <view v-else-if="item.images.length === 2" class="images-layout-2">
+              <image v-for="(img, index) in item.images" :key="index" class="post-image" :src="getImageUrl(img)"
+                mode="aspectFill" @tap.stop="previewImage(item.images, index)">
+              </image>
+            </view>
+
+            <!-- 3张图片：横向3列 -->
+            <view v-else-if="item.images.length === 3" class="images-layout-3">
+              <image v-for="(img, index) in item.images" :key="index" class="post-image" :src="getImageUrl(img)"
+                mode="aspectFill" @tap.stop="previewImage(item.images, index)">
+              </image>
+            </view>
+
+            <!-- 4张图片：2x2网格 -->
+            <view v-else-if="item.images.length === 4" class="images-layout-4">
+              <image v-for="(img, index) in item.images" :key="index" class="post-image" :src="getImageUrl(img)"
+                mode="aspectFill" @tap.stop="previewImage(item.images, index)">
+              </image>
+            </view>
+
+            <!-- 5-9张图片：3列网格 -->
+            <view v-else class="images-layout-grid">
               <image v-for="(img, index) in item.images.slice(0, 9)" :key="index" class="post-image"
                 :src="getImageUrl(img)" mode="aspectFill" @tap.stop="previewImage(item.images, index)">
               </image>
@@ -133,7 +160,17 @@ export default {
         this.refreshing = false
 
         if (res.code === 200) {
-          const newList = res.rows || []
+          let newList = res.rows || []
+
+          // 处理图片字段：将逗号分隔的字符串转换为数组
+          newList = newList.map(post => {
+            if (post.images && typeof post.images === 'string') {
+              post.images = post.images.split(',').filter(img => img.trim())
+            } else if (!post.images) {
+              post.images = []
+            }
+            return post
+          })
 
           if (reset) {
             this.postList = newList
@@ -265,6 +302,11 @@ export default {
       return count.toString()
     },
 
+    // 图片加载失败处理
+    handleImageError(e) {
+      console.error('头像加载失败:', e)
+    },
+
     // 获取图片完整URL
     getImageUrl(url) {
       if (!url) return ''
@@ -295,14 +337,14 @@ export default {
   justify-content: center;
   width: 88rpx;
   height: 88rpx;
-  background: linear-gradient(135deg, #FF6B9D 0%, #FFA5C0 100%);
+  background: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 50%, #fda4af 100%);
   border-radius: 50%;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 157, 0.4);
+  box-shadow: 0 8rpx 24rpx rgba(167, 139, 250, 0.4);
   transition: all $transition-base $ease-out;
 
   &:active {
     transform: scale(0.9);
-    box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.3);
+    box-shadow: 0 4rpx 16rpx rgba(167, 139, 250, 0.3);
   }
 }
 
@@ -403,39 +445,70 @@ export default {
   margin-bottom: $spacing-md;
 }
 
-.post-image.single {
-  width: 100%;
-  max-height: 500rpx;
-  border-radius: $radius-base;
-  background: $bg-gray-100;
+/* 1张图片 - 大图展示 */
+.images-layout-1 {
+  .post-image {
+    width: 100%;
+    max-height: 500rpx;
+    border-radius: $radius-base;
+    background: $bg-gray-100;
+  }
 }
 
-.image-grid {
+/* 2张图片 - 横向2列 */
+.images-layout-2 {
   display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: $spacing-xs;
 
-  &.grid-2 {
-    grid-template-columns: repeat(2, 1fr);
-
-    .post-image {
-      width: 100%;
-      height: 200rpx;
-    }
-  }
-
-  &.grid-3 {
-    grid-template-columns: repeat(3, 1fr);
-
-    .post-image {
-      width: 100%;
-      height: 160rpx;
-    }
+  .post-image {
+    width: 100%;
+    height: 220rpx;
+    border-radius: $radius-sm;
+    background: $bg-gray-100;
   }
 }
 
-.image-grid .post-image {
-  border-radius: $radius-sm;
-  background: $bg-gray-100;
+/* 3张图片 - 横向3列 */
+.images-layout-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-xs;
+
+  .post-image {
+    width: 100%;
+    height: 180rpx;
+    border-radius: $radius-sm;
+    background: $bg-gray-100;
+  }
+}
+
+/* 4张图片 - 2x2网格 */
+.images-layout-4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-xs;
+
+  .post-image {
+    width: 100%;
+    height: 220rpx;
+    border-radius: $radius-sm;
+    background: $bg-gray-100;
+  }
+}
+
+/* 5-9张图片 - 3列网格 */
+.images-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-xs;
+
+  .post-image {
+    width: 100%;
+    height: 180rpx;
+    border-radius: $radius-sm;
+    background: $bg-gray-100;
+  }
 }
 
 /* 帖子底部 - 操作栏 */
