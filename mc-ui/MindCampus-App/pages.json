@@ -24,7 +24,18 @@
     "path": "pages/ai/chat",
     "style": {
       "navigationBarTitleText": "AI 助手",
-      "navigationStyle": "custom"
+      "navigationBarBackgroundColor": "#FFFFFF",
+      "navigationBarTextStyle": "black",
+      "app-plus": {
+        "titleNView": {
+          "buttons": [{
+            "text": "\ue696",
+            "fontSrc": "/static/font/iconfont.ttf",
+            "fontSize": "22px",
+            "color": "#333333"
+          }]
+        }
+      }
     }
   }, {
     "path": "pages/mine/index",

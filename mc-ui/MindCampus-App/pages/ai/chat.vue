@@ -1,17 +1,12 @@
 <template>
   <view class="ai-chat-container">
-    <!-- 使用新的导航栏结构 -->
-    <custom-nav-bar :showSearchBtn="false">
-      <template #title>
-        <view class="nav-title">
-          <uni-icons type="back" size="24" color="#10b981" @click="goBack"></uni-icons>
-          <text class="title-text">AI 助手</text>
-          <view class="setting-btn" @click="toggleHistoryDrawer">
-            <uni-icons type="bars" size="22" color="#333"></uni-icons>
-          </view>
-        </view>
-      </template>
-    </custom-nav-bar>
+    <!-- 浮动历史记录按钮 -->
+    <view class="floating-history-btn" @click="toggleHistoryDrawer">
+      <view class="btn-content">
+        <uni-icons type="list" size="24" color="#fff"></uni-icons>
+      </view>
+      <view class="btn-glow"></view>
+    </view>
 
     <!-- 聊天区域 -->
     <scroll-view class="chat-area" scroll-y :scroll-top="scrollTop" :scroll-with-animation="true"
@@ -33,8 +28,12 @@
                 <text class="message-time">{{ formatTime(msg.timestamp) }}</text>
               </view>
               <view class="message-body">
-                <text v-if="msg.content">{{ msg.content }}</text>
-                <view v-if="msg.role === 'assistant' && msg.content === ''" class="typing-indicator">
+                <!-- AI消息使用markdown解析 -->
+                <ua-markdown v-if="msg.role === 'assistant' && msg.content" :source="msg.content" :showLine="false" />
+                <!-- 用户消息直接显示文本 -->
+                <text v-else-if="msg.role === 'user' && msg.content">{{ msg.content }}</text>
+                <!-- AI正在输入的动画 -->
+                <view v-else-if="msg.role === 'assistant' && msg.content === ''" class="typing-indicator">
                   <view class="dot"></view>
                   <view class="dot"></view>
                   <view class="dot"></view>
@@ -111,7 +110,7 @@
         <!-- 新增：新建对话按钮 -->
         <view class="new-chat-button" @click="createNewChat">
           <view class="button-content">
-            <uni-icons type="refresh" size="18" color="#10b981"></uni-icons>
+            <uni-icons type="refresh" size="20" color="#fff"></uni-icons>
             <text class="new-chat-text">开启新对话</text>
           </view>
         </view>
@@ -155,8 +154,12 @@
 <script>
 import {deleteChat, getChatHistory, getChatMessages, renameChat, sendChatMessage} from '@/api/chat.js';
 import {adjustHeight, formatTime, generateUUID, goBack, onInputBlur, onInputFocus, scrollToBottom} from './ai.js';
+import UaMarkdown from '@/components/ua2-markdown/ua-markdown.vue';
 
 export default {
+  components: {
+    UaMarkdown
+  },
   data() {
     return {
       // 基础配置
@@ -200,6 +203,11 @@ export default {
   },
 
   onLoad() {
+    // 设置导航栏
+    uni.setNavigationBarTitle({
+      title: 'AI 助手'
+    });
+
     const systemInfo = uni.getSystemInfoSync();
     this.safeAreaBottom = systemInfo.safeAreaInsets?.bottom || 34;
 
@@ -209,12 +217,16 @@ export default {
       this.scrollToBottom();
     });
 
-    this.$nextTick(() => {
-      this.scrollToBottom();
-    });
-
-    // 添加一条欢迎消息
+    // 添加一条欢迎消息（不自动滚动到底部）
     this.addWelcomeMessage();
+  },
+
+  // 右上角按钮
+  onNavigationBarButtonTap(e) {
+    if (e.index === 0) {
+      // 点击历史记录按钮
+      this.toggleHistoryDrawer();
+    }
   },
 
   onUnload() {
@@ -631,48 +643,14 @@ export default {
   overflow: hidden;
 }
 
-/* 自定义标题栏样式 */
-.nav-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 8rpx;
-
-  .title-text {
-    font-size: $font-lg;
-    font-weight: $font-bold;
-    background: linear-gradient(135deg, #10b981, #1677FF);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    flex: 1;
-    text-align: left;
-    font-family: $font-family-base;
-  }
-
-  .setting-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: $radius-sm;
-    transition: all $transition-fast $ease-out;
-
-    &:active {
-      transform: scale(0.95);
-      background-color: rgba(0, 0, 0, 0.05);
-    }
-  }
-}
-
 /* 聊天区域样式 */
 .chat-area {
   flex: 1;
   width: 100%;
   overflow-y: auto;
   padding-top: $spacing-sm;
+  padding-bottom: 0;
+  min-height: 0;
 
   .loading-more {
     display: flex;
@@ -780,6 +758,134 @@ export default {
     border-top-left-radius: 4px;
     box-shadow: $shadow-xs;
     font-family: $font-family-base;
+
+    // Markdown 样式优化
+    :deep(.ua__markdown) {
+      font-size: $font-sm;
+      line-height: $line-height-normal;
+      color: $text-primary;
+      word-wrap: break-word;
+
+      // 代码块样式
+      pre {
+        background: #f6f8fa;
+        border-radius: $radius-sm;
+        padding: $spacing-sm;
+        margin: $spacing-xs 0;
+        overflow-x: auto;
+
+        code {
+          font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+      }
+
+      // 行内代码样式
+      code {
+        background: rgba(0, 0, 0, 0.05);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 13px;
+      }
+
+      // 段落样式
+      p {
+        margin: $spacing-xs 0;
+
+        &:first-child {
+          margin-top: 0;
+        }
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+
+      // 列表样式
+      ul,
+      ol {
+        margin: $spacing-xs 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 4px 0;
+      }
+
+      // 标题样式
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        margin: $spacing-md 0 $spacing-xs;
+        font-weight: $font-semibold;
+
+        &:first-child {
+          margin-top: 0;
+        }
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      h2 {
+        font-size: 18px;
+      }
+
+      h3 {
+        font-size: 16px;
+      }
+
+      h4 {
+        font-size: 15px;
+      }
+
+      // 引用样式
+      blockquote {
+        border-left: 3px solid $border-base;
+        padding-left: $spacing-sm;
+        margin: $spacing-xs 0;
+        color: $text-secondary;
+      }
+
+      // 表格样式
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: $spacing-xs 0;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        border: 1px solid $border-base;
+        padding: 6px 8px;
+        text-align: left;
+      }
+
+      th {
+        background: $bg-gray-50;
+        font-weight: $font-semibold;
+      }
+
+      // 链接样式
+      a {
+        color: $primary-color;
+        text-decoration: none;
+      }
+
+      // 分割线
+      hr {
+        border: none;
+        border-top: 1px solid $border-base;
+        margin: $spacing-md 0;
+      }
+    }
   }
 
   .typing-indicator {
@@ -878,19 +984,24 @@ export default {
     }
   }
 
-  .bottom-space {
-    height: 20px;
-  }
+  // .bottom-space {
+  //   height: 50px;
+  // }
 }
 
 /* 输入区域样式 */
 .input-area {
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  right: 0;
   width: 100%;
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: $backdrop-blur;
   border-top: 1px solid $border-light;
   padding: $spacing-xs $spacing-sm;
   box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+  z-index: 100;
 
   .attachment-preview {
     max-height: 120px;
@@ -982,17 +1093,61 @@ export default {
   }
 
   .upload-btn {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(22, 119, 255, 0.08) 100%);
+    background: linear-gradient(135deg, rgba(110, 231, 183, 0.15) 0%, rgba(167, 139, 250, 0.15) 100%);
     margin-right: $spacing-xs;
+    border: 1px solid rgba(110, 231, 183, 0.2);
+    transition: all $transition-base $ease-out;
+
+    &:active {
+      background: linear-gradient(135deg, rgba(110, 231, 183, 0.25) 0%, rgba(167, 139, 250, 0.25) 100%);
+      transform: scale(0.95);
+    }
   }
 
   .send-btn {
     margin-left: $spacing-xs;
     background-color: $bg-gray-200;
+    position: relative;
+    overflow: hidden;
 
     &.active {
-      background: linear-gradient(135deg, $accent-color 0%, $primary-color 100%);
-      box-shadow: $shadow-sm;
+      background: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 50%, #fda4af 100%);
+      box-shadow: 0 4rpx 16rpx rgba(110, 231, 183, 0.4);
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    &.active::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+      transform: translate(-50%, -50%);
+      animation: rotate-glow 3s linear infinite;
+    }
+  }
+
+  @keyframes pulse-glow {
+
+    0%,
+    100% {
+      box-shadow: 0 4rpx 16rpx rgba(110, 231, 183, 0.4);
+    }
+
+    50% {
+      box-shadow: 0 6rpx 20rpx rgba(167, 139, 250, 0.5);
+    }
+  }
+
+  @keyframes rotate-glow {
+    0% {
+      transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    }
+
+    100% {
+      transform: translate(-50%, -50%) rotate(360deg) scale(1.2);
     }
   }
 
@@ -1053,27 +1208,51 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: $spacing-base;
-    border-bottom: 1px solid $border-light;
+    padding: $spacing-lg $spacing-base;
+    background: linear-gradient(135deg, rgba(110, 231, 183, 0.08) 0%, rgba(167, 139, 250, 0.08) 100%);
+    border-bottom: 1px solid rgba(167, 139, 250, 0.15);
+    position: relative;
+    overflow: hidden;
+
+    // 装饰性渐变
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 150rpx;
+      height: 150rpx;
+      background: radial-gradient(circle, rgba(167, 139, 250, 0.15) 0%, transparent 70%);
+      border-radius: $radius-full;
+    }
 
     .drawer-title {
       font-size: $font-lg;
-      font-weight: $font-semibold;
-      color: $text-primary;
+      font-weight: $font-bold;
+      background: linear-gradient(135deg, #6ee7b7, #a78bfa);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
       font-family: $font-family-base;
+      position: relative;
+      z-index: 1;
     }
 
     .drawer-close {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: $radius-sm;
+      width: 36px;
+      height: 36px;
+      border-radius: $radius-full;
+      background: linear-gradient(135deg, rgba(110, 231, 183, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
       transition: all $transition-fast $ease-out;
+      position: relative;
+      z-index: 1;
 
       &:active {
-        background-color: rgba(0, 0, 0, 0.05);
+        background: linear-gradient(135deg, rgba(110, 231, 183, 0.2) 0%, rgba(167, 139, 250, 0.2) 100%);
+        transform: scale(0.95);
       }
     }
   }
@@ -1187,28 +1366,62 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(22, 119, 255, 0.08) 100%);
-    padding: $spacing-sm;
-    border-radius: $radius-sm;
+    gap: 8px;
+    background: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 50%, #fda4af 100%);
+    padding: $spacing-md $spacing-lg;
+    border-radius: $radius-xl;
     transition: all $transition-base $ease-out;
-    box-shadow: $shadow-xs;
-    border: 1px solid rgba(16, 185, 129, 0.1);
+    box-shadow: 0 4rpx 16rpx rgba(110, 231, 183, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+
+    // 装饰性光晕
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+      animation: float-glow 4s ease-in-out infinite;
+    }
 
     &:active {
-      transform: scale(0.98);
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(22, 119, 255, 0.12) 100%);
+      transform: scale(0.97);
+      box-shadow: 0 2rpx 12rpx rgba(110, 231, 183, 0.4);
     }
   }
 
   .new-chat-text {
-    font-size: $font-sm;
-    font-weight: $font-medium;
-    background: linear-gradient(135deg, #10b981, #1677FF);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
+    font-size: $font-base;
+    font-weight: $font-semibold;
+    color: $bg-white;
     font-family: $font-family-base;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+  }
+
+  uni-icons {
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 2rpx 4rpx rgba(0, 0, 0, 0.1));
+  }
+}
+
+@keyframes float-glow {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: translate(-20rpx, -20rpx) scale(1.1);
+    opacity: 0.8;
   }
 }
 
@@ -1219,6 +1432,62 @@ export default {
 
   to {
     opacity: 1;
+  }
+}
+
+/* 浮动历史记录按钮 */
+.floating-history-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 80rpx);
+  right: $spacing-lg;
+  width: 56px;
+  height: 56px;
+  z-index: 500;
+
+  .btn-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 50%, #fda4af 100%);
+    border-radius: $radius-full;
+    box-shadow: 0 6rpx 20rpx rgba(110, 231, 183, 0.4);
+    transition: all $transition-base $ease-out;
+    z-index: 2;
+
+    &:active {
+      transform: scale(0.95);
+      box-shadow: 0 4rpx 16rpx rgba(167, 139, 250, 0.5);
+    }
+  }
+
+  .btn-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: $radius-full;
+    background: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 50%, #fda4af 100%);
+    opacity: 0.6;
+    animation: pulse-btn 2s ease-in-out infinite;
+    z-index: 1;
+  }
+}
+
+@keyframes pulse-btn {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 0.3;
   }
 }
 </style>
