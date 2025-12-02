@@ -45,6 +45,7 @@ public class AiChatController {
     public Flux<ServerSentEvent<String>> generate(
             @RequestParam(value = "message", required = true) String message,
             @RequestParam(value = "sessionId", required = false) Long sessionId,
+            @RequestParam(value = "token", required = false) String token,
             HttpServletResponse response) {
 
         // 验证用户登录
