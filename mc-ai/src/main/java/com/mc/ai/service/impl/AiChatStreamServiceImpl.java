@@ -40,6 +40,9 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
 
     // 存储每个会话的流式状态标识
     private final ConcurrentHashMap<String, AtomicBoolean> streamingStates = new ConcurrentHashMap<>();
+    
+    // 存储每个会话是否已保存AI消息的标识（防止重复保存）
+    private final ConcurrentHashMap<String, AtomicBoolean> messageSavedFlags = new ConcurrentHashMap<>();
 
     private static final String SYSTEM_PROMPT = STUDENT_WELL_BEING_PROMPT;
 
@@ -94,6 +97,10 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
         // 为当前会话创建流式状态标识
         AtomicBoolean isStreaming = streamingStates.computeIfAbsent(chatId, k -> new AtomicBoolean(true));
         isStreaming.set(true);
+        
+        // 重置消息保存标识（开始新的流式对话）
+        AtomicBoolean messageSaved = messageSavedFlags.computeIfAbsent(chatId, k -> new AtomicBoolean(false));
+        messageSaved.set(false);
 
         // 用于累积AI回复内容
         StringBuilder aiResponse = new StringBuilder();
@@ -125,18 +132,26 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
      * 处理流式响应完成
      */
     private void handleStreamComplete(Long sessionId, Long userId, String userMessage, String aiResponse, String chatId) {
-        // 保存AI回复消息
-        if (aiResponse.length() > 0) {
-            chatMessageService.saveMessage(sessionId, userId, 0, aiResponse);
-        }
+        // 使用CAS确保只保存一次AI消息（防止与doOnCancel重复）
+        AtomicBoolean messageSaved = messageSavedFlags.get(chatId);
+        if (messageSaved != null && messageSaved.compareAndSet(false, true)) {
+            // 保存AI回复消息
+            if (aiResponse.length() > 0) {
+                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse);
+                log.info("流式对话完成，已保存AI消息 [sessionId: {}, 长度: {}]", sessionId, aiResponse.length());
+            }
 
-        // 如果是会话的第一次对话，生成会话标题
-        List<AiChatMessage> sessionMessages = chatMessageService.getSessionMessages(sessionId);
-        if (sessionMessages.size() == 2) {
-            generateSessionTitleAsync(sessionId, userMessage, aiResponse);
+            // 如果是会话的第一次对话，生成会话标题
+            List<AiChatMessage> sessionMessages = chatMessageService.getSessionMessages(sessionId);
+            if (sessionMessages.size() == 2) {
+                generateSessionTitleAsync(sessionId, userMessage, aiResponse);
+            }
+        } else {
+            log.info("流式对话完成，但消息已被保存，跳过 [sessionId: {}]", sessionId);
         }
 
         streamingStates.remove(chatId);
+        messageSavedFlags.remove(chatId);
         log.info("流式对话完成 [用户ID: {}, 会话ID: {}]", userId, sessionId);
     }
 
@@ -144,11 +159,20 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
      * 处理流式响应取消
      */
     private void handleStreamCancel(Long sessionId, Long userId, String aiResponse, String chatId) {
-        // 即使取消也保存部分回复
-        if (aiResponse.length() > 0) {
-            chatMessageService.saveMessage(sessionId, userId, 0, aiResponse);
+        // 使用CAS确保只保存一次AI消息（防止与doOnComplete重复）
+        AtomicBoolean messageSaved = messageSavedFlags.get(chatId);
+        if (messageSaved != null && messageSaved.compareAndSet(false, true)) {
+            // 即使取消也保存部分回复
+            if (aiResponse.length() > 0) {
+                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse);
+                log.info("流式对话被取消，已保存部分AI消息 [sessionId: {}, 长度: {}]", sessionId, aiResponse.length());
+            }
+        } else {
+            log.info("流式对话被取消，但消息已被保存，跳过 [sessionId: {}]", sessionId);
         }
+        
         streamingStates.remove(chatId);
+        messageSavedFlags.remove(chatId);
         log.info("流式对话被取消 [用户ID: {}, 会话ID: {}]", userId, sessionId);
     }
 
