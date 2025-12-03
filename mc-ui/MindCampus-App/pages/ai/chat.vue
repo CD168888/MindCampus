@@ -90,8 +90,12 @@
             @blur="handleInputBlur" :show-confirm-bar="false" :hold-keyboard="true" :adjust-position="false"></textarea>
         </view>
 
-        <view class="send-btn" :class="{ active: canSend }" @click="sendMessage">
+        <!-- 发送/停止按钮 -->
+        <view v-if="!isStreaming" class="send-btn" :class="{ active: canSend }" @click="sendMessage">
           <uni-icons type="paperplane-filled" size="24" color="#fff"></uni-icons>
+        </view>
+        <view v-else class="stop-btn" @click="handleCancelStream">
+          <uni-icons type="closeempty" size="28" color="#fff"></uni-icons>
         </view>
       </view>
     </view>
@@ -132,8 +136,12 @@
                 <uni-icons type="chat" size="24" color="#666"></uni-icons>
               </view>
               <view class="history-info">
-                <text class="history-title">{{ chat.firstMessage.substring(0, 10) || `对话 ${index + 1}` }}...</text>
-                <text class="history-id">{{ chat.chatId.substring(0, 8) }}...</text>
+                <text class="history-title">
+                  {{ (chat.firstMessage || `对话 ${index + 1}`).length > 20 
+                    ? (chat.firstMessage || `对话 ${index + 1}`).substring(0, 20) + '...' 
+                    : (chat.firstMessage || `对话 ${index + 1}`) 
+                  }}
+                </text>
               </view>
             </view>
             <view class="history-actions">
@@ -152,8 +160,8 @@
 </template>
 
 <script>
-import {deleteChat, getChatHistory, getChatMessages, renameChat, sendChatMessage} from '@/api/chat.js';
-import {adjustHeight, formatTime, generateUUID, goBack, onInputBlur, onInputFocus, scrollToBottom} from './ai.js';
+import { getSessions, getMessages, deleteSession, updateSessionTitle, streamChat, cancelStream, createSession } from '@/api/ai.js';
+import { adjustHeight, formatTime, generateUUID, goBack, onInputBlur, onInputFocus, scrollToBottom } from './ai.js';
 import UaMarkdown from '@/components/ua2-markdown/ua-markdown.vue';
 
 export default {
@@ -162,8 +170,8 @@ export default {
   },
   data() {
     return {
-      // 基础配置
-      ChatUUID: generateUUID(),
+      // 会话ID（从后端获取）
+      sessionId: null,
 
       // 响应式状态
       userInput: '',
@@ -173,6 +181,9 @@ export default {
       isStreaming: false,
       isLoadingMore: false,
       fullResponse: '',
+
+      // SSE连接对象
+      eventSource: null,
 
       // 历史对话状态
       showHistoryDrawer: false,
@@ -231,6 +242,8 @@ export default {
 
   onUnload() {
     uni.$off('keyboardHeightChange');
+    // 关闭SSE连接
+    this.closeEventSource();
   },
 
   methods: {
@@ -375,14 +388,69 @@ export default {
       }
     },
 
+    // 关闭SSE连接
+    closeEventSource() {
+      if (this.eventSource) {
+        if (typeof this.eventSource.close === 'function') {
+          this.eventSource.close();
+        }
+        this.eventSource = null;
+      }
+    },
+
+    // 中断流式输出
+    async handleCancelStream() {
+      if (!this.isStreaming) return;
+      
+      try {
+        // 先关闭EventSource连接，停止接收数据
+        this.closeEventSource();
+        
+        // 如果sessionId存在，调用后端接口停止生成
+        if (this.sessionId) {
+          await cancelStream(this.sessionId);
+          console.log('已调用后端停止接口 - sessionId:', this.sessionId);
+        }
+        
+        this.isStreaming = false;
+        
+        // 保存当前AI回复（即使被中断也保存部分内容）
+        const lastIndex = this.currentMessages.length - 1;
+        if (lastIndex >= 0 && this.currentMessages[lastIndex].role === 'assistant') {
+          const content = this.currentMessages[lastIndex].content || '（已停止生成）';
+          this.currentMessages[lastIndex].content = content;
+        }
+        
+        uni.showToast({
+          title: '已停止生成',
+          icon: 'success',
+          duration: 1500
+        });
+      } catch (error) {
+        console.error('中断流式输出失败:', error);
+        this.isStreaming = false;
+        uni.showToast({
+          title: '停止失败，请重试',
+          icon: 'none'
+        });
+      }
+    },
+
     // 获取历史对话列表
     async fetchChatHistory() {
       this.isLoadingHistory = true;
 
       try {
-        const response = await getChatHistory(this.chatType);
+        const response = await getSessions();
         if (response.code === 200) {
-          this.chatHistory = response.data || [];
+          // 转换数据格式以适配现有UI
+          this.chatHistory = (response.data || []).map((session, idx) => ({
+            chatId: session.sessionId,
+            sessionId: session.sessionId,
+            firstMessage: session.sessionName || `新对话 ${idx + 1}`,
+            timestamp: session.createTime ? new Date(session.createTime).getTime() : Date.now(),
+            messageCount: session.messageCount || 0
+          }));
         } else {
           uni.showToast({
             title: response.msg || '获取历史记录失败',
@@ -403,17 +471,17 @@ export default {
     // 加载特定对话的历史消息
     async loadChatHistory(chatId) {
       try {
-        const response = await getChatMessages(this.chatType, chatId);
+        const response = await getMessages(chatId);
 
         if (response.code === 200) {
-          this.ChatUUID = chatId;
+          this.sessionId = chatId;
 
           const messages = response.data || [];
           this.currentMessages = messages.map(msg => ({
-            role: msg.role,
+            role: msg.messageType === 1 ? 'user' : 'assistant',  // 1=用户消息, 0=AI消息
             content: msg.content,
-            timestamp: msg.timestamp || Date.now(),
-            attachments: msg.attachments || []
+            timestamp: msg.createTime ? new Date(msg.createTime).getTime() : Date.now(),
+            attachments: []
           }));
 
           this.toggleHistoryDrawer();
@@ -437,9 +505,12 @@ export default {
     },
 
     // 创建新对话
-    createNewChat() {
-      this.ChatUUID = generateUUID();
+    async createNewChat() {
+      // 重置会话ID，让后端在第一次发消息时创建新会话
+      this.sessionId = null;
       this.currentMessages = [];
+      this.fullResponse = '';
+      this.closeEventSource();
       this.addWelcomeMessage();
       this.toggleHistoryDrawer();
 
@@ -456,7 +527,7 @@ export default {
 
     // 发送消息
     async sendMessage() {
-      if (!this.canSend) return;
+      if (!this.canSend || this.isStreaming) return;
 
       const messageText = this.userInput.trim();
       const attachments = [...this.selectedFiles];
@@ -488,44 +559,104 @@ export default {
       await this.$nextTick();
       await this.scrollToBottom();
 
-      // 发送请求并处理流式响应
+      // 发送请求并处理流式响应（SSE）
       try {
         this.isStreaming = true;
         let lastScrollTime = 0;
+        const that = this;
 
-        await sendChatMessage({
-          prompt: messageText,
-          chatId: this.ChatUUID,
-          files: attachments,
-          onMessage: async (chunk) => {
-            this.fullResponse += chunk;
+        // 如果是第一次发送消息（sessionId为null），先创建会话
+        if (!this.sessionId) {
+          console.log('首次发送消息，先创建会话');
+          try {
+            const createResponse = await createSession(messageText.substring(0, 50)); // 使用消息前50个字符作为会话名称
+            if (createResponse.code === 200 && createResponse.data) {
+              // 后端返回的是AiChatSession对象，需要从中获取sessionId
+              this.sessionId = createResponse.data.sessionId;
+              console.log('创建会话成功，会话ID:', this.sessionId);
+            } else {
+              throw new Error(createResponse.msg || '创建会话失败');
+            }
+          } catch (createError) {
+            console.error('创建会话失败:', createError);
+            // 如果创建失败，移除占位消息并提示用户
             const lastIndex = this.currentMessages.length - 1;
-            this.currentMessages[lastIndex].content = this.fullResponse;
+            if (lastIndex >= 0) {
+              this.currentMessages[lastIndex].content = '抱歉，创建会话失败，请稍后再试。';
+            }
+            this.isStreaming = false;
+            uni.showToast({
+              title: '创建会话失败',
+              icon: 'none'
+            });
+            return;
+          }
+        }
+
+        // 创建SSE连接
+        const sseConnection = streamChat({
+          message: messageText,
+          sessionId: this.sessionId,
+          onSessionId: (newSessionId) => {
+            // 更新sessionId（当初次发送消息时）
+            that.sessionId = parseInt(newSessionId);
+            console.log('更新 sessionId:', that.sessionId);
+          },
+          onMessage: async (chunk, fullContent) => {
+            that.fullResponse = fullContent;
+            const lastIndex = that.currentMessages.length - 1;
+            if (lastIndex >= 0) {
+              that.currentMessages[lastIndex].content = fullContent;
+            }
 
             const now = Date.now();
             if (now - lastScrollTime > 100) {
               lastScrollTime = now;
-              await this.$nextTick();
-              await this.scrollToBottom();
+              await that.$nextTick();
+              await that.scrollToBottom();
             }
+          },
+          onError: (error) => {
+            console.error('SSE连接错误:', error);
+            const lastIndex = that.currentMessages.length - 1;
+            if (lastIndex >= 0 && !that.currentMessages[lastIndex].content) {
+              that.currentMessages[lastIndex].content = '抱歉，发生了错误，请稍后再试。';
+            }
+            that.isStreaming = false;
+            that.closeEventSource();
+
+            uni.showToast({
+              title: '连接出错，请重试',
+              icon: 'none'
+            });
+          },
+          onComplete: async (fullContent) => {
+            console.log('流式响应完成');
+            that.isStreaming = false;
+            that.closeEventSource();
+            
+            await that.$nextTick();
+            await that.scrollToBottom();
           }
         });
 
-        await this.$nextTick();
-        await this.scrollToBottom();
+        // 保存eventSource引用以便后续关闭
+        this.eventSource = sseConnection.eventSource;
+
       } catch (error) {
         console.error('发送消息失败:', error);
         const lastIndex = this.currentMessages.length - 1;
-        this.currentMessages[lastIndex].content = '抱歉，发生了错误，请稍后再试。';
+        if (lastIndex >= 0) {
+          this.currentMessages[lastIndex].content = '抱歉，发生了错误，请稍后再试。';
+        }
 
         uni.showToast({
           title: '发送消息失败',
           icon: 'none'
         });
-      } finally {
+        
         this.isStreaming = false;
-        await this.$nextTick();
-        await this.scrollToBottom();
+        this.closeEventSource();
       }
     },
 
@@ -537,7 +668,7 @@ export default {
           content: '确定要删除这个对话吗？',
           success: async (res) => {
             if (res.confirm) {
-              const response = await deleteChat(this.chatType, chatId);
+              const response = await deleteSession(chatId);
               if (response.code === 200) {
                 this.chatHistory = this.chatHistory.filter(chat => chat.chatId !== chatId);
                 uni.showToast({
@@ -545,7 +676,7 @@ export default {
                   icon: 'success'
                 });
 
-                if (chatId === this.ChatUUID) {
+                if (chatId === this.sessionId) {
                   this.createNewChat();
                 }
               } else {
@@ -579,15 +710,12 @@ export default {
         success: async (res) => {
           if (res.confirm && res.content.trim()) {
             try {
-              let data = {
-                chatId: this.editingChatId,
-                prompt: res.content.trim()
-              }
-              const response = await renameChat(this.chatType, data);
+              const newTitle = res.content.trim();
+              const response = await updateSessionTitle(this.editingChatId, newTitle);
               if (response.code === 200) {
-                const chat = this.chatHistory.find(c => c.chatId === this.editingChatId);
-                if (chat) {
-                  chat.firstMessage = res.content.trim();
+                const targetChat = this.chatHistory.find(c => c.chatId === this.editingChatId);
+                if (targetChat) {
+                  targetChat.firstMessage = newTitle;
                 }
 
                 uni.showToast({
@@ -1129,6 +1257,41 @@ export default {
     }
   }
 
+  .stop-btn {
+    margin-left: $spacing-xs;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 4rpx 16rpx rgba(239, 68, 68, 0.4);
+    transition: all $transition-base $ease-out;
+    position: relative;
+    overflow: hidden;
+    animation: pulse-stop 1.5s ease-in-out infinite;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+      transform: translate(-50%, -50%);
+      animation: rotate-glow 2s linear infinite;
+    }
+
+    &:active {
+      opacity: $opacity-hover;
+      transform: scale(0.95);
+      box-shadow: 0 2rpx 12rpx rgba(239, 68, 68, 0.5);
+    }
+  }
+
   @keyframes pulse-glow {
 
     0%,
@@ -1138,6 +1301,18 @@ export default {
 
     50% {
       box-shadow: 0 6rpx 20rpx rgba(167, 139, 250, 0.5);
+    }
+  }
+
+  @keyframes pulse-stop {
+
+    0%,
+    100% {
+      box-shadow: 0 4rpx 16rpx rgba(239, 68, 68, 0.4);
+    }
+
+    50% {
+      box-shadow: 0 6rpx 20rpx rgba(220, 38, 38, 0.6);
     }
   }
 
@@ -1329,6 +1504,7 @@ export default {
     .history-info {
       display: flex;
       flex-direction: column;
+      justify-content: center;
       flex: 1;
       min-width: 0;
 
@@ -1336,16 +1512,10 @@ export default {
         font-size: $font-sm;
         font-weight: $font-medium;
         color: $text-primary;
-        margin-bottom: 4px;
+        line-height: 1.5;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        font-family: $font-family-base;
-      }
-
-      .history-id {
-        font-size: 12px;
-        color: $text-tertiary;
         font-family: $font-family-base;
       }
     }
