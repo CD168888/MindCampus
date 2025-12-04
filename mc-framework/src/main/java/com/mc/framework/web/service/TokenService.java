@@ -205,12 +205,12 @@ public class TokenService {
         }
         
         // EventSource不支持自定义header，支持从URL参数获取token（用于SSE场景）
-        if (StringUtils.isEmpty(token)) {
-            token = request.getParameter("token");
-            if (StringUtils.isNotEmpty(token)) {
-                log.debug("From URL parameter get token: {}", token.substring(0, Math.min(20, token.length())) + "...");
-            }
-        }
+//        if (StringUtils.isEmpty(token)) {
+//            token = request.getParameter("token");
+//            if (StringUtils.isNotEmpty(token)) {
+//                log.debug("From URL parameter get token: {}", token.substring(0, Math.min(20, token.length())) + "...");
+//            }
+//        }
         
         return token;
     }

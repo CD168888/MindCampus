@@ -77,14 +77,14 @@ export function cancelStream(sessionId) {
 }
 
 /**
- * 流式对话接口 - 使用SSE (Server-Sent Events)
+ * 流式对话接口 - 使用 fetch + ReadableStream
  * @param {Object} options - 配置选项
  * @param {string} options.message - 用户消息
- * @param {number} options.sessionId - 会话ID（可选，后端会自动创建）
+ * @param {number} options.sessionId - 会话ID(可选,后端会自动创建)
  * @param {Function} options.onMessage - 接收消息回调 (chunk, fullContent)
  * @param {Function} options.onError - 错误回调
  * @param {Function} options.onComplete - 完成回调
- * @returns {Object} 返回包含 eventSource 和 close 方法的对象
+ * @returns {Object} 返回包含 abortController 和 close 方法的对象
  */
 export function streamChat(options) {
   const { message, sessionId, onMessage, onError, onComplete } = options
@@ -95,87 +95,132 @@ export function streamChat(options) {
     url += `&sessionId=${sessionId}`
   }
   
-  // EventSource不支持自定义header，需要通过URL传递token
   const token = getToken()
   console.log('获取到的token:', token ? token.substring(0, 20) + '...' : 'null')
-  if (token) {
-    url += `&token=${encodeURIComponent(token)}`
-  }
-  console.log('最终URL:', url.substring(0, 100) + '...')
+  console.log('请求URL:', url)
   
-  let eventSource = null
   let fullContent = ''
   // 结束标记字符 (ETX - End of Text)
   const END_MARKER = '\u0003'
   
+  // 创建 AbortController 用于取消请求
+  const abortController = new AbortController()
+  
   // #ifdef H5
-  // H5端使用原生EventSource
-  // 注意：EventSource会自动携带cookie，不需要显式设置withCredentials
-  eventSource = new EventSource(url)
-  
-  eventSource.onopen = function(event) {
-    console.log('SSE连接已建立')
-  }
-  
-  eventSource.onmessage = function(event) {
-    try {
-      const data = event.data
-      
-      // 检查是否为心跳消息或空消息
-      if (!data || data === ':heartbeat') {
-        return
-      }
-      
-      // 检查是否为结束标记
-      if (data === END_MARKER || data.includes(END_MARKER)) {
-        // 移除结束标记并处理剩余内容
-        const cleanData = data.replace(END_MARKER, '')
-        if (cleanData) {
-          fullContent += cleanData
-          if (typeof onMessage === 'function') {
-            onMessage(cleanData, fullContent)
+  // H5端使用 fetch API
+  fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': token ? 'Bearer ' + token : '',
+      'Accept': 'text/event-stream',
+      'Cache-Control': 'no-cache'
+    },
+    signal: abortController.signal
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder('utf-8')
+    let buffer = ''
+    
+    // 递归读取流数据
+    const processStream = () => {
+      reader.read().then(({ done, value }) => {
+        if (done) {
+          console.log('流读取完成')
+          if (typeof onComplete === 'function') {
+            onComplete(fullContent)
+          }
+          return
+        }
+        
+        // 解码数据块
+        const chunk = decoder.decode(value, { stream: true })
+        buffer += chunk
+        
+        // 处理 SSE 格式数据
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // 保留未完成的行
+        
+        for (const line of lines) {
+          if (line.startsWith('data:')) {
+            const data = line.substring(5).trim()
+            
+            // 跳过心跳消息
+            if (!data || data === ':heartbeat') {
+              continue
+            }
+            
+            // 检查结束标记
+            if (data === END_MARKER || data.includes(END_MARKER)) {
+              const cleanData = data.replace(END_MARKER, '')
+              if (cleanData) {
+                fullContent += cleanData
+                if (typeof onMessage === 'function') {
+                  onMessage(cleanData, fullContent)
+                }
+              }
+              if (typeof onComplete === 'function') {
+                onComplete(fullContent)
+              }
+              reader.cancel()
+              return
+            }
+            
+            // 处理正常数据
+            fullContent += data
+            if (typeof onMessage === 'function') {
+              onMessage(data, fullContent)
+            }
+          } else if (line.startsWith('event:')) {
+            // 处理事件类型(如 sessionId)
+            const eventType = line.substring(6).trim()
+            if (eventType === 'sessionId') {
+              // 下一行应该是 data
+              const nextLineIndex = lines.indexOf(line) + 1
+              if (nextLineIndex < lines.length) {
+                const dataLine = lines[nextLineIndex]
+                if (dataLine.startsWith('data:')) {
+                  const sessionIdData = dataLine.substring(5).trim()
+                  if (typeof options.onSessionId === 'function') {
+                    options.onSessionId(sessionIdData)
+                  }
+                }
+              }
+            }
           }
         }
-        // 触发完成回调
-        if (typeof onComplete === 'function') {
-          onComplete(fullContent)
+        
+        // 继续读取下一块数据
+        processStream()
+      }).catch(error => {
+        if (error.name === 'AbortError') {
+          console.log('流读取已取消')
+        } else {
+          console.error('流读取错误:', error)
+          if (typeof onError === 'function') {
+            onError(error)
+          }
         }
-        eventSource.close()
-        return
-      }
-      
-      // 后端直接发送纯文本内容
-      fullContent += data
-      if (typeof onMessage === 'function') {
-        onMessage(data, fullContent)
-      }
-    } catch (error) {
-      console.error('SSE消息处理错误:', error)
+      })
     }
-  }
-  
-  // 监听 sessionId 事件
-  eventSource.addEventListener('sessionId', function(event) {
-    const newSessionId = event.data
-    console.log('接收到 sessionId:', newSessionId)
-    if (typeof options.onSessionId === 'function') {
-      options.onSessionId(newSessionId)
+    
+    // 开始处理流
+    processStream()
+  })
+  .catch(error => {
+    if (error.name === 'AbortError') {
+      console.log('请求已取消')
+    } else {
+      console.error('请求错误:', error)
+      if (typeof onError === 'function') {
+        onError(error)
+      }
     }
   })
-  
-  eventSource.onerror = function(error) {
-    console.error('SSE连接错误:', error)
-    // 如果已经有内容，可能是正常结束
-    if (fullContent && eventSource.readyState === EventSource.CLOSED) {
-      if (typeof onComplete === 'function') {
-        onComplete(fullContent)
-      }
-    } else if (typeof onError === 'function' && eventSource.readyState !== EventSource.CLOSED) {
-      // 只有在非CLOSED状态才报错
-      onError(error)
-    }
-    eventSource.close()
-  }
   // #endif
   
   // #ifndef H5
@@ -260,23 +305,23 @@ export function streamChat(options) {
       }
     })
   }
+  // #endif
   
-  eventSource = {
+  return {
+    // #ifdef H5
+    abortController,
+    close: () => {
+      abortController.abort()
+    },
+    // #endif
+    // #ifndef H5
+    requestTask,
     close: () => {
       if (requestTask && requestTask.abort) {
         requestTask.abort()
       }
-    }
-  }
-  // #endif
-  
-  return {
-    eventSource,
-    close: () => {
-      if (eventSource && eventSource.close) {
-        eventSource.close()
-      }
-    }
+    },
+    // #endif
   }
 }
 
