@@ -314,14 +314,6 @@ export function streamChat(options) {
       abortController.abort()
     },
     // #endif
-    // #ifndef H5
-    requestTask,
-    close: () => {
-      if (requestTask && requestTask.abort) {
-        requestTask.abort()
-      }
-    },
-    // #endif
   }
 }
 
