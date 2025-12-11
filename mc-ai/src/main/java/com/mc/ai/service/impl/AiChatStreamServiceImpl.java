@@ -46,12 +46,8 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
 
     private static final String SYSTEM_PROMPT = STUDENT_WELL_BEING_PROMPT;
 
-    public AiChatStreamServiceImpl(ChatClient.Builder chatClientBuilder, ChatMemoryRepository chatMemoryRepository) {
-        this.dashScopeChatClient = chatClientBuilder
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(
-                                MessageWindowChatMemory.builder().chatMemoryRepository(chatMemoryRepository).build())
-                        .build())
-                .build();
+    public AiChatStreamServiceImpl(ChatClient chatClient) {
+        this.dashScopeChatClient = chatClient;
     }
 
     /**
