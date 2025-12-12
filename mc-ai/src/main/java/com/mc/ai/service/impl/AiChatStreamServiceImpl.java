@@ -8,10 +8,7 @@ import com.mc.ai.service.IAiChatStreamService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.ChatMemoryRepository;
-import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -19,8 +16,6 @@ import reactor.core.publisher.Flux;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.mc.ai.prompt.AiPrompts.STUDENT_WELL_BEING_PROMPT;
 
 /**
  * AI 聊天流式服务
@@ -43,8 +38,6 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
     
     // 存储每个会话是否已保存AI消息的标识（防止重复保存）
     private final ConcurrentHashMap<String, AtomicBoolean> messageSavedFlags = new ConcurrentHashMap<>();
-
-    private static final String SYSTEM_PROMPT = STUDENT_WELL_BEING_PROMPT;
 
     public AiChatStreamServiceImpl(ChatClient chatClient) {
         this.dashScopeChatClient = chatClient;
@@ -104,7 +97,6 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
         // 生成流式对话
         return dashScopeChatClient.prompt()
                 .user(message)
-                .system(SYSTEM_PROMPT)
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, sessionId))
                 .stream()
                 .content()
