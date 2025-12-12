@@ -26,17 +26,20 @@
         </view>
         <view class="overview-title">测评完成</view>
         <view class="overview-subtitle">{{ result.questionnaireTitle }}</view>
-
-
-      </view>
-
-      <!-- 统计信息 -->
-      <view class="statistics-section">
-        <view class="stat-item">
-          <view class="stat-value">{{ resultData.totalQuestions }}</view>
-          <view class="stat-label">总题数</view>
+        
+        <!-- 总得分 -->
+        <view class="score-display" v-if="aiAnalysisData.total_score">
+          <text class="score-number">{{ aiAnalysisData.total_score }}</text>
+          <text class="score-label">总得分</text>
+        </view>
+        
+        <!-- 风险等级 -->
+        <view class="risk-badge" :class="'risk-badge-' + (result.riskLevel || '低')">
+          {{ getRiskText(result.riskLevel) }}
         </view>
       </view>
+
+      <!-- 统计信息（已移除） -->
 
       <!-- AI分析 -->
       <view class="ai-analysis-section">
@@ -44,52 +47,98 @@
           <uni-icons type="star" size="20" color="#a78bfa"></uni-icons>
           <text class="section-title">AI 分析报告</text>
         </view>
-        <view class="ai-content">
-          <view v-if="result.aiStatus === '1' && result.aiAnalysis" class="ai-text">
-            {{ result.aiAnalysis }}
+        
+        <view v-if="result.aiStatus === '1' && result.aiAnalysis" class="ai-content">
+          <!-- 雷达图 -->
+          <view class="radar-chart" v-if="aiAnalysisData.indicators">
+            <canvas canvas-id="radarChart" :style="{width: '300px', height: '300px'}" :width="300" :height="300"></canvas>
           </view>
-          <view v-else class="ai-pending">
-            <uni-icons type="clock" size="24" color="#f59e0b"></uni-icons>
-            <text class="ai-pending-text">AI分析结果生成中，请稍后查看</text>
+          
+          <!-- 主要问题 -->
+          <view class="ai-section" v-if="aiAnalysisData.main_issues && aiAnalysisData.main_issues.length > 0">
+            <view class="section-subtitle">主要问题</view>
+            <view class="issues-list">
+              <view v-for="(issue, index) in aiAnalysisData.main_issues" :key="index" class="issue-item">
+                <uni-icons type="info" size="16" color="#f59e0b"></uni-icons>
+                <text class="issue-text">{{ issue }}</text>
+              </view>
+            </view>
           </view>
+          
+          <!-- 建议 -->
+          <view class="ai-section" v-if="aiAnalysisData.suggestions && aiAnalysisData.suggestions.length > 0">
+            <view class="section-subtitle">建议</view>
+            <view class="suggestions-list">
+              <view v-for="(suggestion, index) in aiAnalysisData.suggestions" :key="index" class="suggestion-item">
+                <uni-icons type="checkmark-circle" size="16" color="#6ee7b7"></uni-icons>
+                <text class="suggestion-text">{{ suggestion }}</text>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 详细分析 -->
+          <view class="ai-section" v-if="aiAnalysisData.detailed_analysis">
+            <view class="section-subtitle">详细分析</view>
+            <view class="analysis-text">
+              {{ aiAnalysisData.detailed_analysis }}
+            </view>
+          </view>
+        </view>
+        
+        <view v-else class="ai-pending">
+          <uni-icons type="clock" size="24" color="#f59e0b"></uni-icons>
+          <text class="ai-pending-text">AI分析结果生成中，请稍后查看</text>
         </view>
       </view>
 
-      <!-- 答题详情 -->
+      <!-- 答题详情 - 轮播图 -->
       <view class="answers-section">
         <view class="section-header">
           <uni-icons type="list" size="20" color="#6ee7b7"></uni-icons>
           <text class="section-title">答题详情</text>
+          <text class="total-questions">(共 {{ resultData.totalQuestions }} 题)</text>
         </view>
 
-        <view class="answer-list">
-          <view v-for="(answer, index) in resultData.answers" :key="answer.answerId" class="answer-card">
-            <view class="answer-header">
-            <view class="answer-number">第 {{ index + 1 }} 题</view>
-          </view>
+        <view class="swiper-container">
+          <swiper :indicator-dots="true" :autoplay="false" :interval="3000" :duration="500" class="answer-swiper">
+            <swiper-item v-for="(answer, index) in resultData.answers" :key="answer.answerId">
+              <view class="answer-card">
+                <view class="answer-header">
+                  <view class="answer-number">第 {{ index + 1 }} 题</view>
+                </view>
 
-            <view class="answer-question">
-              <text class="question-text">{{ answer.content }}</text>
-            </view>
+                <view class="answer-question">
+                  <text class="question-text">{{ answer.content }}</text>
+                </view>
 
-            <!-- 选择题 -->
-            <view v-if="answer.type === 'choice'" class="answer-details">
-              <view class="detail-row">
-                <text class="detail-label">你的答案：</text>
-                <text class="detail-value answer-user">
-                  {{ answer.userAnswer }}
-                </text>
+                <!-- 选择题 -->
+                <view v-if="answer.type === 'choice'" class="answer-details">
+                  <view class="detail-row">
+                    <text class="detail-label">你的答案：</text>
+                    <text class="detail-value answer-user">
+                      {{ answer.userAnswer }}
+                    </text>
+                  </view>
+                  
+                  <!-- 选项列表 -->
+                  <view class="options-list" v-if="answer.options">
+                    <view v-for="(option, optKey) in parseOptions(answer.options)" :key="optKey" class="option-item">
+                      <text class="option-label">{{ optKey }}</text>
+                      <text class="option-text">{{ option }}</text>
+                    </view>
+                  </view>
+                </view>
+
+                <!-- 简答题 -->
+                <view v-else class="answer-details">
+                  <view class="detail-row detail-full">
+                    <text class="detail-label">你的答案：</text>
+                    <text class="detail-value answer-text">{{ answer.userAnswer }}</text>
+                  </view>
+                </view>
               </view>
-            </view>
-
-            <!-- 简答题 -->
-            <view v-else class="answer-details">
-              <view class="detail-row detail-full">
-                <text class="detail-label">你的答案：</text>
-                <text class="detail-value answer-text">{{ answer.userAnswer }}</text>
-              </view>
-            </view>
-          </view>
+            </swiper-item>
+          </swiper>
         </view>
       </view>
 
@@ -112,7 +161,9 @@ export default {
       loading: false,
       resultId: null,
       resultData: null,
-      result: null
+      result: null,
+      aiAnalysisData: {}, // 解析后的AI分析数据
+      radarChart: null
     }
   },
   onLoad(options) {
@@ -126,6 +177,23 @@ export default {
       this.loadResult()
     }
   },
+  onReady() {
+    // 页面渲染完成后绘制雷达图
+    this.$nextTick(() => {
+      this.drawRadarChart()
+    })
+  },
+  watch: {
+    // 监听AI分析数据变化，重新绘制雷达图
+    aiAnalysisData: {
+      handler() {
+        this.$nextTick(() => {
+          this.drawRadarChart()
+        })
+      },
+      deep: true
+    }
+  },
   methods: {
     // 加载结果详情
     async loadResult() {
@@ -136,6 +204,63 @@ export default {
         if (res.code === 200) {
           this.resultData = res.data
           this.result = res.data.result
+          
+          // 解析AI分析数据
+          if (this.result.aiAnalysis) {
+            try {
+              this.aiAnalysisData = JSON.parse(this.result.aiAnalysis)
+              console.log('AI分析数据:', this.aiAnalysisData)
+              
+              // 确保indicators对象存在
+              if (!this.aiAnalysisData.indicators) {
+                this.aiAnalysisData.indicators = {}
+              }
+              
+              // 为缺失的指标提供默认值
+              const defaultIndicators = {
+                sleep_score: 50,
+                social_score: 50,
+                stress_score: 50,
+                anxiety_score: 50,
+                emotion_score: 50,
+                depression_score: 50,
+                self_efficacy_score: 50
+              }
+              
+              // 合并默认值和实际数据
+              for (const key in defaultIndicators) {
+                if (this.aiAnalysisData.indicators[key] === undefined) {
+                  this.aiAnalysisData.indicators[key] = defaultIndicators[key]
+                }
+              }
+            } catch (e) {
+              console.error('解析AI分析数据失败:', e)
+              this.aiAnalysisData = {
+                indicators: {
+                  sleep_score: 50,
+                  social_score: 50,
+                  stress_score: 50,
+                  anxiety_score: 50,
+                  emotion_score: 50,
+                  depression_score: 50,
+                  self_efficacy_score: 50
+                }
+              }
+            }
+          } else {
+            // 如果没有AI分析数据，提供默认数据
+            this.aiAnalysisData = {
+              indicators: {
+                sleep_score: 50,
+                social_score: 50,
+                stress_score: 50,
+                anxiety_score: 50,
+                emotion_score: 50,
+                depression_score: 50,
+                self_efficacy_score: 50
+              }
+            }
+          }
         } else {
           uni.showToast({
             title: res.msg || '加载失败',
@@ -191,6 +316,169 @@ export default {
         '高': '风险等级：高'
       }
       return texts[riskLevel] || '风险等级：低'
+    },
+    
+    // 解析选项
+    parseOptions(optionsStr) {
+      try {
+        console.log('选项字符串:', optionsStr)
+        const options = JSON.parse(optionsStr)
+        console.log('解析后的选项:', options)
+        return options
+      } catch (e) {
+        console.error('解析选项失败:', e)
+        return {}
+      }
+    },
+    
+    // 绘制雷达图
+    drawRadarChart() {
+      if (!this.aiAnalysisData.indicators) {
+        return
+      }
+      
+      const ctx = uni.createCanvasContext('radarChart')
+      if (!ctx) {
+        console.error('无法获取Canvas上下文')
+        return
+      }
+      
+      // 雷达图配置
+      const width = 300
+      const height = 300
+      const centerX = width / 2
+      const centerY = height / 2
+      const radius = Math.min(centerX, centerY) - 40
+      
+      // 指标配置
+      const indicatorConfig = [
+        { key: 'sleep_score', name: '睡眠质量', color: '#FF6B6B' },
+        { key: 'social_score', name: '社交功能', color: '#4ECDC4' },
+        { key: 'stress_score', name: '压力水平', color: '#FFD166' },
+        { key: 'anxiety_score', name: '焦虑程度', color: '#06D6A0' },
+        { key: 'emotion_score', name: '情绪稳定性', color: '#118AB2' },
+        { key: 'depression_score', name: '抑郁倾向', color: '#7209B7' },
+        { key: 'self_efficacy_score', name: '自我效能感', color: '#00BBF9' }
+      ]
+      
+      const indicators = indicatorConfig.map(config => {
+        return {
+          name: config.name,
+          value: this.aiAnalysisData.indicators[config.key] || 0,
+          color: config.color
+        }
+      })
+      
+      const angleStep = 2 * Math.PI / indicators.length
+      
+      // 清空画布
+      ctx.clearRect(0, 0, width, height)
+      
+      // 绘制雷达图背景
+      ctx.beginPath()
+      for (let i = 0; i < 5; i++) {
+        const r = radius * (i + 1) / 5
+        ctx.moveTo(centerX + r, centerY)
+        for (let j = 1; j < indicators.length; j++) {
+          const angle = j * angleStep
+          const x = centerX + r * Math.cos(angle)
+          const y = centerY + r * Math.sin(angle)
+          ctx.lineTo(x, y)
+        }
+        ctx.closePath()
+        ctx.strokeStyle = '#E5E7EB'
+        ctx.lineWidth = 1
+        ctx.stroke()
+      }
+      
+      // 绘制坐标轴
+      for (let i = 0; i < indicators.length; i++) {
+        const angle = i * angleStep
+        const x = centerX + radius * Math.cos(angle)
+        const y = centerY + radius * Math.sin(angle)
+        ctx.beginPath()
+        ctx.moveTo(centerX, centerY)
+        ctx.lineTo(x, y)
+        ctx.strokeStyle = '#E5E7EB'
+        ctx.lineWidth = 1
+        ctx.stroke()
+      }
+      
+      // 绘制数据区域
+      ctx.beginPath()
+      for (let i = 0; i < indicators.length; i++) {
+        const angle = i * angleStep
+        const r = (indicators[i].value / 100) * radius
+        const x = centerX + r * Math.cos(angle)
+        const y = centerY + r * Math.sin(angle)
+        if (i === 0) {
+          ctx.moveTo(x, y)
+        } else {
+          ctx.lineTo(x, y)
+        }
+      }
+      ctx.closePath()
+      ctx.fillStyle = 'rgba(110, 231, 183, 0.3)'
+      ctx.fill()
+      ctx.strokeStyle = '#6EE7B7'
+      ctx.lineWidth = 2
+      ctx.stroke()
+      
+      // 绘制数据点
+      for (let i = 0; i < indicators.length; i++) {
+        const angle = i * angleStep
+        const r = (indicators[i].value / 100) * radius
+        const x = centerX + r * Math.cos(angle)
+        const y = centerY + r * Math.sin(angle)
+        ctx.beginPath()
+        ctx.arc(x, y, 4, 0, 2 * Math.PI)
+        ctx.fillStyle = '#6EE7B7'
+        ctx.fill()
+        ctx.strokeStyle = '#FFFFFF'
+        ctx.lineWidth = 2
+        ctx.stroke()
+      }
+      
+      // 绘制指标名称
+      ctx.font = '12px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#4B5563'
+      for (let i = 0; i < indicators.length; i++) {
+        const angle = i * angleStep
+        const r = radius + 20
+        const x = centerX + r * Math.cos(angle)
+        const y = centerY + r * Math.sin(angle)
+        ctx.fillText(indicators[i].name, x, y)
+      }
+      
+      // 绘制数值
+      ctx.font = '10px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#4B5563'
+      for (let i = 0; i < indicators.length; i++) {
+        const angle = i * angleStep
+        const r = (indicators[i].value / 100) * radius
+        const x = centerX + r * Math.cos(angle)
+        const y = centerY + r * Math.sin(angle) - 15
+        ctx.fillText(indicators[i].value, x, y)
+      }
+      
+      // 绘制中心标题
+      ctx.font = '14px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#111827'
+      ctx.fillText('各维度得分', centerX, centerY - 20)
+      
+      // 绘制图例
+      ctx.font = '12px sans-serif'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      
+      // 执行绘制
+      ctx.draw()
     }
   }
 }
@@ -198,6 +486,31 @@ export default {
 
 <style lang="scss" scoped>
 @import "@/static/scss/theme.scss";
+
+// 使用项目中已定义的uni.scss变量覆盖
+$font-sm: $uni-font-size-sm;
+$font-base: $uni-font-size-base;
+$font-lg: $uni-font-size-lg;
+
+$spacing-sm: $uni-spacing-col-sm;
+$spacing-md: $uni-spacing-col-base;
+$spacing-lg: $uni-spacing-col-lg;
+
+$radius-sm: $uni-border-radius-sm;
+$radius-base: $uni-border-radius-base;
+$radius-lg: $uni-border-radius-lg;
+$radius-full: $uni-border-radius-circle;
+
+$bg-white: $uni-bg-color;
+$text-primary: $uni-text-color;
+$text-secondary: $uni-text-color;
+$text-tertiary: $uni-text-color-grey;
+
+$border-light: $uni-border-color;
+
+$success-color: $uni-color-success;
+$warning-color: $uni-color-warning;
+$danger-color: $uni-color-error;
 
 .assessment-result-page {
   min-height: 100vh;
@@ -572,6 +885,199 @@ export default {
 
 .result-icon {
   font-weight: $font-bold;
+}
+
+/* ==================== 结果概览 ==================== */
+.result-overview {
+  text-align: center;
+  margin-bottom: $spacing-lg;
+}
+
+.total-score {
+  font-size: 48px;
+  font-weight: $font-bold;
+  color: $text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.risk-level {
+  font-size: 20px;
+  font-weight: $font-bold;
+  margin-bottom: $spacing-lg;
+}
+
+.risk-low {
+  color: $success-color;
+}
+
+.risk-medium {
+  color: $warning-color;
+}
+
+.risk-high {
+  color: $danger-color;
+}
+
+/* ==================== AI分析报告 ==================== */
+.ai-analysis-report {
+  margin-top: $spacing-lg;
+  padding: $spacing-lg;
+  background: $bg-gray-50;
+  border-radius: $radius-xl;
+}
+
+.radar-chart-container {
+  display: flex;
+  justify-content: center;
+  margin: $spacing-lg 0;
+}
+
+.radar-chart {
+  width: 300px;
+  height: 300px;
+}
+
+.main-issues {
+  margin-top: $spacing-lg;
+  padding: $spacing-md;
+  background: #fff5f5;
+  border-radius: $radius-lg;
+  border-left: 4px solid #ee0a24;
+}
+
+.suggestions {
+  margin-top: $spacing-lg;
+  padding: $spacing-md;
+  background: #f0f9eb;
+  border-radius: $radius-lg;
+  border-left: 4px solid #07c160;
+}
+
+.detailed-analysis {
+  margin-top: $spacing-lg;
+  padding: $spacing-md;
+  background: #e6f7ff;
+  border-radius: $radius-lg;
+  border-left: 4px solid #1890ff;
+}
+
+.analysis-section-title {
+  font-size: $font-lg;
+  font-weight: $font-bold;
+  color: $text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.analysis-section-content {
+  font-size: $font-sm;
+  color: $text-secondary;
+  line-height: $line-height-relaxed;
+}
+
+.analysis-list {
+  margin-left: $spacing-md;
+}
+
+.analysis-list-item {
+  font-size: $font-sm;
+  color: $text-secondary;
+  margin-bottom: $spacing-xs;
+  line-height: $line-height-relaxed;
+}
+
+/* ==================== 轮播图答题详情 ==================== */
+.swiper-container {
+  margin-top: $spacing-md;
+}
+
+.answer-swiper {
+  min-height: 280px;
+  border-radius: $radius-xl;
+  overflow: hidden;
+}
+
+.swiper-item {
+  padding: $spacing-md;
+  background: $bg-white;
+  min-height: 200px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.question-content {
+  font-size: $font-lg;
+  color: $text-primary;
+  margin-bottom: $spacing-md;
+  line-height: $line-height-relaxed;
+  flex-shrink: 0;
+}
+
+.options-list {
+  margin-top: $spacing-md;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.option-item {
+  font-size: $font-sm;
+  color: $text-secondary;
+  margin-bottom: $spacing-sm;
+  line-height: $line-height-relaxed;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-lg;
+  background: $bg-gray-50;
+  border: 1px solid $border-light;
+  transition: all $transition-base $ease-out;
+  min-height: 60rpx;
+  display: flex;
+  align-items: flex-start;
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-all;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.option-label {
+  font-weight: $font-bold;
+  margin-right: $spacing-sm;
+  color: $text-primary;
+  min-width: 40rpx;
+}
+
+.option-text {
+  flex: 1;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+.user-answer {
+  font-size: $font-sm;
+  color: $primary-color;
+  margin-top: $spacing-sm;
+  font-weight: $font-bold;
+  flex-shrink: 0;
+}
+
+.swiper-pagination {
+  margin-top: 0rpx;
+}
+
+.swiper-pagination .swiper-pagination-item {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $border-light;
+  margin: 0 4px;
+}
+
+.swiper-pagination .swiper-pagination-item-active {
+  background: $primary-color;
+  width: 12px;
+  height: 12px;
 }
 
 /* ==================== 底部操作 ==================== */
