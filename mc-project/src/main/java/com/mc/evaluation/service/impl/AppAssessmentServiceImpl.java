@@ -15,6 +15,7 @@ import com.mc.evaluation.mapper.QuestionnaireAnswerMapper;
 import com.mc.evaluation.service.IAppAssessmentService;
 import com.mc.questionnaire.domain.Question;
 import com.mc.questionnaire.domain.Questionnaire;
+import com.mc.evaluation.service.IMentalHealthEvaluationService;
 import com.mc.questionnaire.mapper.QuestionMapper;
 import com.mc.questionnaire.mapper.QuestionnaireMapper;
 import com.mc.student.domain.Student;
@@ -41,6 +42,7 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
     private final EvaluationResultMapper evaluationResultMapper;
     private final QuestionnaireAnswerMapper answerMapper;
     private final StudentInfoMapper studentInfoMapper;
+    private final IMentalHealthEvaluationService mentalHealthEvaluationService;
 
     @Override
     public AssessmentStatisticsVO getStatistics(Long userId) {
@@ -325,6 +327,9 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
             answer.setResultId(result.getResultId());
         }
         answerMapper.batchInsert(answerList);
+
+        // 异步调用AI评估服务
+        mentalHealthEvaluationService.asyncEvaluateMentalHealth(result.getResultId());
 
         return result.getResultId();
     }

@@ -1,12 +1,12 @@
 package com.mc.ai.service.impl;
 
+import com.mc.ai.domain.AiChatMessage;
+import com.mc.ai.mapper.AiChatMessageMapper;
+import com.mc.ai.service.IAiChatMessageService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mc.ai.domain.AiChatMessage;
-import com.mc.ai.mapper.AiChatMessageMapper;
-import com.mc.ai.service.IAiChatMessageService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;

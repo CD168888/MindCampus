@@ -17,13 +17,19 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <dependencies>
-        <!-- 通用模块  -->
-        <dependency>
-            <groupId>com.mc</groupId>
-            <artifactId>mc-common</artifactId>
-        </dependency>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-bom</artifactId>
+                <version>1.0.0.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
+    <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -34,9 +40,36 @@
             <artifactId>swagger-annotations-jakarta</artifactId>
             <version>2.2.30</version>
         </dependency>
+
+        <!-- 阿里云 Spring AI Dashscope 启动器 -->
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
+        </dependency>
+
+        <!-- 阿里云 Spring AI Redis 内存存储启动器 -->
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-memory-redis</artifactId>
+        </dependency>
+
+        <!-- 阿里云 Spring AI MySQL (JDBC) 记忆存储启动器 -->
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-memory-jdbc</artifactId>
+        </dependency>
+
+        <!-- Redis 客户端 - Jedis -->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>5.2.0</version>
+        </dependency>
+
+        <!-- MC 框架 -->
         <dependency>
             <groupId>com.mc</groupId>
-            <artifactId>mc-system</artifactId>
+            <artifactId>mc-framework</artifactId>
         </dependency>
     </dependencies>
 

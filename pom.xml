@@ -192,13 +192,6 @@
                 <version>${mc.version}</version>
             </dependency>
 
-            <!-- AI模块 -->
-            <dependency>
-                <groupId>com.mc</groupId>
-                <artifactId>mc-ai</artifactId>
-                <version>${mc.version}</version>
-            </dependency>
-
         </dependencies>
     </dependencyManagement>
 
@@ -210,7 +203,6 @@
         <module>mc-generator</module>
         <module>mc-common</module>
         <module>mc-project</module>
-        <module>mc-ai</module>
     </modules>
     <packaging>pom</packaging>
 

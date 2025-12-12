@@ -1,7 +1,7 @@
 package com.mc.ai.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.mc.ai.domain.AiChatMessage;
+import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
 

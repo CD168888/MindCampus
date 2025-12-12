@@ -1,7 +1,7 @@
 package com.mc.ai.config;
 
-import com.alibaba.cloud.ai.memory.redis.RedisChatMemoryRepository;
 import com.mc.ai.prompt.AiPrompts;
+import com.alibaba.cloud.ai.memory.redis.RedisChatMemoryRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
