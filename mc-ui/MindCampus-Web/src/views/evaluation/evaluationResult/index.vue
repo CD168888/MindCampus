@@ -55,7 +55,11 @@
       <el-table-column label="学生名称" align="center" prop="studentName" />
       <el-table-column label="问卷标题" align="center" prop="questionnaireTitle" />
 
-      <el-table-column label="AI 分析结果" align="center" prop="aiAnalysis" />
+      <el-table-column label="风险等级" align="center" prop="riskLevel">
+        <template #default="scope">
+          <dict-tag :options="risk_level" :value="scope.row.riskLevel" />
+        </template>
+      </el-table-column>
       <el-table-column label="AI分析状态" align="center" prop="aiStatus">
         <template #default="scope">
           <dict-tag :options="ai_status" :value="scope.row.aiStatus" />
@@ -73,6 +77,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
+          <el-button link type="primary" icon="View" @click="handleViewAiResult(scope.row)" v-if="scope.row.aiStatus === '1'">查看</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['evaluation:evaluationResult:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)"
@@ -132,19 +137,52 @@
         </div>
       </template>
     </el-dialog>
-  </div>
-</template>
+      <!-- AI分析结果查看弹窗 -->
+      <el-dialog
+        v-model="aiResultDialogVisible"
+        title="AI分析结果详情"
+        width="800px"
+        append-to-body
+      >
+        <div class="ai-result-container">
+          <div class="ai-result-header">
+            <div class="total-score">
+              <h3>总得分</h3>
+              <div class="score-value">{{ aiResultData.total_score }}</div>
+              <div class="risk-level">风险等级：{{ aiResultData.risk_level }}</div>
+            </div>
+          </div>
+          
+          <div class="chart-container">
+            <h3>各维度得分</h3>
+            <div id="radar-chart" style="width: 100%; height: 400px;"></div>
+          </div>
+          
+          <div class="analysis-content">
+            <h3>主要问题</h3>
+            <ul>
+              <li v-for="(issue, index) in aiResultData.main_issues" :key="index">{{ issue }}</li>
+            </ul>
+            
+            <h3>建议</h3>
+            <ul>
+              <li v-for="(suggestion, index) in aiResultData.suggestions" :key="index">{{ suggestion }}</li>
+            </ul>
+            
+            <h3>详细分析</h3>
+            <p>{{ aiResultData.detailed_analysis }}</p>
+          </div>
+        </div>
+      </el-dialog>
+    </div>
+  </template>
 
 <script setup name="EvaluationResult">
-import {
-  addEvaluationResult,
-  delEvaluationResult,
-  getEvaluationResult,
-  listEvaluationResult,
-  updateEvaluationResult
-} from "@/api/evaluation/evaluationResult"
+import { addEvaluationResult, delEvaluationResult, getEvaluationResult, listEvaluationResult, updateEvaluationResult } from "@/api/evaluation/evaluationResult"
 import {listInfo} from "@/api/student/info"
 import {listQuestionnaire} from "@/api/questionnaire/questionnaireinfo"
+import * as echarts from "echarts"
+import { nextTick } from "vue"
 
 const { proxy } = getCurrentInstance()
 const { completion_status, read_status, risk_level, ai_status } = proxy.useDict('completion_status', 'read_status', 'risk_level', 'ai_status')
@@ -200,6 +238,11 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+// AI分析结果弹窗相关
+const aiResultDialogVisible = ref(false)
+const aiResultData = ref({})
+let radarChart = null
+
 /** 查询心理测评结果列表 */
 function getList() {
   loading.value = true
@@ -209,6 +252,70 @@ function getList() {
     loading.value = false
   })
 }
+
+/** 查看AI分析结果 */
+function handleViewAiResult(row) {
+  if (row.aiAnalysis) {
+    aiResultData.value = JSON.parse(row.aiAnalysis)
+    aiResultDialogVisible.value = true
+    // 等待DOM渲染完成后初始化图表
+    nextTick(() => {
+      initRadarChart()
+    })
+  }
+}
+
+/** 初始化雷达图 */
+function initRadarChart() {
+  const chartDom = document.getElementById('radar-chart')
+  if (radarChart) {
+    radarChart.dispose()
+  }
+  radarChart = echarts.init(chartDom)
+  
+  const indicators = [
+    { name: '焦虑', max: 100 },
+    { name: '抑郁', max: 100 },
+    { name: '压力', max: 100 },
+    { name: '社交功能', max: 100 },
+    { name: '睡眠质量', max: 100 },
+    { name: '情绪稳定性', max: 100 },
+    { name: '自我效能感', max: 100 }
+  ]
+  
+  const option = {
+    tooltip: {},
+    radar: {
+      indicator: indicators,
+      radius: '70%'
+    },
+    series: [{
+      name: '心理评估得分',
+      type: 'radar',
+      data: [{
+        value: [
+          aiResultData.value.indicators.anxiety_score || 0,
+          aiResultData.value.indicators.depression_score || 0,
+          aiResultData.value.indicators.stress_score || 0,
+          aiResultData.value.indicators.social_score || 0,
+          aiResultData.value.indicators.sleep_score || 0,
+          aiResultData.value.indicators.emotion_score || 0,
+          aiResultData.value.indicators.self_efficacy_score || 0
+        ],
+        name: '得分'
+      }]
+    }]
+  }
+  
+  option && radarChart.setOption(option)
+}
+
+// 监听窗口大小变化，调整图表大小
+window.addEventListener('resize', () => {
+  if (radarChart) {
+    radarChart.resize()
+  }
+})
 
 /** 获取学生列表 */
 function getStudentList() {
@@ -333,3 +440,64 @@ function handleExport() {
 
 getList()
 </script>
+
+<style scoped>
+.ai-result-container {
+  padding: 20px;
+}
+
+.ai-result-header {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.total-score {
+  text-align: center;
+}
+
+.score-value {
+  font-size: 48px;
+  font-weight: bold;
+  color: #409EFF;
+  margin: 10px 0;
+}
+
+.risk-level {
+  font-size: 18px;
+  font-weight: bold;
+  color: #F56C6C;
+}
+
+.chart-container {
+  margin-bottom: 30px;
+}
+
+.analysis-content {
+  margin-top: 30px;
+}
+
+.analysis-content h3 {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 20px 0 10px;
+  color: #303133;
+}
+
+.analysis-content ul {
+  margin-left: 20px;
+  padding: 0;
+}
+
+.analysis-content li {
+  margin: 8px 0;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.analysis-content p {
+  color: #606266;
+  line-height: 1.8;
+  text-indent: 2em;
+}
+</style>
