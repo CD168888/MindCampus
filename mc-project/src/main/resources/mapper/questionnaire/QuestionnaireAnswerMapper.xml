@@ -59,7 +59,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="type != null  and type != ''"> and qa.type = #{type}</if>
             <if test="studentId != null "> and er.student_id = #{studentId}</if>
             <if test="studentName != null and studentName != ''"> and s.name like concat('%', #{studentName}, '%')</if>
-            <if test="isCorrect != null "> and qa.is_correct = #{isCorrect}</if>
         </where>
         order by qa.result_id, qa.questionnaire_id, qu.order_num, qa.question_id
     </select>
