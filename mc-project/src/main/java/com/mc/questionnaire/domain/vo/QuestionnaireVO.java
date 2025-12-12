@@ -30,9 +30,6 @@ public class QuestionnaireVO {
     @Schema(description = "问卷类型（0常规测评 1临时测评 2专项测评 3学业压力 4情绪状态 5人格特质）")
     private String type;
 
-    @Schema(description = "问卷总分")
-    private Integer totalScore;
-
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "问卷开始时间")
     private Date startTime;

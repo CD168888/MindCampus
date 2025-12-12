@@ -63,34 +63,12 @@ public class QuestionnaireAnswer extends BaseEntity {
   private String options;
 
   /**
-   * 标准答案（仅选择题有效）
-   */
-  @Excel(name = "标准答案")
-  private String standardAnswer;
-
-  /**
-   * 分值
-   */
-  @Excel(name = "分值")
-  private Integer score;
-
-  /**
    * 用户作答内容
    */
   @Excel(name = "用户答案")
   private String userAnswer;
 
-  /**
-   * 是否答对（1正确/0错误/2表示简答题 无）
-   */
-  @Excel(name = "是否答对", readConverterExp = "1=正确,0=错误,2=无")
-  private Integer isCorrect;
 
-  /**
-   * 用户获得分数
-   */
-  @Excel(name = "获得分数")
-  private Integer obtainScore;
 
   /**
    * 学生ID
@@ -167,21 +145,6 @@ public class QuestionnaireAnswer extends BaseEntity {
     return options;
   }
 
-  public void setStandardAnswer(String standardAnswer) {
-    this.standardAnswer = standardAnswer;
-  }
-
-  public String getStandardAnswer() {
-    return standardAnswer;
-  }
-
-  public void setScore(Integer score) {
-    this.score = score;
-  }
-
-  public Integer getScore() {
-    return score;
-  }
 
   public void setUserAnswer(String userAnswer) {
     this.userAnswer = userAnswer;
@@ -191,21 +154,7 @@ public class QuestionnaireAnswer extends BaseEntity {
     return userAnswer;
   }
 
-  public void setIsCorrect(Integer isCorrect) {
-    this.isCorrect = isCorrect;
-  }
 
-  public Integer getIsCorrect() {
-    return isCorrect;
-  }
-
-  public void setObtainScore(Integer obtainScore) {
-    this.obtainScore = obtainScore;
-  }
-
-  public Integer getObtainScore() {
-    return obtainScore;
-  }
 
   public void setStudentId(Long studentId) {
     this.studentId = studentId;
@@ -234,11 +183,7 @@ public class QuestionnaireAnswer extends BaseEntity {
         .append("type", getType())
         .append("content", getContent())
         .append("options", getOptions())
-        .append("standardAnswer", getStandardAnswer())
-        .append("score", getScore())
         .append("userAnswer", getUserAnswer())
-        .append("isCorrect", getIsCorrect())
-        .append("obtainScore", getObtainScore())
         .append("studentId", getStudentId())
         .append("studentName", getStudentName())
         .append("createBy", getCreateBy())

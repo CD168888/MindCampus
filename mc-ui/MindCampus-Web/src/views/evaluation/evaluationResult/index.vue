@@ -7,11 +7,7 @@
       <el-form-item label="问卷标题" prop="questionnaireTitle">
         <el-input v-model="queryParams.questionnaireTitle" placeholder="请输入问卷标题" clearable @keyup.enter="handleQuery" />
       </el-form-item>
-      <el-form-item label="风险等级" prop="riskLevel" style="width: 250px">
-        <el-select v-model="queryParams.riskLevel" placeholder="请选择风险等级" clearable>
-          <el-option v-for="dict in risk_level" :key="dict.value" :label="dict.label" :value="dict.value" />
-        </el-select>
-      </el-form-item>
+
       <el-form-item label="AI分析状态" prop="aiStatus" style="width: 250px; white-space: nowrap;">
         <el-select v-model="queryParams.aiStatus" placeholder="请选择AI分析状态" clearable>
           <el-option v-for="dict in ai_status" :key="dict.value" :label="dict.label" :value="dict.value" />
@@ -58,12 +54,7 @@
       <el-table-column label="测评结果ID" align="center" prop="resultId" />
       <el-table-column label="学生名称" align="center" prop="studentName" />
       <el-table-column label="问卷标题" align="center" prop="questionnaireTitle" />
-      <el-table-column label="总得分" align="center" prop="totalScore" />
-      <el-table-column label="风险等级" align="center" prop="riskLevel">
-        <template #default="scope">
-          <dict-tag :options="risk_level" :value="scope.row.riskLevel" />
-        </template>
-      </el-table-column>
+
       <el-table-column label="AI 分析结果" align="center" prop="aiAnalysis" />
       <el-table-column label="AI分析状态" align="center" prop="aiStatus">
         <template #default="scope">
@@ -110,15 +101,7 @@
         </el-form-item>
         <!-- 编辑模式下显示这些字段 -->
         <template v-if="isEditMode">
-          <el-form-item label="总得分" prop="totalScore">
-            <el-input v-model="form.totalScore" placeholder="请输入总得分" />
-          </el-form-item>
-          <el-form-item label="风险等级" prop="riskLevel">
-            <el-select v-model="form.riskLevel" placeholder="请选择风险等级">
-              <el-option v-for="dict in risk_level" :key="dict.value" :label="dict.label"
-                :value="dict.value"></el-option>
-            </el-select>
-          </el-form-item>
+
           <el-form-item label="AI 分析结果" prop="aiAnalysis">
             <el-input v-model="form.aiAnalysis" placeholder="请输入AI 分析结果" />
           </el-form-item>
@@ -188,7 +171,6 @@ const data = reactive({
     studentName: null,
     questionnaireId: null,
     questionnaireTitle: null,
-    riskLevel: null,
     aiStatus: null,
     readStatus: null,
     completionStatus: null,
@@ -200,13 +182,7 @@ const data = reactive({
     questionnaireId: [
       { required: true, message: "问卷ID不能为空", trigger: "blur" }
     ],
-    // 编辑模式下这些字段为必填，新增模式下不显示
-    totalScore: [
-      { required: false, message: "总得分不能为空", trigger: "blur" }
-    ],
-    riskLevel: [
-      { required: false, message: "风险等级不能为空", trigger: "change" }
-    ],
+
     aiAnalysis: [
       { required: false, message: "AI 分析结果不能为空", trigger: "blur" }
     ],
@@ -260,8 +236,6 @@ function reset() {
     resultId: null,
     studentId: null,
     questionnaireId: null,
-    totalScore: null,
-    riskLevel: null,
     aiAnalysis: null,
     aiStatus: null,
     readStatus: null,

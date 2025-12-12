@@ -13,11 +13,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="type"    column="type"    />
         <result property="content"    column="content"    />
         <result property="options"    column="options"    />
-        <result property="standardAnswer"    column="standard_answer"    />
-        <result property="score"    column="score"    />
         <result property="userAnswer"    column="user_answer"    />
-        <result property="isCorrect"    column="is_correct"    />
-        <result property="obtainScore"    column="obtain_score"    />
         <result property="studentId"    column="student_id"    />
         <result property="studentName"    column="student_name"    />
         <result property="createBy"    column="create_by"    />
@@ -36,11 +32,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             qa.type, 
             qa.content, 
             qa.options, 
-            qa.standard_answer, 
-            qa.score, 
             qa.user_answer, 
-            qa.is_correct, 
-            qa.obtain_score, 
             qa.create_by, 
             qa.create_time, 
             qa.update_by, 
@@ -86,11 +78,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="type != null and type != ''">type,</if>
             <if test="content != null and content != ''">content,</if>
             <if test="options != null">options,</if>
-            <if test="standardAnswer != null">standard_answer,</if>
-            <if test="score != null">score,</if>
             <if test="userAnswer != null">user_answer,</if>
-            <if test="isCorrect != null">is_correct,</if>
-            <if test="obtainScore != null">obtain_score,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -104,11 +92,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="type != null and type != ''">#{type},</if>
             <if test="content != null and content != ''">#{content},</if>
             <if test="options != null">#{options},</if>
-            <if test="standardAnswer != null">#{standardAnswer},</if>
-            <if test="score != null">#{score},</if>
             <if test="userAnswer != null">#{userAnswer},</if>
-            <if test="isCorrect != null">#{isCorrect},</if>
-            <if test="obtainScore != null">#{obtainScore},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
@@ -126,11 +110,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="type != null and type != ''">type = #{type},</if>
             <if test="content != null and content != ''">content = #{content},</if>
             <if test="options != null">options = #{options},</if>
-            <if test="standardAnswer != null">standard_answer = #{standardAnswer},</if>
-            <if test="score != null">score = #{score},</if>
             <if test="userAnswer != null">user_answer = #{userAnswer},</if>
-            <if test="isCorrect != null">is_correct = #{isCorrect},</if>
-            <if test="obtainScore != null">obtain_score = #{obtainScore},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>

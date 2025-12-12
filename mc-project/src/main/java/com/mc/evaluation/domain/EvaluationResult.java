@@ -44,12 +44,6 @@ public class EvaluationResult extends BaseEntity {
     private String questionnaireTitle;
 
     /**
-     * 总得分
-     */
-    @Excel(name = "总得分")
-    private Long totalScore;
-
-    /**
      * 风险等级（低/中/高）
      */
     @Excel(name = "风险等级")
@@ -119,13 +113,7 @@ public class EvaluationResult extends BaseEntity {
         return questionnaireTitle;
     }
 
-    public void setTotalScore(Long totalScore) {
-        this.totalScore = totalScore;
-    }
 
-    public Long getTotalScore() {
-        return totalScore;
-    }
 
     public void setRiskLevel(String riskLevel) {
         this.riskLevel = riskLevel;
@@ -175,7 +163,6 @@ public class EvaluationResult extends BaseEntity {
                 .append("studentName", getStudentName())
                 .append("questionnaireId", getQuestionnaireId())
                 .append("questionnaireTitle", getQuestionnaireTitle())
-                .append("totalScore", getTotalScore())
                 .append("riskLevel", getRiskLevel())
                 .append("aiAnalysis", getAiAnalysis())
                 .append("aiStatus", getAiStatus())

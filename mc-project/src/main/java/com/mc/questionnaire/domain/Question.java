@@ -36,12 +36,6 @@ public class Question extends BaseEntityPlus {
     @Schema(description = "选项（JSON 格式）")
     private String options;
 
-    @Schema(description = "标准答案")
-    private String standardAnswer;
-
-    @Schema(description = "分值")
-    private Integer score;
-
     @Schema(description = "题目顺序")
     private Integer orderNum;
 }

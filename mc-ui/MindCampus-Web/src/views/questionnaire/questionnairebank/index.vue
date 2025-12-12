@@ -45,8 +45,7 @@
       </el-table-column>
       <el-table-column label="题干内容" align="center" prop="content" />
       <el-table-column label="选择题选项" align="center" prop="options" />
-      <el-table-column label="标准答案" align="center" prop="standardAnswer" />
-      <el-table-column label="分值" align="center" prop="score" />
+
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
@@ -82,19 +81,7 @@
                 :placeholder="'请输入选项' + String.fromCharCode(65 + index) + '的内容'" />
             </div>
           </el-form-item>
-
-          <el-form-item label="标准答案" prop="standardAnswer">
-            <el-select v-model="form.standardAnswer" placeholder="请选择正确答案" clearable>
-              <el-option v-for="(option, index) in form.optionList" :key="index"
-                :label="String.fromCharCode(65 + index) + '. ' + option" :value="String.fromCharCode(65 + index)"
-                :disabled="!option || option.trim() === ''" />
-            </el-select>
-          </el-form-item>
         </div>
-
-        <el-form-item label="分值" prop="score">
-          <el-input-number v-model="form.score" :min="0" :max="100" placeholder="请输入分值" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -145,12 +132,7 @@ const data = reactive({
     content: [
       { required: true, message: "题干内容不能为空", trigger: "blur" }
     ],
-    standardAnswer: [
-      { required: true, message: "标准答案不能为空", trigger: "blur" }
-    ],
-    score: [
-      { required: true, message: "分值不能为空", trigger: "blur" }
-    ],
+
   }
 })
 
@@ -180,8 +162,6 @@ function reset() {
     content: null,
     options: null,
     optionList: ['', '', '', ''],
-    standardAnswer: null,
-    score: null,
     createBy: null,
     createTime: null,
     updateBy: null,
@@ -258,9 +238,8 @@ function handleTypeChange(value) {
     // 如果是选择题，固定为A、B、C、D四个选项
     form.value.optionList = ['', '', '', '']
   } else {
-    // 如果是简答题，清空选项和标准答案
+    // 如果是简答题，清空选项
     form.value.optionList = []
-    form.value.standardAnswer = ''
   }
 }
 

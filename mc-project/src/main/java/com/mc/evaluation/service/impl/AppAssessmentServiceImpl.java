@@ -2,7 +2,6 @@ package com.mc.evaluation.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mc.common.exception.ServiceException;
-import com.mc.common.utils.StringUtils;
 import com.mc.evaluation.domain.EvaluationResult;
 import com.mc.evaluation.domain.QuestionnaireAnswer;
 import com.mc.evaluation.domain.dto.SubmitAnswerDTO;
@@ -13,9 +12,9 @@ import com.mc.evaluation.domain.vo.QuestionnaireListVO;
 import com.mc.evaluation.mapper.EvaluationResultMapper;
 import com.mc.evaluation.mapper.QuestionnaireAnswerMapper;
 import com.mc.evaluation.service.IAppAssessmentService;
+import com.mc.evaluation.service.IMentalHealthEvaluationService;
 import com.mc.questionnaire.domain.Question;
 import com.mc.questionnaire.domain.Questionnaire;
-import com.mc.evaluation.service.IMentalHealthEvaluationService;
 import com.mc.questionnaire.mapper.QuestionMapper;
 import com.mc.questionnaire.mapper.QuestionnaireMapper;
 import com.mc.student.domain.Student;
@@ -127,8 +126,6 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
                 // 已完成
                 item.setCompletedTime(
                         evalResult.getUpdateTime() != null ? evalResult.getUpdateTime() : evalResult.getCreateTime());
-                item.setScore(evalResult.getTotalScore());
-                item.setRiskLevel(evalResult.getRiskLevel());
 
                 // 判断AI分析状态
                 if ("1".equals(evalResult.getAiStatus())) {
@@ -204,7 +201,6 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
         vo.setDescription(questionnaire.getDescription());
         vo.setStatus(questionnaire.getStatus());
         vo.setType(questionnaire.getType());
-        vo.setTotalScore(questionnaire.getTotalScore());
         vo.setStartTime(questionnaire.getStartTime());
         vo.setEndTime(questionnaire.getEndTime());
         vo.setQuestions(questions);
@@ -244,8 +240,7 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
         Map<Long, Question> questionMap = questions.stream()
                 .collect(Collectors.toMap(Question::getQuestionId, q -> q));
 
-        // 计算得分
-        int totalScore = 0;
+        // 创建答题记录列表
         List<QuestionnaireAnswer> answerList = new ArrayList<>();
 
         for (SubmitAnswerDTO.AnswerItem answerItem : dto.getAnswers()) {
@@ -262,30 +257,15 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
             answer.setType(question.getType());
             answer.setContent(question.getContent());
             answer.setOptions(question.getOptions());
-            answer.setStandardAnswer(question.getStandardAnswer());
-            answer.setScore(question.getScore());
 
             // 用户作答
             answer.setUserAnswer(answerItem.getUserAnswer());
 
-            // 判断是否正确（仅选择题）
-            if ("choice".equals(question.getType()) && StringUtils.isNotEmpty(question.getStandardAnswer())) {
-                boolean isCorrect = question.getStandardAnswer().equalsIgnoreCase(answerItem.getUserAnswer());
-                answer.setIsCorrect(isCorrect ? 1 : 2);
-                answer.setObtainScore(isCorrect ? question.getScore() : 0);
-                totalScore += answer.getObtainScore();
-            } else {
-                // 简答题默认给分
-                answer.setIsCorrect(3);
-                answer.setObtainScore(question.getScore());
-                totalScore += question.getScore();
-            }
-
             answerList.add(answer);
         }
 
-        // 评估风险等级
-        String riskLevel = calculateRiskLevel(totalScore, questionnaire.getTotalScore());
+        // 移除风险等级计算，直接设为空或默认值
+        String riskLevel = "";
 
         // 查询该学生的测评记录（发送时已创建）
         EvaluationResult queryResult = new EvaluationResult();
@@ -301,7 +281,6 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
                     .orElse(existingResults.get(0));
             result.setStudentName(student.getName());
             result.setQuestionnaireTitle(questionnaire.getTitle());
-            result.setTotalScore((long) totalScore);
             result.setRiskLevel(riskLevel);
             result.setCompletionStatus("1"); // 1已完成
             result.setAiStatus("0"); // 0未完成
@@ -314,7 +293,6 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
             result.setStudentName(student.getName());
             result.setQuestionnaireId(dto.getQuestionnaireId());
             result.setQuestionnaireTitle(questionnaire.getTitle());
-            result.setTotalScore((long) totalScore);
             result.setRiskLevel(riskLevel);
             result.setCompletionStatus("1"); // 1已完成
             result.setAiStatus("0"); // 0未完成
@@ -350,21 +328,12 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
 
         // 计算统计信息
         int totalQuestions = answers.size();
-        int correctCount = (int) answers.stream()
-                .filter(a -> a.getIsCorrect() != null && a.getIsCorrect() == 1)
-                .count();
-
-        String accuracy = totalQuestions > 0
-                ? String.format("%.2f%%", (correctCount * 100.0 / totalQuestions))
-                : "0%";
 
         // 组装VO
         EvaluationResultVO vo = new EvaluationResultVO();
         vo.setResult(result);
         vo.setAnswers(answers);
         vo.setTotalQuestions(totalQuestions);
-        vo.setCorrectCount(correctCount);
-        vo.setAccuracy(accuracy);
 
         return vo;
     }
@@ -435,22 +404,5 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
         return item;
     }
 
-    /**
-     * 计算风险等级
-     */
-    private String calculateRiskLevel(int score, Integer totalScore) {
-        if (totalScore == null || totalScore == 0) {
-            return "低";
-        }
 
-        double percentage = (double) score / totalScore;
-
-        if (percentage >= 0.8) {
-            return "低";
-        } else if (percentage >= 0.5) {
-            return "中";
-        } else {
-            return "高";
-        }
-    }
 }

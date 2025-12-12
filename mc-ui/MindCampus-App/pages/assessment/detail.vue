@@ -32,10 +32,7 @@
             <uni-icons type="clock" size="16" color="#6ee7b7"></uni-icons>
             <text class="meta-text">约 {{ questions.length }} 分钟</text>
           </view>
-          <view class="meta-item">
-            <uni-icons type="star" size="16" color="#fda4af"></uni-icons>
-            <text class="meta-text">总分 {{ questionnaire.totalScore }}</text>
-          </view>
+
         </view>
       </view>
 
@@ -62,7 +59,6 @@
 
           <view class="question-content">
             <text class="question-text">{{ question.content }}</text>
-            <text class="question-score">({{ question.score }}分)</text>
           </view>
 
           <!-- 选择题 -->

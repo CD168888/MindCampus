@@ -37,17 +37,6 @@ public class QuestionBank extends BaseEntity {
     @Excel(name = "选择题选项")
     private String options;
 
-    /**
-     * 标准答案（仅选择题有效）
-     */
-    @Excel(name = "标准答案")
-    private String standardAnswer;
-
-    /**
-     * 分值
-     */
-    @Excel(name = "分值")
-    private Long score;
 
     public void setBankId(Long bankId) {
         this.bankId = bankId;
@@ -81,22 +70,6 @@ public class QuestionBank extends BaseEntity {
         return options;
     }
 
-    public void setStandardAnswer(String standardAnswer) {
-        this.standardAnswer = standardAnswer;
-    }
-
-    public String getStandardAnswer() {
-        return standardAnswer;
-    }
-
-    public void setScore(Long score) {
-        this.score = score;
-    }
-
-    public Long getScore() {
-        return score;
-    }
-
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -104,8 +77,6 @@ public class QuestionBank extends BaseEntity {
                 .append("type", getType())
                 .append("content", getContent())
                 .append("options", getOptions())
-                .append("standardAnswer", getStandardAnswer())
-                .append("score", getScore())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

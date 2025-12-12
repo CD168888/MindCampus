@@ -25,10 +25,4 @@ public class EvaluationResultVO {
 
   @Schema(description = "总题数")
   private Integer totalQuestions;
-
-  @Schema(description = "正确题数")
-  private Integer correctCount;
-
-  @Schema(description = "准确率")
-  private String accuracy;
 }

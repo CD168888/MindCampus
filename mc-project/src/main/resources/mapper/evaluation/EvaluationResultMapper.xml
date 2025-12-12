@@ -10,7 +10,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="studentName"    column="student_name"    />
         <result property="questionnaireId"    column="questionnaire_id"    />
         <result property="questionnaireTitle"    column="questionnaire_title"    />
-        <result property="totalScore"    column="total_score"    />
         <result property="riskLevel"    column="risk_level"    />
         <result property="aiAnalysis"    column="ai_analysis"    />
         <result property="aiStatus"    column="ai_status"    />
@@ -28,7 +27,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             er.result_id, 
             er.student_id, 
             er.questionnaire_id, 
-            er.total_score, 
             er.risk_level, 
             er.ai_analysis, 
             er.ai_status, 
@@ -71,7 +69,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="studentId != null">student_id,</if>
             <if test="questionnaireId != null">questionnaire_id,</if>
-            <if test="totalScore != null">total_score,</if>
             <if test="riskLevel != null and riskLevel != ''">risk_level,</if>
             <if test="aiAnalysis != null and aiAnalysis != ''">ai_analysis,</if>
             <if test="aiStatus != null and aiStatus != ''">ai_status,</if>
@@ -86,7 +83,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="studentId != null">#{studentId},</if>
             <if test="questionnaireId != null">#{questionnaireId},</if>
-            <if test="totalScore != null">#{totalScore},</if>
             <if test="riskLevel != null and riskLevel != ''">#{riskLevel},</if>
             <if test="aiAnalysis != null and aiAnalysis != ''">#{aiAnalysis},</if>
             <if test="aiStatus != null and aiStatus != ''">#{aiStatus},</if>
@@ -105,7 +101,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="SET" suffixOverrides=",">
             <if test="studentId != null">student_id = #{studentId},</if>
             <if test="questionnaireId != null">questionnaire_id = #{questionnaireId},</if>
-            <if test="totalScore != null">total_score = #{totalScore},</if>
             <if test="riskLevel != null and riskLevel != ''">risk_level = #{riskLevel},</if>
             <if test="aiAnalysis != null and aiAnalysis != ''">ai_analysis = #{aiAnalysis},</if>
             <if test="aiStatus != null and aiStatus != ''">ai_status = #{aiStatus},</if>

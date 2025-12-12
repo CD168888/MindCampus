@@ -89,10 +89,7 @@
             <view class="meta-item">
               <text class="meta-text">{{ item.questionCount }} 题</text>
             </view>
-            <view class="meta-divider">·</view>
-            <view class="meta-item">
-              <text class="meta-text">得分 {{ item.score }}分</text>
-            </view>
+
             <view class="meta-divider">·</view>
             <view class="meta-item">
               <text class="meta-text">{{ item.publisher }}</text>

@@ -46,19 +46,7 @@ public class QuestionnaireAnswer extends BaseEntityPlus {
   @Schema(description = "选择题选项（A/B/C/D…），简答题为空")
   private String options;
 
-  @Schema(description = "标准答案（仅选择题有效）")
-  private String standardAnswer;
-
-  @Schema(description = "分值")
-  private Integer score;
-
   // 用户作答部分
   @Schema(description = "用户作答内容")
   private String userAnswer;
-
-  @Schema(description = "是否答对（1正确/0错误/空表示简答题）")
-  private Integer isCorrect;
-
-  @Schema(description = "用户获得分数")
-  private Integer obtainScore;
 }

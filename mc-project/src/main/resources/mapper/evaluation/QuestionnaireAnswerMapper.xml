@@ -12,11 +12,7 @@
         <result property="type" column="type"/>
         <result property="content" column="content"/>
         <result property="options" column="options"/>
-        <result property="standardAnswer" column="standard_answer"/>
-        <result property="score" column="score"/>
         <result property="userAnswer" column="user_answer"/>
-        <result property="isCorrect" column="is_correct"/>
-        <result property="obtainScore" column="obtain_score"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>
@@ -33,11 +29,7 @@
             type,
             content,
             options,
-            standard_answer,
-            score,
             user_answer,
-            is_correct,
-            obtain_score,
             create_time
         ) VALUES
         <foreach collection="list" item="item" separator=",">
@@ -48,11 +40,7 @@
                 #{item.type},
                 #{item.content},
                 #{item.options},
-                #{item.standardAnswer},
-                #{item.score},
                 #{item.userAnswer},
-                #{item.isCorrect},
-                #{item.obtainScore},
                 NOW()
             )
         </foreach>
@@ -68,11 +56,7 @@
             type,
             content,
             options,
-            standard_answer,
-            score,
             user_answer,
-            is_correct,
-            obtain_score,
             create_by,
             create_time,
             update_by,

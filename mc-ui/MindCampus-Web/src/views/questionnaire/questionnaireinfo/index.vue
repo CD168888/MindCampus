@@ -62,7 +62,7 @@
           <dict-tag :options="questionnaire_type" :value="scope.row.type" />
         </template>
       </el-table-column>
-      <el-table-column label="总分" align="center" prop="totalScore" width="80" />
+
       <el-table-column label="开始时间" align="center" prop="startTime" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.startTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
@@ -106,7 +106,7 @@
         <el-descriptions-item label="类型">
           <dict-tag :options="questionnaire_type" :value="viewForm.type" />
         </el-descriptions-item>
-        <el-descriptions-item label="总分">{{ viewForm.totalScore }} 分</el-descriptions-item>
+
         <el-descriptions-item label="开始时间">{{ parseTime(viewForm.startTime, '{y}-{m}-{d} {h}:{i}:{s}')
           }}</el-descriptions-item>
         <el-descriptions-item label="结束时间">{{ parseTime(viewForm.endTime, '{y}-{m}-{d} {h}:{i}:{s}')
@@ -136,14 +136,12 @@
               {{ String.fromCharCode(65 + i) }}. {{ opt }}
             </div>
           </div>
-          <p v-if="q.standardAnswer" style="margin:10px 0 5px 0; font-weight:bold; color:#e6a23c;">
-            标准答案：{{ q.standardAnswer }}
-          </p>
+          
         </div>
 
         <div
           style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px solid #e4e7ed;">
-          <span style="color:#909399; font-size:12px;">分值：{{ q.score }} 分</span>
+          
           <span style="color:#909399; font-size:12px;">排序：{{ q.orderNum }}</span>
         </div>
       </div>
@@ -174,9 +172,7 @@
             <el-option v-for="dict in questionnaire_type" :key="dict.value" :label="dict.label" :value="dict.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="总分">
-          <el-input :value="calculateTotalScore()" disabled placeholder="根据题目分值自动计算" />
-        </el-form-item>
+
         <el-form-item label="开始时间" prop="startTime">
           <el-date-picker v-model="form.startTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss"
             placeholder="请选择开始时间" />
@@ -231,18 +227,7 @@
                     </div>
                   </el-form-item>
 
-                  <el-form-item label="标准答案">
-                    <el-select v-model="q.standardAnswer" placeholder="请选择正确答案" clearable>
-                      <el-option v-for="(option, index) in q.optionList" :key="index"
-                        :label="String.fromCharCode(65 + index) + '. ' + option"
-                        :value="String.fromCharCode(65 + index)" :disabled="!option || option.trim() === ''" />
-                    </el-select>
-                  </el-form-item>
                 </div>
-
-                <el-form-item label="分值">
-                  <el-input-number v-model="q.score" :min="0" :max="100" placeholder="请输入分值" />
-                </el-form-item>
               </div>
             </div>
           </div>
@@ -301,7 +286,7 @@
             </template>
           </el-table-column>
           <el-table-column label="题干内容" align="center" prop="content" show-overflow-tooltip />
-          <el-table-column label="分值" align="center" prop="score" width="80" />
+    
         </el-table>
 
         <!-- 分页 -->
@@ -533,7 +518,7 @@ function handleView(row) {
     description: row.description,
     status: row.status,
     type: row.type,
-    totalScore: row.totalScore,
+    
     startTime: row.startTime,
     endTime: row.endTime,
     createTime: row.createTime,
@@ -661,8 +646,7 @@ function addQuestion() {
     content: '',
     type: 'choice',
     optionList: ['', '', '', ''],
-    standardAnswer: '',
-    score: 0
+   
   })
   // 新增题目后跳转到最后一题
   currentQuestionIndex.value = form.value.questions.length - 1
@@ -685,21 +669,12 @@ function handleQuestionTypeChange(question) {
       question.optionList = ['', '', '', '']
     }
   } else {
-    // 如果是简答题，清空选项和标准答案
-    question.optionList = []
-    question.standardAnswer = ''
+    // 如果是简答题，清空选项
+  question.optionList = []
   }
 }
 
-// 计算总分
-function calculateTotalScore() {
-  if (!form.value.questions || form.value.questions.length === 0) {
-    return 0
-  }
-  return form.value.questions.reduce((total, question) => {
-    return total + (question.score || 0)
-  }, 0)
-}
+
 
 // 轮播图控制函数
 function prevQuestion() {
@@ -765,8 +740,7 @@ function addSelectedQuestions() {
       content: question.content,
       type: question.type,
       optionList: ['', '', '', ''],
-      standardAnswer: question.standardAnswer || '',
-      score: question.score || 0
+    
     }
 
     // 如果是选择题且有选项数据，解析选项

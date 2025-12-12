@@ -27,14 +27,7 @@
         <view class="overview-title">测评完成</view>
         <view class="overview-subtitle">{{ result.questionnaireTitle }}</view>
 
-        <view class="score-display">
-          <view class="score-number">{{ result.totalScore }}</view>
-          <view class="score-label">总得分</view>
-        </view>
 
-        <view class="risk-badge" :class="'risk-badge-' + (result.riskLevel || '低')">
-          {{ getRiskText(result.riskLevel) }}
-        </view>
       </view>
 
       <!-- 统计信息 -->
@@ -42,16 +35,6 @@
         <view class="stat-item">
           <view class="stat-value">{{ resultData.totalQuestions }}</view>
           <view class="stat-label">总题数</view>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item">
-          <view class="stat-value">{{ resultData.correctCount }}</view>
-          <view class="stat-label">正确题数</view>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item">
-          <view class="stat-value">{{ resultData.accuracy }}</view>
-          <view class="stat-label">准确率</view>
         </view>
       </view>
 
@@ -82,13 +65,8 @@
         <view class="answer-list">
           <view v-for="(answer, index) in resultData.answers" :key="answer.answerId" class="answer-card">
             <view class="answer-header">
-              <view class="answer-number">第 {{ index + 1 }} 题</view>
-              <view class="answer-score-info">
-                <text class="score-obtained">{{ answer.obtainScore }}分</text>
-                <text class="score-divider">/</text>
-                <text class="score-total">{{ answer.score }}分</text>
-              </view>
-            </view>
+            <view class="answer-number">第 {{ index + 1 }} 题</view>
+          </view>
 
             <view class="answer-question">
               <text class="question-text">{{ answer.content }}</text>
@@ -97,16 +75,9 @@
             <!-- 选择题 -->
             <view v-if="answer.type === 'choice'" class="answer-details">
               <view class="detail-row">
-                <text class="detail-label">标准答案：</text>
-                <text class="detail-value answer-standard">{{ answer.standardAnswer }}</text>
-              </view>
-              <view class="detail-row">
                 <text class="detail-label">你的答案：</text>
-                <text class="detail-value answer-user"
-                  :class="{ 'answer-correct': answer.isCorrect === 1, 'answer-wrong': answer.isCorrect === 0 }">
+                <text class="detail-value answer-user">
                   {{ answer.userAnswer }}
-                  <text v-if="answer.isCorrect === 1" class="result-icon">✓</text>
-                  <text v-else-if="answer.isCorrect === 0" class="result-icon">✗</text>
                 </text>
               </view>
             </view>

@@ -13,11 +13,7 @@
           <el-option label="简答题" value="short_answer" />
         </el-select>
       </el-form-item>
-      <el-form-item label="是否答对" prop="isCorrect" style="width: 200px">
-        <el-select v-model="queryParams.isCorrect" placeholder="请选择是否答对" clearable>
-          <el-option v-for="dict in is_correct" :key="dict.value" :label="dict.label" :value="dict.value" />
-        </el-select>
-      </el-form-item>
+
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -67,14 +63,7 @@
       </el-table-column>
       <el-table-column label="题干内容" align="center" prop="content" width="250" show-overflow-tooltip />
       <el-table-column label="用户答案" align="center" prop="userAnswer" width="200" show-overflow-tooltip />
-      <el-table-column label="标准答案" align="center" prop="standardAnswer" width="150" show-overflow-tooltip />
-      <el-table-column label="是否答对" align="center" prop="isCorrect" width="100">
-        <template #default="scope">
-          <dict-tag :options="is_correct" :value="scope.row.isCorrect" />
-        </template>
-      </el-table-column>
-      <el-table-column label="分值" align="center" prop="score" width="80" />
-      <el-table-column label="获得分数" align="center" prop="obtainScore" width="100" />
+
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="View" @click="handleView(scope.row)"
@@ -116,23 +105,11 @@
           <el-input v-model="form.options" type="textarea" :rows="4" placeholder="请输入选项（JSON格式）"
             :disabled="form.answerId != null" />
         </el-form-item>
-        <el-form-item label="标准答案" prop="standardAnswer">
-          <el-input v-model="form.standardAnswer" placeholder="请输入标准答案" :disabled="form.answerId != null" />
-        </el-form-item>
-        <el-form-item label="分值" prop="score">
-          <el-input-number v-model="form.score" :min="0" placeholder="请输入分值" :disabled="form.answerId != null" />
-        </el-form-item>
+
         <el-form-item label="用户答案" prop="userAnswer">
           <el-input v-model="form.userAnswer" type="textarea" :rows="3" placeholder="请输入用户答案" />
         </el-form-item>
-        <el-form-item label="是否答对" prop="isCorrect">
-          <el-select v-model="form.isCorrect" placeholder="请选择是否答对">
-            <el-option v-for="dict in is_correct" :key="dict.value" :label="dict.label" :value="dict.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="获得分数" prop="obtainScore">
-          <el-input-number v-model="form.obtainScore" :min="0" placeholder="请输入获得分数" />
-        </el-form-item>
+
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -153,18 +130,14 @@
           <el-tag v-if="viewForm.type === 'choice'" type="success">选择题</el-tag>
           <el-tag v-else-if="viewForm.type === 'short_answer'" type="info">简答题</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="是否答对">
-          <dict-tag :options="is_correct" :value="viewForm.isCorrect" />
-        </el-descriptions-item>
-        <el-descriptions-item label="分值">{{ viewForm.score }}</el-descriptions-item>
-        <el-descriptions-item label="获得分数">{{ viewForm.obtainScore }}</el-descriptions-item>
+
         <el-descriptions-item label="题干内容" :span="2">
           <div style="white-space: pre-wrap;">{{ viewForm.content }}</div>
         </el-descriptions-item>
         <el-descriptions-item label="用户答案" :span="2">
           <div style="white-space: pre-wrap;">{{ viewForm.userAnswer }}</div>
         </el-descriptions-item>
-        <el-descriptions-item label="标准答案" :span="2">{{ viewForm.standardAnswer }}</el-descriptions-item>
+
         <el-descriptions-item label="创建时间" :span="2">{{ parseTime(viewForm.createTime) }}</el-descriptions-item>
       </el-descriptions>
       <template #footer>
@@ -212,7 +185,6 @@ const data = reactive({
     type: null,
     studentId: null,
     studentName: null,
-    isCorrect: null,
   },
   rules: {
     resultId: [
@@ -320,11 +292,7 @@ function reset() {
     type: null,
     content: null,
     options: null,
-    standardAnswer: null,
-    score: 0,
     userAnswer: null,
-    isCorrect: null,
-    obtainScore: 0,
     createBy: null,
     createTime: null,
     updateBy: null,

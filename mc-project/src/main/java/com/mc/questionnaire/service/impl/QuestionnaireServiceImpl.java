@@ -67,14 +67,7 @@ public class QuestionnaireServiceImpl extends ServiceImpl<QuestionnaireMapper, Q
         questionnaire.setStartTime(questionnaireDTO.getStartTime());
         questionnaire.setEndTime(questionnaireDTO.getEndTime());
 
-        // 总分 = 题目分值累加
-        int totalScore = 0;
-        if (questionnaireDTO.getQuestions() != null && !questionnaireDTO.getQuestions().isEmpty()) {
-            totalScore = questionnaireDTO.getQuestions().stream()
-                    .mapToInt(q -> q.getScore() == null ? 0 : q.getScore())
-                    .sum();
-        }
-        questionnaire.setTotalScore(totalScore);
+        // 移除分数相关逻辑
 
         if (questionnaireDTO.getQuestionnaireId() == null) {
             // 新增问卷

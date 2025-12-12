@@ -42,17 +42,11 @@ public class QuestionnaireItemVO {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date completedTime;
 
-    @Schema(description = "得分")
-    private Long score;
-
     @Schema(description = "结果ID")
     private Long resultId;
 
     @Schema(description = "问卷类型（0常规测评 1临时测评 2专项测评 3学业压力 4情绪状态 5人格特质）")
     private String type;
-
-    @Schema(description = "风险等级")
-    private String riskLevel;
 
     @Schema(description = "状态（pending待填写/expired已截止/completed已完成/analyzing待分析）")
     private String status;
