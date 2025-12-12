@@ -1,12 +1,14 @@
 package com.mc.framework.datasource;
 
-import java.util.Map;
-import javax.sql.DataSource;
+import com.mc.common.enums.DataSourceType;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
+
+import javax.sql.DataSource;
+import java.util.Map;
 
 /**
  * 动态数据源
- * 
+ *
  * @author caidu
  */
 public class DynamicDataSource extends AbstractRoutingDataSource
@@ -21,6 +23,8 @@ public class DynamicDataSource extends AbstractRoutingDataSource
     @Override
     protected Object determineCurrentLookupKey()
     {
-        return DynamicDataSourceContextHolder.getDataSourceType();
+        // 当数据源类型为null时，默认使用master数据源
+        String dataSourceType = DynamicDataSourceContextHolder.getDataSourceType();
+        return dataSourceType != null ? dataSourceType : DataSourceType.MASTER.name();
     }
 }
