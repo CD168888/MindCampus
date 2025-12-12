@@ -22,6 +22,8 @@ import com.mc.student.mapper.StudentInfoMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -306,8 +308,14 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
         }
         answerMapper.batchInsert(answerList);
 
-        // 异步调用AI评估服务
-        mentalHealthEvaluationService.asyncEvaluateMentalHealth(result.getResultId());
+        // 事务提交后再异步调用AI评估服务
+        final Long finalResultId = result.getResultId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCommit() {
+                mentalHealthEvaluationService.asyncEvaluateMentalHealth(finalResultId);
+            }
+        });
 
         return result.getResultId();
     }
