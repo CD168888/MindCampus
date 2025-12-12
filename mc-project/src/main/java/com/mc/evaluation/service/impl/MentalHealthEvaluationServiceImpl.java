@@ -49,7 +49,7 @@ public class MentalHealthEvaluationServiceImpl implements IMentalHealthEvaluatio
             // 获取问卷答案
             List<QuestionnaireAnswer> answers = questionnaireAnswerMapper.selectByResultId(resultId);
             if (answers == null || answers.isEmpty()) {
-                log.warn("没有找到问卷答案 - 测评结果ID: {}", resultId);
+                log.warn("没有找到问卷 - 测评结果ID: {}", resultId);
                 return;
             }
 
@@ -97,7 +97,8 @@ public class MentalHealthEvaluationServiceImpl implements IMentalHealthEvaluatio
      * @return 评估提示词
      */
     private String buildEvaluationPrompt(String questionnaireContent) {
-        return String.format("请对以下问卷进行心理健康评估:\n\n%s\n\n请按照要求的JSON格式输出评估结果。", questionnaireContent);
+        // 系统提示词已经包含了完整的评估要求，这里只需要提供问卷内容
+        return questionnaireContent;
     }
 
     /**
@@ -110,15 +111,19 @@ public class MentalHealthEvaluationServiceImpl implements IMentalHealthEvaluatio
         try {
             EvaluationResult dbResult = evaluationResultMapper.selectEvaluationResultByResultId(resultId);
             if (dbResult != null) {
-                // 更新AI分析结果
-                dbResult.setAiAnalysis(objectMapper.writeValueAsString(evaluationResult));
-                // 更新风险等级
+                // 更新AI分析结果（包含总分、各指标分值、评估建议等完整信息）
+                String aiAnalysisJson = objectMapper.writeValueAsString(evaluationResult);
+                dbResult.setAiAnalysis(aiAnalysisJson);
+                
+                // 更新风险等级（从AI评估结果中获取）
                 dbResult.setRiskLevel(evaluationResult.getRiskLevel());
+                
                 // 更新AI分析状态为已完成
                 dbResult.setAiStatus("1");
 
                 evaluationResultMapper.updateEvaluationResult(dbResult);
-                log.info("更新评估结果到数据库 - 测评结果ID: {}", resultId);
+                log.info("更新评估结果到数据库 - 测评结果ID: {}, 总得分: {}, 风险等级: {}", 
+                        resultId, evaluationResult.getTotalScore(), evaluationResult.getRiskLevel());
             } else {
                 log.warn("未找到对应的测评结果记录 - 测评结果ID: {}", resultId);
             }
