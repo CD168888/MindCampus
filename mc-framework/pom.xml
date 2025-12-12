@@ -59,18 +59,6 @@
             <artifactId>mc-system</artifactId>
         </dependency>
 
-        <!-- 项目模块 -->
-        <dependency>
-            <groupId>com.mc</groupId>
-            <artifactId>mc-project</artifactId>
-        </dependency>
-
-        <!-- 公共模块 -->
-        <dependency>
-            <groupId>com.mc</groupId>
-            <artifactId>mc-common</artifactId>
-        </dependency>
-
     </dependencies>
 
 </project>

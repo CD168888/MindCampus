@@ -38,6 +38,12 @@
             <groupId>com.mc</groupId>
             <artifactId>mc-system</artifactId>
         </dependency>
+        
+        <dependency>
+            <groupId>com.mc</groupId>
+            <artifactId>mc-ai</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>
