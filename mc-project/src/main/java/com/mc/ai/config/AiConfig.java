@@ -1,9 +1,10 @@
 package com.mc.ai.config;
 
-import com.mc.ai.prompt.AiPrompts;
 import com.alibaba.cloud.ai.memory.redis.RedisChatMemoryRepository;
+import com.mc.ai.prompt.AiPrompts;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,11 +69,11 @@ public class AiConfig {
      * 这样做的好处是无需手动维护工具列表，新增的工具 Bean 会自动被注册到 ChatClient 中。
      *
      * @param builder Spring AI 的 ChatClient 构建器，用于配置和创建 ChatClient 实例
-     * @param chatMemoryRepository Redis 聊天记忆仓库，用于持久化对话历史
+     * @param chatMemory Redis 聊天记忆仓库，用于持久化对话历史
      * @return 配置完成的 ChatClient 实例，包含所有自动发现的工具和对话记忆功能
      */
     @Bean
-    public ChatClient chatClient(ChatClient.Builder builder, RedisChatMemoryRepository chatMemoryRepository){
+    public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory) {
         // 获取 Spring 容器中所有 Supplier 和 Function Bean
         Map<String, Supplier> supplierBeans = applicationContext.getBeansOfType(Supplier.class);
         Map<String, Function> functionBeans = applicationContext.getBeansOfType(Function.class);
@@ -84,10 +85,7 @@ public class AiConfig {
         return builder
                 .defaultSystem(AiPrompts.GENERAL_ASSISTANT)
                 .defaultAdvisors(
-                        MessageChatMemoryAdvisor.builder(
-                                        MessageWindowChatMemory.builder()
-                                                .chatMemoryRepository(chatMemoryRepository)
-                                                .build())
+                        MessageChatMemoryAdvisor.builder(chatMemory)
                                 .build())
                 .defaultToolNames(allToolNames.toArray(new String[0]))
                 .build();
@@ -101,6 +99,16 @@ public class AiConfig {
                 // 若没有设置密码则注释该项
 //				.password(redisPassword)
                 .timeout(redisTimeout)
+                .build();
+    }
+
+    /**
+     * 配置 ChatMemory Bean，供其他服务注入使用
+     */
+    @Bean
+    public ChatMemory chatMemory(RedisChatMemoryRepository chatMemoryRepository) {
+        return MessageWindowChatMemory.builder()
+                .chatMemoryRepository(chatMemoryRepository)
                 .build();
     }
 

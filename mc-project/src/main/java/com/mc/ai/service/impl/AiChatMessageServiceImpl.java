@@ -1,20 +1,25 @@
 package com.mc.ai.service.impl;
 
-import com.mc.ai.domain.AiChatMessage;
-import com.mc.ai.mapper.AiChatMessageMapper;
-import com.mc.ai.service.IAiChatMessageService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mc.ai.domain.AiChatMessage;
+import com.mc.ai.mapper.AiChatMessageMapper;
+import com.mc.ai.service.IAiChatMessageService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * AI聊天消息服务
@@ -28,6 +33,9 @@ public class AiChatMessageServiceImpl extends ServiceImpl<AiChatMessageMapper, A
 
     @Resource
     private ObjectMapper objectMapper;
+
+    @Resource
+    private ChatMemory chatMemory;
 
     private static final String CHAT_HISTORY_KEY = "chat:history:";
     private static final long CACHE_EXPIRE_HOURS = 24; // Redis缓存24小时
@@ -93,7 +101,9 @@ public class AiChatMessageServiceImpl extends ServiceImpl<AiChatMessageMapper, A
         if (messages == null) {
             messages = getMessagesFromDB(sessionId);
             if (!messages.isEmpty()) {
+                // 同时恢复消息缓存和AI记忆
                 cacheToRedis(sessionId, messages);
+                restoreAiMemory(sessionId, messages);
             }
         }
 
@@ -115,6 +125,39 @@ public class AiChatMessageServiceImpl extends ServiceImpl<AiChatMessageMapper, A
     }
 
     /**
+     * 恢复 AI 记忆系统
+     * 将历史消息注入到 Spring AI 的 ChatMemory 中
+     */
+    private void restoreAiMemory(Long sessionId, List<AiChatMessage> messages) {
+        try {
+            String conversationId = String.valueOf(sessionId);
+
+            // 将 AiChatMessage 转换为 Spring AI 的 Message 格式
+            List<Message> aiMessages = messages.stream()
+                    .map(msg -> {
+                        if (msg.getMessageType() == 1) {
+                            // 用户消息
+                            return new UserMessage(msg.getContent());
+                        } else {
+                            // AI助手消息
+                            return new AssistantMessage(msg.getContent());
+                        }
+                    })
+                    .collect(Collectors.toList());
+
+            // 清空旧的记忆（如果有）
+            chatMemory.clear(conversationId);
+
+            // 添加所有历史消息到 ChatMemory
+            chatMemory.add(conversationId, aiMessages);
+
+            log.info("恢复会话 {} 的AI记忆，共 {} 条消息", sessionId, aiMessages.size());
+        } catch (Exception e) {
+            log.error("恢复AI记忆失败 - 会话ID: {}", sessionId, e);
+        }
+    }
+
+    /**
      * 同步会话的所有消息到Redis（用于消息更新后）
      */
     private void syncToRedis(Long sessionId) {
@@ -123,7 +166,7 @@ public class AiChatMessageServiceImpl extends ServiceImpl<AiChatMessageMapper, A
     }
 
     /**
-     * 删除会话的所有消息（同时删除数据库和Redis）
+     * 删除会话的所有消息（同时删除数据库、Redis缓存和AI记忆）
      */
     public boolean deleteSessionMessages(Long sessionId, Long userId) {
         // 验证会话归属
@@ -136,9 +179,26 @@ public class AiChatMessageServiceImpl extends ServiceImpl<AiChatMessageMapper, A
         if (removed) {
             String key = CHAT_HISTORY_KEY + sessionId;
             stringRedisTemplate.delete(key);
+
+            // 同时清空AI记忆
+            clearAiMemory(sessionId);
+
             log.info("删除会话 {} 的所有消息", sessionId);
         }
 
         return removed;
+    }
+
+    /**
+     * 清空指定会话的 AI 记忆
+     */
+    private void clearAiMemory(Long sessionId) {
+        try {
+            String conversationId = String.valueOf(sessionId);
+            chatMemory.clear(conversationId);
+            log.info("清空会话 {} 的AI记忆", sessionId);
+        } catch (Exception e) {
+            log.error("清空AI记忆失败 - 会话ID: {}", sessionId, e);
+        }
     }
 }
