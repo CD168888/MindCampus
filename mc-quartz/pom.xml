@@ -35,6 +35,11 @@
             <artifactId>mc-common</artifactId>
         </dependency>
 
+        <!-- 项目模块 -->
+        <dependency>
+            <groupId>com.mc</groupId>
+            <artifactId>mc-project</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
