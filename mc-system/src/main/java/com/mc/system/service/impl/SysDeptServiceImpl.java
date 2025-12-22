@@ -1,11 +1,5 @@
 package com.mc.system.service.impl;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import com.mc.common.annotation.DataScope;
 import com.mc.common.constant.UserConstants;
 import com.mc.common.core.domain.TreeSelect;
@@ -20,6 +14,13 @@ import com.mc.common.utils.spring.SpringUtils;
 import com.mc.system.mapper.SysDeptMapper;
 import com.mc.system.mapper.SysRoleMapper;
 import com.mc.system.service.ISysDeptService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 部门管理 服务实现
