@@ -50,3 +50,11 @@ export function delDept(deptId) {
     method: 'delete'
   })
 }
+
+// 获取所有辅导员信息
+export function getAllCounselors() {
+  return request({
+    url: '/counselor/counselordept/list',
+    method: 'get'
+  })
+}

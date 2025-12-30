@@ -103,18 +103,25 @@
                   </el-form-item>
                </el-col>
                <el-col :span="12">
-                  <el-form-item label="负责人" prop="leader">
-                     <el-input v-model="form.leader" placeholder="请输入负责人" maxlength="20" />
+                  <el-form-item label="辅导员" prop="counselorId">
+                     <el-select v-model="form.counselorId" placeholder="选择辅导员" @change="handleCounselorChange">
+                        <el-option
+                           v-for="counselor in counselorList"
+                           :key="counselor.counselorId"
+                           :label="counselor.name"
+                           :value="counselor.counselorId"
+                        />
+                     </el-select>
                   </el-form-item>
                </el-col>
                <el-col :span="12">
                   <el-form-item label="联系电话" prop="phone">
-                     <el-input v-model="form.phone" placeholder="请输入联系电话" maxlength="11" />
+                     <el-input v-model="form.phone" placeholder="请输入联系电话" maxlength="11" disabled />
                   </el-form-item>
                </el-col>
                <el-col :span="12">
                   <el-form-item label="邮箱" prop="email">
-                     <el-input v-model="form.email" placeholder="请输入邮箱" maxlength="50" />
+                     <el-input v-model="form.email" placeholder="请输入邮箱" maxlength="50" disabled />
                   </el-form-item>
                </el-col>
                <el-col :span="12">
@@ -141,7 +148,7 @@
 </template>
 
 <script setup name="Dept">
-import { listDept, getDept, delDept, addDept, updateDept, listDeptExcludeChild } from "@/api/system/dept"
+import { listDept, getDept, delDept, addDept, updateDept, listDeptExcludeChild, getAllCounselors } from "@/api/system/dept"
 
 const { proxy } = getCurrentInstance()
 const { sys_normal_disable } = proxy.useDict("sys_normal_disable")
@@ -152,6 +159,7 @@ const loading = ref(true)
 const showSearch = ref(true)
 const title = ref("")
 const deptOptions = ref([])
+const counselorList = ref([])
 const isExpandAll = ref(true)
 const refreshTable = ref(true)
 
@@ -165,6 +173,7 @@ const data = reactive({
     parentId: [{ required: true, message: "上级部门不能为空", trigger: "blur" }],
     deptName: [{ required: true, message: "部门名称不能为空", trigger: "blur" }],
     orderNum: [{ required: true, message: "显示排序不能为空", trigger: "blur" }],
+    counselorId: [{ required: true, message: "请选择辅导员", trigger: "change" }],
     email: [{ type: "email", message: "请输入正确的邮箱地址", trigger: ["blur", "change"] }],
     phone: [{ pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/, message: "请输入正确的手机号码", trigger: "blur" }]
   },
@@ -194,12 +203,29 @@ function reset() {
     parentId: undefined,
     deptName: undefined,
     orderNum: 0,
+    counselorId: undefined,
     leader: undefined,
     phone: undefined,
     email: undefined,
     status: "0"
   }
   proxy.resetForm("deptRef")
+}
+
+/** 处理辅导员选择 */
+function handleCounselorChange(counselorId) {
+  if (counselorId) {
+    const selectedCounselor = counselorList.value.find(item => item.counselorId === counselorId)
+    if (selectedCounselor) {
+      form.value.leader = selectedCounselor.name
+      form.value.phone = selectedCounselor.phone
+      form.value.email = selectedCounselor.email
+    }
+  } else {
+    form.value.leader = undefined
+    form.value.phone = undefined
+    form.value.email = undefined
+  }
 }
 
 /** 搜索按钮操作 */
@@ -218,6 +244,10 @@ function handleAdd(row) {
   reset()
   listDept().then(response => {
     deptOptions.value = proxy.handleTree(response.data, "deptId")
+  })
+  // 获取所有辅导员列表
+  getAllCounselors().then(response => {
+    counselorList.value = response.data
   })
   if (row != undefined) {
     form.value.parentId = row.deptId
@@ -241,10 +271,22 @@ function handleUpdate(row) {
   listDeptExcludeChild(row.deptId).then(response => {
     deptOptions.value = proxy.handleTree(response.data, "deptId")
   })
-  getDept(row.deptId).then(response => {
-    form.value = response.data
-    open.value = true
-    title.value = "修改部门"
+  // 获取所有辅导员列表
+  getAllCounselors().then(response => {
+    counselorList.value = response.data
+    // 等辅导员列表加载完成后再获取部门信息
+    getDept(row.deptId).then(response => {
+      form.value = response.data
+      // 根据leader字段找到对应的counselorId
+      if (form.value.leader && counselorList.value.length > 0) {
+        const matchedCounselor = counselorList.value.find(item => item.name === form.value.leader)
+        if (matchedCounselor) {
+          form.value.counselorId = matchedCounselor.counselorId
+        }
+      }
+      open.value = true
+      title.value = "修改部门"
+    })
   })
 }
 
