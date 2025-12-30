@@ -1,7 +1,7 @@
 package com.mc.counselor.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mc.common.core.domain.entity.SysUser;
-import com.mc.common.utils.DateUtils;
 import com.mc.counselor.domain.CounselorInfo;
 import com.mc.counselor.mapper.CounselorInfoMapper;
 import com.mc.counselor.service.ICounselorInfoService;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * @date 2025-09-24
  */
 @Service
-public class CounselorInfoServiceImpl implements ICounselorInfoService {
+public class CounselorInfoServiceImpl extends ServiceImpl<CounselorInfoMapper, CounselorInfo> implements ICounselorInfoService {
     @Autowired
     private CounselorInfoMapper counselorInfoMapper;
     @Autowired
@@ -33,7 +33,7 @@ public class CounselorInfoServiceImpl implements ICounselorInfoService {
      */
     @Override
     public CounselorInfo selectCounselorInfoByCounselorId(Long counselorId) {
-        return counselorInfoMapper.selectCounselorInfoByCounselorId(counselorId);
+        return getById(counselorId);
     }
 
     /**
@@ -44,7 +44,7 @@ public class CounselorInfoServiceImpl implements ICounselorInfoService {
      */
     @Override
     public List<CounselorInfo> selectCounselorInfoList(CounselorInfo counselorInfo) {
-        return counselorInfoMapper.selectCounselorInfoList(counselorInfo);
+        return list();
     }
 
     /**
@@ -55,8 +55,7 @@ public class CounselorInfoServiceImpl implements ICounselorInfoService {
      */
     @Override
     public int insertCounselorInfo(CounselorInfo counselorInfo) {
-        counselorInfo.setCreateTime(DateUtils.getNowDate());
-        return counselorInfoMapper.insertCounselorInfo(counselorInfo);
+        return save(counselorInfo) ? 1 : 0;
     }
 
     /**
@@ -67,8 +66,7 @@ public class CounselorInfoServiceImpl implements ICounselorInfoService {
      */
     @Override
     public int updateCounselorInfo(CounselorInfo counselorInfo) {
-        counselorInfo.setUpdateTime(DateUtils.getNowDate());
-        return counselorInfoMapper.updateCounselorInfo(counselorInfo);
+        return updateById(counselorInfo) ? 1 : 0;
     }
 
     /**
@@ -79,7 +77,7 @@ public class CounselorInfoServiceImpl implements ICounselorInfoService {
      */
     @Override
     public int deleteCounselorInfoByCounselorIds(Long[] counselorIds) {
-        return counselorInfoMapper.deleteCounselorInfoByCounselorIds(counselorIds);
+        return removeByIds(Arrays.asList(counselorIds)) ? counselorIds.length : 0;
     }
 
     /**
@@ -90,7 +88,7 @@ public class CounselorInfoServiceImpl implements ICounselorInfoService {
      */
     @Override
     public int deleteCounselorInfoByCounselorId(Long counselorId) {
-        return counselorInfoMapper.deleteCounselorInfoByCounselorId(counselorId);
+        return removeById(counselorId) ? 1 : 0;
     }
 
     /**
@@ -106,7 +104,7 @@ public class CounselorInfoServiceImpl implements ICounselorInfoService {
                 .filter(user -> "01".equals(user.getUserType()) && user.getUserId() != null && user.getUserId() != 1)
                 .collect(Collectors.toMap(SysUser::getUserId, user -> user));
 
-        Set<Long> boundUserIds = counselorInfoMapper.selectCounselorInfoList(new CounselorInfo()).stream()
+        Set<Long> boundUserIds = this.list().stream()
                 .map(CounselorInfo::getUserId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());

@@ -1,7 +1,8 @@
 package com.mc.counselor.domain;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.mc.common.annotation.Excel;
-import com.mc.common.core.domain.BaseEntity;
+import com.mc.common.core.domain.BaseEntityPlus;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -11,7 +12,8 @@ import org.apache.commons.lang3.builder.ToStringStyle;
  * @author caidu
  * @date 2025-09-24
  */
-public class CounselorInfo extends BaseEntity {
+@TableName("counselor_info")
+public class CounselorInfo extends BaseEntityPlus {
     private static final long serialVersionUID = 1L;
 
     /**
