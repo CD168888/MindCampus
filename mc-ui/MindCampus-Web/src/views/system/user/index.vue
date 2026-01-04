@@ -28,6 +28,12 @@
                 <el-input v-model="queryParams.phonenumber" placeholder="请输入手机号码" clearable style="width: 240px"
                   @keyup.enter="handleQuery" />
               </el-form-item>
+              <el-form-item label="用户类型" prop="userType">
+                <el-select v-model="queryParams.userType" placeholder="用户类型" clearable style="width: 240px">
+                  <el-option v-for="dict in sys_user_type" :key="dict.value" :label="dict.label"
+                    :value="dict.value" />
+                </el-select>
+              </el-form-item>
               <el-form-item label="状态" prop="status">
                 <el-select v-model="queryParams.status" placeholder="用户状态" clearable style="width: 240px">
                   <el-option v-for="dict in sys_normal_disable" :key="dict.value" :label="dict.label"
@@ -332,7 +338,8 @@ const data = reactive({
     userName: undefined,
     phonenumber: undefined,
     status: undefined,
-    deptId: undefined
+    deptId: undefined,
+    userType: undefined
   },
   rules: {
     userName: [{ required: true, message: "用户名称不能为空", trigger: "blur" }, { min: 2, max: 20, message: "用户名称长度必须介于 2 和 20 之间", trigger: "blur" }],
