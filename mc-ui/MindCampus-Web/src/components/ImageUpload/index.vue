@@ -173,7 +173,9 @@ function handleExceed() {
 // 上传成功回调
 function handleUploadSuccess(res, file) {
   if (res.code === 200) {
-    uploadList.value.push({ name: res.fileName, url: res.fileName })
+    // Strip backticks and whitespace from URL if present
+    const url = res.url ? res.url.replace(/[`]/g, '').trim() : ''
+    uploadList.value.push({ name: res.fileName, url: url })
     uploadedSuccessfully()
   } else {
     number.value--
@@ -223,7 +225,12 @@ function listToString(list, separator) {
   separator = separator || ","
   for (let i in list) {
     if (undefined !== list[i].url && list[i].url.indexOf("blob:") !== 0) {
-      strs += list[i].url.replace(baseUrl, "") + separator
+      // Only remove baseUrl for non-external URLs
+      let url = list[i].url
+      if (!isExternal(url)) {
+        url = url.replace(baseUrl, "")
+      }
+      strs += url + separator
     }
   }
   return strs != "" ? strs.substr(0, strs.length - 1) : ""
