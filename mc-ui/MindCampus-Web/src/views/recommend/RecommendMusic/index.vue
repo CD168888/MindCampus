@@ -101,8 +101,8 @@
         <el-form-item label="音乐风格" prop="genre">
           <el-input v-model="form.genre" placeholder="请输入音乐风格" />
         </el-form-item>
-        <el-form-item label="时长（秒）" prop="duration">
-          <el-input-number v-model="form.duration" :min="0" placeholder="上传音频后自动计算" :disabled="calculatingDuration" />
+        <el-form-item label="时长" prop="duration">
+          <el-input v-model="durationFormatted" placeholder="上传音频后自动计算" disabled style="width: 100%;" />
           <span v-if="calculatingDuration" style="margin-left: 10px; color: #409eff; font-size: 12px;">正在计算时长...</span>
         </el-form-item>
         <el-form-item label="音乐简介" prop="description">
@@ -210,11 +210,25 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+// 计算属性：将秒数转换为时分秒格式
+const durationFormatted = computed({
+  get: () => {
+    if (!form.value.duration) return ''
+    return formatDuration(form.value.duration)
+  },
+  set: (value) => {
+    // 保持原始值不变，因为我们只在显示时使用格式化值
+  }
+})
+
 // 监听音频文件变化，自动计算时长
 watch(() => form.value.mp3Url, (newUrl, oldUrl) => {
-  // 只在新增时自动计算，或者URL变化且没有时长时计算
-  if (newUrl && newUrl !== oldUrl && (!form.value.duration || form.value.musicId == null)) {
+  if (newUrl && newUrl !== oldUrl) {
+    // 上传或修改音频文件时，自动计算时长
     calculateAudioDuration(newUrl)
+  } else if (!newUrl && oldUrl) {
+    // 删除音频文件时，清空时长
+    form.value.duration = null
   }
 }, { immediate: false })
 

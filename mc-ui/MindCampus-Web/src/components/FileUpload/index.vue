@@ -162,7 +162,9 @@ function handleUploadError(err) {
 // 上传成功回调
 function handleUploadSuccess(res, file) {
   if (res.code === 200) {
-    uploadList.value.push({ name: res.fileName, url: res.fileName })
+    // 使用res.url而不是res.fileName，确保获取完整的URL
+    const url = res.url ? res.url.replace(/[`]/g, '').trim() : res.fileName
+    uploadList.value.push({ name: res.fileName, url: url })
     uploadedSuccessfully()
   } else {
     number.value--

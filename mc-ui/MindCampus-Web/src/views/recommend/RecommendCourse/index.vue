@@ -105,8 +105,8 @@
         <el-form-item label="讲师" prop="lecturer">
           <el-input v-model="form.lecturer" placeholder="请输入讲师" />
         </el-form-item>
-        <el-form-item label="视频时长（秒）" prop="duration">
-          <el-input-number v-model="form.duration" :min="0" placeholder="上传视频后自动计算" :disabled="calculatingDuration" />
+        <el-form-item label="视频时长" prop="duration">
+          <el-input v-model="durationFormatted" placeholder="上传视频后自动计算" disabled style="width: 100%;" />
           <span v-if="calculatingDuration" style="margin-left: 10px; color: #409eff; font-size: 12px;">正在计算时长...</span>
         </el-form-item>
         <el-form-item label="章节数" prop="chapters">
@@ -225,11 +225,25 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+// 计算属性：将秒数转换为时分秒格式
+const durationFormatted = computed({
+  get: () => {
+    if (!form.value.duration) return ''
+    return formatDuration(form.value.duration)
+  },
+  set: (value) => {
+    // 保持原始值不变，因为我们只在显示时使用格式化值
+  }
+})
+
 // 监听视频文件变化，自动计算时长
 watch(() => form.value.mp4Url, (newUrl, oldUrl) => {
-  // 只在新增时自动计算，或者URL变化且没有时长时计算
-  if (newUrl && newUrl !== oldUrl && (!form.value.duration || form.value.courseId == null)) {
+  if (newUrl && newUrl !== oldUrl) {
+    // 上传或修改视频文件时，自动计算时长
     calculateVideoDuration(newUrl)
+  } else if (!newUrl && oldUrl) {
+    // 删除视频文件时，清空时长
+    form.value.duration = null
   }
 }, { immediate: false })
 
