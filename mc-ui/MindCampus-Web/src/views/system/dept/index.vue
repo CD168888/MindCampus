@@ -149,6 +149,7 @@
 
 <script setup name="Dept">
 import { listDept, getDept, delDept, addDept, updateDept, listDeptExcludeChild, getAllCounselors } from "@/api/system/dept"
+import { bindCounselorDept } from "@/api/counselor/counselordept"
 
 const { proxy } = getCurrentInstance()
 const { sys_normal_disable } = proxy.useDict("sys_normal_disable")
@@ -296,12 +297,26 @@ function submitForm() {
     if (valid) {
       if (form.value.deptId != undefined) {
         updateDept(form.value).then(response => {
+          // 调用绑定接口
+          if (form.value.counselorId) {
+            bindCounselorDept({
+              counselorId: form.value.counselorId,
+              deptIds: [form.value.deptId]
+            })
+          }
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
         })
       } else {
         addDept(form.value).then(response => {
+          // 调用绑定接口
+          if (form.value.counselorId) {
+            bindCounselorDept({
+              counselorId: form.value.counselorId,
+              deptIds: [response.data.deptId]
+            })
+          }
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()

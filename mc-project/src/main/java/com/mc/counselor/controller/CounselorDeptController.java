@@ -10,8 +10,11 @@ import com.mc.counselor.service.ICounselorInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 辅导员管理Controller
@@ -31,13 +34,18 @@ public class CounselorDeptController extends BaseController {
     /**
      * 绑定辅导员和部门
      *
-     * @param counselorId 辅导员ID
-     * @param deptIds 部门ID列表
+     * @param params 绑定参数
      * @return 绑定结果
      */
     @PostMapping("/bind")
     @Log(title = "辅导员管理", businessType = BusinessType.INSERT)
-    public AjaxResult bindCounselorDept(Long counselorId, Long[] deptIds) {
+    public AjaxResult bindCounselorDept(@RequestBody Map<String, Object> params) {
+        Long counselorId = Long.valueOf(params.get("counselorId").toString());
+        List<Object> deptIdList = (List<Object>) params.get("deptIds");
+        Long[] deptIds = new Long[deptIdList.size()];
+        for (int i = 0; i < deptIdList.size(); i++) {
+            deptIds[i] = Long.valueOf(deptIdList.get(i).toString());
+        }
         return toAjax(counselorDeptService.bindCounselorDept(counselorId, deptIds));
     }
 

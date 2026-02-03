@@ -135,10 +135,24 @@ public class CounselorDeptServiceImpl extends ServiceImpl<CounselorDeptMapper, C
     public int bindCounselorDept(Long counselorId, Long[] deptIds) {
         return stream(deptIds)
                 .mapToInt(deptId -> {
-                    CounselorDept counselorDept = new CounselorDept();
-                    counselorDept.setCounselorId(counselorId);
-                    counselorDept.setDeptId(deptId);
-                    return counselorDeptMapper.insert(counselorDept);
+                    // 检查是否已存在绑定关系
+                    LambdaQueryWrapper<CounselorDept> queryWrapper = new LambdaQueryWrapper<>();
+                    queryWrapper.eq(CounselorDept::getCounselorId, counselorId);
+                    queryWrapper.eq(CounselorDept::getDeptId, deptId);
+                    CounselorDept existing = counselorDeptMapper.selectOne(queryWrapper);
+                    
+                    if (existing != null) {
+                        // 已存在，更新状态为正常
+                        existing.setStatus("0");
+                        return counselorDeptMapper.updateById(existing);
+                    } else {
+                        // 不存在，创建新绑定
+                        CounselorDept counselorDept = new CounselorDept();
+                        counselorDept.setCounselorId(counselorId);
+                        counselorDept.setDeptId(deptId);
+                        counselorDept.setStatus("0");
+                        return counselorDeptMapper.insert(counselorDept);
+                    }
                 })
                 .sum();
     }

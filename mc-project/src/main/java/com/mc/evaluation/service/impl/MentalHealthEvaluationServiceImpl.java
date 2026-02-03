@@ -10,6 +10,7 @@ import com.mc.evaluation.service.IMentalHealthEvaluationService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +35,9 @@ public class MentalHealthEvaluationServiceImpl implements IMentalHealthEvaluatio
 
     @Resource
     private ObjectMapper objectMapper;
+
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
     /**
      * 异步评估心理健康状态
@@ -124,6 +128,9 @@ public class MentalHealthEvaluationServiceImpl implements IMentalHealthEvaluatio
                 evaluationResultMapper.updateEvaluationResult(dbResult);
                 log.info("更新评估结果到数据库 - 测评结果ID: {}, 总得分: {}, 风险等级: {}", 
                         resultId, evaluationResult.getTotalScore(), evaluationResult.getRiskLevel());
+                
+                // 发布评测结果更新事件，触发干预通知生成
+                eventPublisher.publishEvent(resultId);
             } else {
                 log.warn("未找到对应的测评结果记录 - 测评结果ID: {}", resultId);
             }
