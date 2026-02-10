@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mc.intervention.mapper.InterventionNotificationMapper">
+
+    <resultMap type="com.mc.intervention.domain.InterventionNotification" id="InterventionNotificationResult">
+        <id property="notificationId" column="notification_id" />
+        <result property="resultId" column="result_id" />
+        <result property="studentId" column="student_id" />
+        <result property="userId" column="user_id" />
+        <result property="deptId" column="dept_id" />
+        <result property="notificationType" column="notification_type" />
+        <result property="notificationContent" column="notification_content" />
+        <result property="sendTime" column="send_time" />
+        <result property="readStatus" column="read_status" />
+        <result property="processStatus" column="process_status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+        <!-- 关联信息 -->
+        <result property="studentName" column="student_name" />
+        <result property="userName" column="user_name" />
+        <result property="deptName" column="dept_name" />
+        <result property="riskLevel" column="risk_level" />
+    </resultMap>
+
+    <sql id="selectNotificationVo">
+        select n.notification_id, n.result_id, n.student_id, n.user_id, n.dept_id, n.notification_type, 
+               n.notification_content, n.send_time, n.read_status, n.process_status, 
+               n.create_by, n.create_time, n.update_by, n.update_time, n.remark,
+               s.name as student_name, u.nick_name as user_name, d.dept_name, e.risk_level
+        from intervention_notification n
+        left join student_info s on n.student_id = s.student_id
+        left join sys_user u on n.user_id = u.user_id
+        left join sys_dept d on n.dept_id = d.dept_id
+        left join evaluation_result e on n.result_id = e.result_id
+    </sql>
+
+    <select id="selectNotificationList" parameterType="com.mc.intervention.domain.vo.InterventionNotificationVo" resultMap="InterventionNotificationResult">
+        <include refid="selectNotificationVo" />
+        <where>
+            <if test="notificationId != null">
+                AND n.notification_id = #{notificationId}
+            </if>
+            <if test="resultId != null">
+                AND n.result_id = #{resultId}
+            </if>
+            <if test="studentId != null">
+                AND n.student_id = #{studentId}
+            </if>
+            <if test="userId != null">
+                AND n.user_id = #{userId}
+            </if>
+            <if test="deptId != null">
+                AND n.dept_id = #{deptId}
+            </if>
+            <if test="notificationType != null and notificationType != ''">
+                AND n.notification_type = #{notificationType}
+            </if>
+            <if test="readStatus != null and readStatus != ''">
+                AND n.read_status = #{readStatus}
+            </if>
+            <if test="processStatus != null and processStatus != ''">
+                AND n.process_status = #{processStatus}
+            </if>
+            <if test="beginTime != null and beginTime != ''">
+                AND date_format(n.create_time,'%y%m%d') &gt;= date_format(#{beginTime},'%y%m%d')
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND date_format(n.create_time,'%y%m%d') &lt;= date_format(#{endTime},'%y%m%d')
+            </if>
+        </where>
+        order by n.create_time desc
+    </select>
+
+    <select id="selectNotificationById" parameterType="Long" resultMap="InterventionNotificationResult">
+        <include refid="selectNotificationVo" />
+        where n.notification_id = #{notificationId}
+    </select>
+
+    <select id="selectNotificationByResultId" parameterType="Long" resultMap="InterventionNotificationResult">
+        <include refid="selectNotificationVo" />
+        where n.result_id = #{resultId}
+        order by n.create_time desc
+    </select>
+
+    <select id="selectNotificationByStudentId" parameterType="Long" resultMap="InterventionNotificationResult">
+        <include refid="selectNotificationVo" />
+        where n.student_id = #{studentId}
+        order by n.create_time desc
+    </select>
+
+    <select id="selectNotificationByUserId" parameterType="Long" resultMap="InterventionNotificationResult">
+        <include refid="selectNotificationVo" />
+        where n.user_id = #{userId}
+        order by n.create_time desc
+    </select>
+
+    <insert id="insertNotification" parameterType="com.mc.intervention.domain.InterventionNotification" useGeneratedKeys="true" keyProperty="notificationId">
+        insert into intervention_notification
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="resultId != null">result_id,</if>
+            <if test="studentId != null">student_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="notificationType != null">notification_type,</if>
+            <if test="notificationContent != null">notification_content,</if>
+            <if test="sendTime != null">send_time,</if>
+            <if test="readStatus != null">read_status,</if>
+            <if test="processStatus != null">process_status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="resultId != null">#{resultId},</if>
+            <if test="studentId != null">#{studentId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="notificationType != null">#{notificationType},</if>
+            <if test="notificationContent != null">#{notificationContent},</if>
+            <if test="sendTime != null">#{sendTime},</if>
+            <if test="readStatus != null">#{readStatus},</if>
+            <if test="processStatus != null">#{processStatus},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateNotification" parameterType="com.mc.intervention.domain.InterventionNotification">
+        update intervention_notification
+        <set>
+            <if test="resultId != null">result_id = #{resultId},</if>
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="notificationType != null">notification_type = #{notificationType},</if>
+            <if test="notificationContent != null">notification_content = #{notificationContent},</if>
+            <if test="sendTime != null">send_time = #{sendTime},</if>
+            <if test="readStatus != null">read_status = #{readStatus},</if>
+            <if test="processStatus != null">process_status = #{processStatus},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where notification_id = #{notificationId}
+    </update>
+
+    <update id="updateNotificationReadStatus" parameterType="java.lang.Long">
+        update intervention_notification
+        set read_status = #{readStatus}
+        where notification_id = #{notificationId}
+    </update>
+
+    <update id="updateNotificationProcessStatus" parameterType="java.lang.Long">
+        update intervention_notification
+        set process_status = #{processStatus}
+        where notification_id = #{notificationId}
+    </update>
+
+    <delete id="deleteNotificationById" parameterType="java.lang.Long">
+        delete from intervention_notification
+        where notification_id = #{notificationId}
+    </delete>
+
+    <delete id="deleteNotificationByIds" parameterType="Long[]">
+        delete from intervention_notification
+        where notification_id in
+        <foreach item="notificationId" collection="array" open="(" separator="," close=")">
+            #{notificationId}
+        </foreach>
+    </delete>
+
+</mapper>

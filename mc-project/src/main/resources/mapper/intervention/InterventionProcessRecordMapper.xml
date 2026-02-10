@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mc.intervention.mapper.InterventionProcessRecordMapper">
+
+    <resultMap type="com.mc.intervention.domain.InterventionProcessRecord" id="InterventionProcessRecordResult">
+        <id property="recordId" column="record_id" />
+        <result property="notificationId" column="notification_id" />
+        <result property="userId" column="user_id" />
+        <result property="processContent" column="process_content" />
+        <result property="processTime" column="process_time" />
+        <result property="processResult" column="process_result" />
+        <result property="status" column="status" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+        <!-- 关联信息 -->
+        <result property="userName" column="user_name" />
+        <result property="notificationContent" column="notification_content" />
+        <result property="studentName" column="student_name" />
+    </resultMap>
+
+    <sql id="selectRecordVo">
+        select r.record_id, r.notification_id, r.user_id, r.process_content, 
+               r.process_time, r.process_result, r.status, 
+               r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
+               u.nick_name as user_name, n.notification_content, s.name as student_name
+        from intervention_process_record r
+        left join sys_user u on r.user_id = u.user_id
+        left join intervention_notification n on r.notification_id = n.notification_id
+        left join student_info s on n.student_id = s.student_id
+    </sql>
+
+    <select id="selectRecordList" parameterType="com.mc.intervention.domain.InterventionProcessRecord" resultMap="InterventionProcessRecordResult">
+        <include refid="selectRecordVo" />
+        <where>
+            <if test="recordId != null">
+                AND r.record_id = #{recordId}
+            </if>
+            <if test="notificationId != null">
+                AND r.notification_id = #{notificationId}
+            </if>
+            <if test="userId != null">
+                AND r.user_id = #{userId}
+            </if>
+            <if test="status != null and status != ''">
+                AND r.status = #{status}
+            </if>
+        </where>
+        order by r.create_time desc
+    </select>
+
+    <select id="selectRecordById" parameterType="Long" resultMap="InterventionProcessRecordResult">
+        <include refid="selectRecordVo" />
+        where r.record_id = #{recordId}
+    </select>
+
+    <select id="selectRecordByNotificationId" parameterType="Long" resultMap="InterventionProcessRecordResult">
+        <include refid="selectRecordVo" />
+        where r.notification_id = #{notificationId}
+        order by r.create_time desc
+    </select>
+
+    <select id="selectRecordByUserId" parameterType="Long" resultMap="InterventionProcessRecordResult">
+        <include refid="selectRecordVo" />
+        where r.user_id = #{userId}
+        order by r.create_time desc
+    </select>
+
+    <insert id="insertRecord" parameterType="com.mc.intervention.domain.InterventionProcessRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into intervention_process_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="notificationId != null">notification_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="processContent != null">process_content,</if>
+            <if test="processTime != null">process_time,</if>
+            <if test="processResult != null">process_result,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="notificationId != null">#{notificationId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="processContent != null">#{processContent},</if>
+            <if test="processTime != null">#{processTime},</if>
+            <if test="processResult != null">#{processResult},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateRecord" parameterType="com.mc.intervention.domain.InterventionProcessRecord">
+        update intervention_process_record
+        <set>
+            <if test="notificationId != null">notification_id = #{notificationId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="processContent != null">process_content = #{processContent},</if>
+            <if test="processTime != null">process_time = #{processTime},</if>
+            <if test="processResult != null">process_result = #{processResult},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where record_id = #{recordId}
+    </update>
+
+    <delete id="deleteRecordById" parameterType="java.lang.Long">
+        delete from intervention_process_record
+        where record_id = #{recordId}
+    </delete>
+
+    <delete id="deleteRecordByIds" parameterType="Long[]">
+        delete from intervention_process_record
+        where record_id in
+        <foreach item="recordId" collection="array" open="(" separator="," close=")">
+            #{recordId}
+        </foreach>
+    </delete>
+
+</mapper>
