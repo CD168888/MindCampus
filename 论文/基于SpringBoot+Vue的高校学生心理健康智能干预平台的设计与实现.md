@@ -1224,19 +1224,39 @@ CREATE TABLE `content_recommendation` (
 
 #### 5.1.1 学生信息管理功能实现
 
-学生信息管理功能采用分层架构设计，包含学生档案管理和学生状态管理两大核心组件。学生档案管理实现学生基本信息的CRUD操作，支持学号、姓名、年级、专业等信息的管理。学生状态管理实现对学生心理健康状态的监控和预警。
+学生信息管理功能采用分层架构设计，包含学生档案主数据管理与学生状态监控两大核心组件。学生档案主数据组件实现学生基本信息的全生命周期管理，提供标准化的CRUD操作接口；学生状态监控组件实现对学生心理健康状态的实时监控和预警，确保及时发现需要关注的学生。
 
-学生信息管理关键代码如下：
+增加功能：首先前端通过实现一个弹窗来收集管理员输入的学生信息，包括学号、姓名、性别、年级、专业、班级、联系电话等，然后将收集到的数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
+
+分页查询功能：通过将用户输入的查询条件，如学号、姓名、状态等，通过Axios的GET请求SpringBoot的服务端接口，然后在接口中处理数据，最后通过MyBatis-Plus的分页插件构造分页器，将分页的数据信息传递回前端。
+
+修改功能：首先通过获取表格中这一项的学生ID信息，然后去请求服务端的数据信息，获取当前学生的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据学生ID修改数据库中的数据信息。
+
+删除功能：首先前端通过获取这一项的学生ID数据，然后请求服务端，服务端通过获取到ID之后，删除该学生的信息。
+
+学生信息管理实现的关键代码为：
 
 ```java
 @GetMapping("/list")
-public R<PageUtils> list(Student student, PageQuery pageQuery) {
-    LambdaQueryWrapper<Student> queryWrapper = new LambdaQueryWrapper<Student>()
-        .like(StringUtils.isNotBlank(student.getStudentNo()), Student::getStudentNo, student.getStudentNo())
-        .like(StringUtils.isNotBlank(student.getName()), Student::getName, student.getName())
-        .eq(StringUtils.isNotBlank(student.getStatus()), Student::getStatus, student.getStatus());
-    Page<Student> page = studentService.page(pageQuery.build(), queryWrapper);
-    return R.ok(new PageUtils(page));
+public TableDataInfo<List<Student>> list(Student student) {
+    startPage();
+    List<Student> list = studentInfoService.selectStudentInfoList(student);
+    return getDataTable(list);
+}
+
+@PostMapping
+public R<Integer> add(@RequestBody Student student) {
+    return R.ok(studentInfoService.insertStudentInfo(student));
+}
+
+@PutMapping
+public R<Integer> edit(@RequestBody Student student) {
+    return R.ok(studentInfoService.updateStudentInfo(student));
+}
+
+@DeleteMapping("/{studentIds}")
+public R<Integer> remove(@PathVariable Long[] studentIds) {
+    return R.ok(studentInfoService.deleteStudentInfoByStudentIds(studentIds));
 }
 ```
 
@@ -1244,119 +1264,210 @@ public R<PageUtils> list(Student student, PageQuery pageQuery) {
 
 #### 5.1.2 问卷管理功能实现
 
-问卷管理功能实现心理测评问卷的创建、编辑、发布和管理。管理员可以设置问卷的基本信息，包括标题、描述、类型、开始时间和结束时间等。问卷管理关键代码如下：
+问卷管理功能的实现主要包括问卷的创建、编辑、发布和管理。管理员可以设置问卷的基本信息，包括标题、描述、类型、开始时间和结束时间等。问卷管理组件承担心理测评问卷的维护任务，涵盖问卷的创建、发布、修改及检索等功能，其实现机制与系统其他组件采用统一架构标准。
+
+问卷创建功能：首先前端通过实现一个弹窗来收集管理员输入的问卷信息，包括标题、说明、类型、起止时间等，然后将收集到数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
+
+分页查询功能：通过将用户输入的查询条件，通过Axios的GET请求SpringBoot的服务端接口，然后在接口中处理数据，最后通过MyBatis-Plus的分页插件构造分页器，将分页的数据信息传递回前端。
+
+问卷修改功能：首先通过获取表格中这一项的id信息，然后去请求服务端的数据信息，获取当前问卷的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据id修改数据库中的数据信息。
+
+问卷删除功能：首先前端通过获取这一项的id数据，然后请求服务端，服务端通过获取到id之后，判断当前问卷是否有关联题目的信息，有的话就禁止删除，并且传递相应的状态值。如果没有关联数据则删除成功。
+
+问卷管理实现的关键代码为：
 
 ```java
-@PostMapping("/questionnaire")
-public R<String> addQuestionnaire(@RequestBody Questionnaire questionnaire) {
-    questionnaireService.save(questionnaire);
-    return R.ok("添加成功");
+@PostMapping
+public R<Integer> add(@RequestBody Questionnaire questionnaire) {
+    return R.ok(questionnaireService.insertQuestionnaire(questionnaire));
 }
 
-@GetMapping("/questionnaire/{id}")
-public R<Questionnaire> getQuestionnaire(@PathVariable("id") Long id) {
-    Questionnaire questionnaire = questionnaireService.getById(id);
-    // 获取关联的题目列表
-    List<Question> questions = questionService.list(
-        new LambdaQueryWrapper<Question>()
-            .eq(Question::getQuestionnaireId, id)
-            .orderByAsc(Question::getOrderNum)
-    );
-    questionnaire.setQuestions(questions);
-    return R.ok(questionnaire);
+@PutMapping
+public R<Integer> edit(@RequestBody Questionnaire questionnaire) {
+    return R.ok(questionnaireService.updateQuestionnaire(questionnaire));
+}
+
+@DeleteMapping("/{questionnaireIds}")
+public R<Integer> remove(@PathVariable Long[] questionnaireIds) {
+    return R.ok(questionnaireService.deleteQuestionnaireByQuestionnaireIds(questionnaireIds));
+}
+
+@GetMapping("/{questionnaireId}")
+public R<Questionnaire> getInfo(@PathVariable("questionnaireId") Long questionnaireId) {
+    return R.ok(questionnaireService.selectQuestionnaireByQuestionnaireId(questionnaireId));
 }
 ```
 
 #### 5.1.3 题库管理功能实现
 
-题库管理功能实现心理测评题目的维护，支持选择题和简答题两种题型。管理员可以添加、编辑和删除题目，设置题目内容、选项和分值等。题目创建关键代码如下：
+题库管理功能的实现主要包括题目的创建、编辑、删除和管理。题库管理组件实现心理测评题目的维护，支持选择题和简答题两种题型。管理员可以添加、编辑和删除题目，设置题目内容、选项和分值等。
+
+题目创建功能：首先前端通过实现一个表单来收集管理员输入的题目信息，包括题目类型、题干内容、选项、分值等，然后将收集到数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
+
+题目修改功能：首先通过获取表格中这一项的题目ID信息，然后去请求服务端的数据信息，获取当前题目的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据题目ID修改数据库中的数据信息。
+
+题目删除功能：首先前端通过获取这一项的题目ID数据，然后请求服务端，服务端通过获取到ID之后，删除该题目的信息。
+
+题库管理实现的关键代码为：
 
 ```java
-@PostMapping("/question")
-public R<String> addQuestion(@RequestBody Question question) {
-    question.setScore(question.getScore() != null ? question.getScore() : 0);
-    questionService.save(question);
-    return R.ok("添加成功");
+@PostMapping
+public R<Integer> add(@RequestBody Question question) {
+    return R.ok(questionService.insertQuestion(question));
+}
+
+@PutMapping
+public R<Integer> edit(@RequestBody Question question) {
+    return R.ok(questionService.updateQuestion(question));
+}
+
+@DeleteMapping("/{questionIds}")
+public R<Integer> remove(@PathVariable Long[] questionIds) {
+    return R.ok(questionService.deleteQuestionByQuestionIds(questionIds));
+}
+
+@GetMapping("/{questionId}")
+public R<Question> getInfo(@PathVariable("questionId") Long questionId) {
+    return R.ok(questionService.selectQuestionByQuestionId(questionId));
 }
 ```
 
 #### 5.1.4 评估结果管理功能实现
 
-评估结果管理功能用于查看和管理学生的心理测评结果。管理员可以查看学生的答题详情、得分情况，并触发智能分析生成评估报告。评估结果查看关键代码如下：
+评估结果管理功能的实现主要包括评估结果的查看、分析和管理。评估结果管理组件负责查看学生的答题情况和得分，支持智能分析生成评估报告。
+
+评估结果查看功能：管理员可以通过评估结果列表查看所有学生的测评结果，包括总得分、风险等级、测评时间等信息。点击详情可以查看学生的答题详情、得分情况，并触发智能分析生成评估报告。
+
+智能分析功能：系统会根据学生的答题情况和得分，自动生成智能分析报告，包括学生的心理健康状况分析、风险等级评估、建议措施等。
+
+评估结果管理实现的关键代码为：
 
 ```java
-@GetMapping("/result/{id}")
-public R<EvaluationResult> getResultDetail(@PathVariable("id") Long id) {
-    EvaluationResult result = evaluationResultService.getById(id);
-    // 获取答题详情
-    List<QuestionnaireAnswer> answers = answerService.list(
-        new LambdaQueryWrapper<QuestionnaireAnswer>()
-            .eq(QuestionnaireAnswer::getResultId, id)
-    );
-    result.setAnswers(answers);
-    return R.ok(result);
+@GetMapping("/list")
+public TableDataInfo<List<EvaluationResult>> list(EvaluationResult evaluationResult) {
+    startPage();
+    List<EvaluationResult> list = evaluationResultService.selectEvaluationResultList(evaluationResult);
+    return getDataTable(list);
+}
+
+@GetMapping("/{resultId}")
+public R<EvaluationResult> getInfo(@PathVariable("resultId") Long resultId) {
+    return R.ok(evaluationResultService.selectEvaluationResultByResultId(resultId));
+}
+
+@PutMapping("/aiAnalysis/{resultId}")
+public R<Integer> aiAnalysis(@PathVariable Long resultId) {
+    return R.ok(evaluationResultService.aiAnalysis(resultId));
 }
 ```
 
 #### 5.1.5 心理干预管理功能实现
 
-心理干预管理功能包括风险配置、干预通知和流程记录三个模块。风险配置模块允许管理员设置不同风险等级对应的分数区间。干预通知模块用于查看和处理需要心理干预的学生通知。流程记录模块用于记录对学生进行心理干预的全过程。
+心理干预管理功能的实现分为三个小模块：风险配置、干预通知、流程记录，他们的实现功能都是通过对数据信息进行增删改查操作，用户点击不同的按钮实现不同的功能。
 
-风险配置关键代码如下：
+风险配置模块：管理员可以配置不同风险等级对应的分数区间。当学生的评估得分落在某个区间时，系统会自动识别对应的风险等级。风险配置实现的关键代码如下：
 
 ```java
-@PostMapping("/riskConfig")
-public R<String> addRiskConfig(@RequestBody InterventionRiskConfig config) {
-    // 验证分数区间不重叠
-    Long count = riskConfigService.count(
-        new LambdaQueryWrapper<InterventionRiskConfig>()
-            .le(InterventionRiskConfig::getMinScore, config.getMaxScore())
-            .ge(InterventionRiskConfig::getMaxScore, config.getMinScore())
-    );
-    if (count > 0) {
-        return R.fail("分数区间与其他配置重叠");
-    }
-    riskConfigService.save(config);
-    return R.ok("添加成功");
+@PostMapping
+public R<Integer> add(@RequestBody InterventionRiskConfig interventionRiskConfig) {
+    return R.ok(interventionRiskConfigService.insertInterventionRiskConfig(interventionRiskConfig));
+}
+
+@PutMapping
+public R<Integer> edit(@RequestBody InterventionRiskConfig interventionRiskConfig) {
+    return R.ok(interventionRiskConfigService.updateInterventionRiskConfig(interventionRiskConfig));
+}
+
+@DeleteMapping("/{configIds}")
+public R<Integer> remove(@PathVariable Long[] configIds) {
+    return R.ok(interventionRiskConfigService.deleteInterventionRiskConfigByConfigIds(configIds));
 }
 ```
 
+干预通知模块：当学生完成心理测评后，系统会根据风险配置自动生成干预通知，推送给对应的辅导员或管理员。干预通知包括通知类型、通知内容、发送时间、阅读状态、处理状态等信息。
+
+流程记录模块：记录对学生进行心理干预的全过程，包括干预方式、干预内容、干预效果评估等。
+
 #### 5.1.6 内容推荐管理功能实现
 
-内容推荐管理功能包括文章管理、课程管理、音乐管理和轮播图管理四个模块。管理员可以发布心理健康知识文章、管理在线课程、管理放松音乐资源和首页轮播图。
+内容推荐管理功能的实现分为四个小模块：文章管理、课程管理、音乐管理和轮播图管理，他们的实现功能都是通过对数据信息进行增删改查操作，用户点击不同的按钮实现不同的功能。
 
-内容推荐管理关键代码如下：
+文章管理模块：管理员可以发布心理健康知识文章，学生可以浏览和收藏。文章支持富文本内容，可以包含图片、视频等多媒体元素。
+
+课程管理模块：管理员可以管理在线课程信息，包括课程名称、课程简介、授课教师、课程链接等。学生可以浏览课程列表，观看课程视频。
+
+音乐管理模块：管理员可以管理放松音乐资源，学生可以在线播放音乐。音乐支持分类标签，如放松、助眠、减压等。
+
+轮播图管理模块：管理员可以管理首页轮播图，轮播图会展示给学生，推送重要的活动或内容。
+
+内容推荐管理实现的关键代码为：
 
 ```java
 @GetMapping("/list")
-public R<List<RecommendArticle>> getArticleList(RecommendArticle article) {
-    List<RecommendArticle> list = articleService.list(
-        new LambdaQueryWrapper<RecommendArticle>()
-            .eq(RecommendArticle::getStatus, "0")
-            .orderByAsc(RecommendArticle::getSortOrder)
-    );
-    return R.ok(list);
+public TableDataInfo<List<RecommendArticle>> list(RecommendArticle recommendArticle) {
+    startPage();
+    List<RecommendArticle> list = recommendArticleService.selectRecommendArticleList(recommendArticle);
+    return getDataTable(list);
+}
+
+@PostMapping
+public R<Integer> add(@RequestBody RecommendArticle recommendArticle) {
+    return R.ok(recommendArticleService.insertRecommendArticle(recommendArticle));
+}
+
+@PutMapping
+public R<Integer> edit(@RequestBody RecommendArticle recommendArticle) {
+    return R.ok(recommendArticleService.updateRecommendArticle(recommendArticle));
+}
+
+@DeleteMapping("/{articleIds}")
+public R<Integer> remove(@PathVariable Long[] articleIds) {
+    return R.ok(recommendArticleService.deleteRecommendArticleByArticleIds(articleIds));
 }
 ```
 
 #### 5.1.7 社区管理功能实现
 
-社区管理功能用于管理学生发布的帖子和评论，管理员可以对违规内容进行删除处理。社区管理关键代码如下：
+社区管理功能的实现主要包括帖子管理和评论管理两个模块。社区管理组件用于管理学生发布的帖子和评论，管理员可以对违规内容进行删除处理。
+
+帖子管理模块：管理员可以查看所有学生发布的帖子，包括帖子标题、内容、发布时间、发布者等信息。对于违规帖子，管理员可以进行删除或屏蔽处理。
+
+评论管理模块：管理员可以查看帖子的评论内容，对于违规评论，管理员可以进行删除处理。
+
+社区管理实现的关键代码为：
 
 ```java
-@PutMapping("/post/status/{postId}")
-public R<String> updatePostStatus(@PathVariable Long postId, @RequestParam String status) {
-    communityPostService.update()
-        .eq("post_id", postId)
-        .set("status", status)
-        .update();
-    return R.ok("操作成功");
+@GetMapping("/list")
+public TableDataInfo<List<CommunityPost>> list(CommunityPost communityPost) {
+    startPage();
+    List<CommunityPost> list = communityPostService.selectCommunityPostList(communityPost);
+    return getDataTable(list);
+}
+
+@PutMapping("/status/{postId}")
+public R<Integer> updateStatus(@PathVariable Long postId, @RequestParam String status) {
+    return R.ok(communityPostService.updateCommunityPostStatus(postId, status));
+}
+
+@DeleteMapping("/{postIds}")
+public R<Integer> remove(@PathVariable Long[] postIds) {
+    return R.ok(communityPostService.deleteCommunityPostByPostIds(postIds));
 }
 ```
 
 #### 5.1.8 系统管理功能实现
 
-系统管理功能包括用户管理、角色管理、菜单管理、部门管理和日志管理。管理员可以管理系统用户账号、定义用户角色、配置管理后台菜单、维护学校组织架构和查看操作日志。
+系统管理功能的构建包含了五个核心模块：用户管理、角色管理、菜单管理、部门管理和日志管理，以下是各模块的具体实现细节：
+
+用户管理模块：用户管理模块主要的实现方式是通过前端渲染用户的数据列表，然后管理员点击数据，发送数据请求到服务端，服务端处理完成数据返回JSON数据到前端，前端再渲染响应的数据。管理员可以管理系统用户账号，包括添加、编辑、删除用户，重置用户密码等。
+
+角色管理模块：角色管理模块用于定义不同的用户角色，如管理员、辅导员、学生，并配置每个角色的权限。管理员可以创建新角色，为角色分配菜单权限。
+
+菜单管理模块：菜单管理模块用于配置管理后台的左侧导航菜单。管理员可以添加、编辑、删除菜单节点，配置菜单的显示顺序和权限。
+
+部门管理模块：部门管理模块用于维护学校的组织架构。管理员可以添加、编辑、删除部门，调整部门的上下级关系。
+
+日志管理模块：日志管理模块记录用户的操作日志，便于审计和追溯。管理员可以查看系统操作日志，按用户、时间、操作类型等条件筛选日志。
 
 ### 5.2 用户功能模块
 
@@ -1364,7 +1475,9 @@ public R<String> updatePostStatus(@PathVariable Long postId, @RequestParam Strin
 
 用户登录功能支持学生和辅导员通过账号密码登录系统。登录页面采用Vue3实现，支持表单验证和错误提示。登录成功后，系统会生成JWT令牌用于后续的身份验证。
 
-登录功能关键代码如下：
+登录功能的实现流程：用户在登录页面输入账号、密码和验证码，点击登录按钮后，前端通过Axios发送POST请求到服务端的登录接口。服务端验证用户输入的账号、密码和验证码是否正确，验证通过后生成JWT令牌并返回给前端。前端将令牌存储在localStorage中，然后跳转到系统首页。
+
+登录功能实现的关键代码为：
 
 ```javascript
 const login = async () => {
@@ -1391,7 +1504,9 @@ const login = async () => {
 
 智能聊天功能允许学生与AI进行心理陪伴对话，实现无限制的倾诉和初步心理疏导。前端使用SSE技术接收流式响应，实现类似真人聊天的逐字显示效果。
 
-智能聊天关键代码如下：
+智能聊天功能的实现流程：学生在智能聊天页面选择或创建会话，输入聊天内容并发送。前端通过SSE技术与后端建立长连接，传递用户输入的消息和会话ID。后端首先验证用户登录状态，获取当前用户信息。然后调用会话服务验证或创建会话，将用户消息保存到数据库。最后调用AI大模型服务获取回复，通过Flux流式返回响应。
+
+智能聊天实现的关键代码为：
 
 ```javascript
 const sendMessage = async () => {
@@ -1421,11 +1536,39 @@ const sendMessage = async () => {
 };
 ```
 
+后端实现关键代码：
+
+```java
+@GetMapping(value = "/chatStream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public Flux<ServerSentEvent<String>> generate(
+        @RequestParam(value = "message", required = true) String message,
+        @RequestParam(value = "sessionId", required = false) Long sessionId,
+        HttpServletResponse response) {
+    // 验证用户登录
+    Long userId = SecurityUtils.getUserId();
+    // 验证或创建会话
+    Long validSessionId = chatStreamService.validateOrCreateSession(sessionId, userId);
+    if (validSessionId == null) {
+        return Flux.just(ServerSentEvent.<String>builder()
+                .event("error")
+                .data("会话不存在或无权访问")
+                .build());
+    }
+    // 设置响应头，禁止缓存
+    response.setHeader("Cache-Control", "no-cache, no-transform");
+    response.setHeader("X-Accel-Buffering", "no");
+    // 委托给 Service 层处理流式响应
+    return chatStreamService.generateStreamResponse(message, validSessionId, userId);
+}
+```
+
 #### 5.2.3 心理测评功能实现
 
 心理测评功能允许学生在线完成心理测评问卷，系统自动计算得分并生成评估报告。测评结果包含总得分、风险等级、智能分析和建议等内容。
 
-心理测评关键代码如下：
+心理测评功能的实现流程：学生在心理测评页面选择问卷，进入答题页面。答题过程中，学生逐题回答，系统实时保存答案。答题完成后，学生点击提交按钮，系统自动计算得分并生成评估报告。评估报告包含总得分、风险等级、智能分析和建议等内容。
+
+心理测评实现的关键代码为：
 
 ```javascript
 const submitAnswer = async () => {
@@ -1448,11 +1591,31 @@ const submitAnswer = async () => {
 };
 ```
 
+后端实现关键代码：
+
+```java
+@PostMapping("/submit")
+public R<Long> submitAnswer(@RequestBody SubmitAnswerDTO dto) {
+    Long userId = SecurityUtils.getUserId();
+    Long resultId = appAssessmentService.submitAnswer(userId, dto);
+    return R.ok(resultId);
+}
+
+@GetMapping("/result/{resultId}")
+public R<EvaluationResultVO> getResultDetail(@PathVariable Long resultId) {
+    Long userId = SecurityUtils.getUserId();
+    EvaluationResultVO detail = appAssessmentService.getResultDetail(userId, resultId);
+    return R.ok(detail);
+}
+```
+
 #### 5.2.4 内容浏览功能实现
 
 内容浏览功能允许学生浏览心理知识文章、在线课程和放松音乐。学生可以根据分类筛选内容，收藏感兴趣的内容。
 
-内容浏览关键代码如下：
+内容浏览功能的实现流程：学生在内容浏览页面可以查看心理知识文章、在线课程和放松音乐。学生可以根据分类筛选内容，点击内容查看详情，收藏感兴趣的内容。
+
+内容浏览实现的关键代码为：
 
 ```javascript
 const getArticleList = async () => {
@@ -1479,7 +1642,9 @@ const collectArticle = async (articleId) => {
 
 社区互动功能允许学生在社区中发布帖子，分享心理健康相关的内容。其他学生可以对帖子进行点赞、评论。
 
-社区互动关键代码如下：
+社区互动功能的实现流程：学生在社区页面可以浏览帖子列表，发布新帖子，对帖子进行点赞和评论。发布帖子时，学生可以填写标题和内容，选择是否匿名发布。其他学生可以对帖子进行点赞，发表评论。
+
+社区互动实现的关键代码为：
 
 ```javascript
 const publishPost = async () => {
@@ -1513,7 +1678,9 @@ const likePost = async (postId) => {
 
 个人中心功能展示用户的基本信息、测评历史、收藏记录等。学生可以修改个人信息、查看测评结果和管理收藏内容。
 
-个人中心关键代码如下：
+个人中心功能的实现流程：学生在个人中心页面可以查看自己的基本信息，包括姓名、学号、年级、专业等。学生可以查看自己的测评历史，包括测评时间、测评结果、风险等级等。学生可以查看自己的收藏记录，包括收藏的文章、课程和音乐。
+
+个人中心实现的关键代码为：
 
 ```javascript
 const getProfile = async () => {
