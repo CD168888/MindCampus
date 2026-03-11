@@ -995,29 +995,79 @@ CREATE TABLE `intervention_notification` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='干预通知表';
 ```
 
-（11）内容推荐实体，用于存储推荐给学生的内容信息，包括文章、课程、音乐等，涵盖标题、内容、链接、类型、排序、状态、创建时间、更新时间等信息。如图4-19所示。
+（11）心理文章推荐实体，用于存储推荐给学生的心理知识文章信息，涵盖文章标题、内容、摘要、作者、阅读量、分类、状态、创建时间、更新时间等信息。如图4-19所示。
 
-图4-19 内容推荐实体属性图
+图4-19 心理文章推荐实体属性图
 
 ```sql
-CREATE TABLE `content_recommendation` (
-  `content_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '内容ID',
-  `title` varchar(200) DEFAULT NULL COMMENT '标题',
-  `content` text COMMENT '内容',
-  `link` varchar(500) DEFAULT NULL COMMENT '链接',
-  `type` varchar(20) DEFAULT NULL COMMENT '类型',
-  `order_num` int(10) DEFAULT NULL COMMENT '排序',
-  `status` char(1) DEFAULT '0' COMMENT '状态',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
-  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
-  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+CREATE TABLE `recommend_article` (
+  `article_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '文章ID',
+  `title` varchar(100) NOT NULL COMMENT '文章标题',
+  `content` text NOT NULL COMMENT '文章内容（Markdown格式）',
+  `summary` varchar(500) DEFAULT NULL COMMENT '文章摘要',
+  `author` varchar(64) DEFAULT NULL COMMENT '作者',
+  `read_count` int(10) DEFAULT '0' COMMENT '阅读量',
+  `category` varchar(50) DEFAULT NULL COMMENT '文章分类',
+  `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1下架）',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `remark` varchar(200) DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (`content_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='内容推荐表';
+  PRIMARY KEY (`article_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='心理文章推荐表';
 ```
 
-（12）总体关系：系统采用规范化数据建模，构建以下实体映射体系：学生实体与评估结果形成1:N双向约束，与智能聊天会话建立1:N级联关系。问卷与题目间定义1:N评估关联。评估结果与干预通知间设置1:N预警关联。用户-内容推荐间建立N:1发布关系，通过外键级联与事务锁机制保障数据操作的原子性和业务完整性。
+（12）心理课程推荐实体，用于存储推荐给学生的心理课程信息，涵盖课程标题、视频链接、封面图、讲师、时长、章节数、难度、状态、创建时间、更新时间等信息。如图4-20所示。
+
+图4-20 心理课程推荐实体属性图
+
+```sql
+CREATE TABLE `recommend_course` (
+  `course_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '课程ID',
+  `title` varchar(100) NOT NULL COMMENT '课程标题',
+  `mp4_url` varchar(255) NOT NULL COMMENT '视频文件链接',
+  `cover_url` varchar(255) DEFAULT NULL COMMENT '封面图链接',
+  `lecturer` varchar(64) DEFAULT NULL COMMENT '讲师',
+  `duration` int(10) DEFAULT NULL COMMENT '视频时长（秒）',
+  `chapters` int(10) DEFAULT NULL COMMENT '章节数',
+  `level` varchar(20) DEFAULT NULL COMMENT '课程难度（0初级/1中级/2高级）',
+  `description` varchar(500) DEFAULT NULL COMMENT '课程简介',
+  `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1下架）',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`course_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='心理课程推荐表';
+```
+
+（13）心理音乐推荐实体，用于存储推荐给学生的放松音乐资源信息，涵盖音乐标题、音频链接、封面图、艺术家、风格、时长、状态、创建时间、更新时间等信息。如图4-21所示。
+
+图4-21 心理音乐推荐实体属性图
+
+```sql
+CREATE TABLE `recommend_music` (
+  `music_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '音乐ID',
+  `title` varchar(100) NOT NULL COMMENT '音乐标题',
+  `mp3_url` varchar(255) NOT NULL COMMENT '音频文件链接',
+  `cover_url` varchar(255) DEFAULT NULL COMMENT '封面图链接',
+  `artist` varchar(64) DEFAULT NULL COMMENT '演唱者/作者',
+  `genre` varchar(50) DEFAULT NULL COMMENT '音乐风格',
+  `duration` int(10) DEFAULT NULL COMMENT '时长（秒）',
+  `description` varchar(500) DEFAULT NULL COMMENT '音乐简介',
+  `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1下架）',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`music_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='心理音乐推荐表';
+```
+
+（14）总体关系：系统采用规范化数据建模，构建以下实体映射体系：用户实体与学生实体、辅导员实体形成1:1关联关系，学生实体与评估结果形成1:N双向约束，与智能聊天会话建立1:N级联关系。智能聊天会话与智能消息间定义1:N消息关联。问卷与题目间设置1:N评估关联。评估结果与干预通知间建立1:N预警关联，干预通知与干预处理记录形成1:N处理关联。用户与内容推荐（文章、课程、音乐）间建立N:1发布关系，通过外键级联与事务锁机制保障数据操作的原子性和业务完整性。
 
 #### 4.3.2 逻辑结构设计
 
@@ -1211,6 +1261,66 @@ CREATE TABLE `content_recommendation` (
 | max_score | int | 10 | 空 | 最高分数 |
 | notification_template | text | | 空 | 通知模板 |
 | status | char | 1 | 空 | 状态 |
+| create_by | varchar | 64 | 空 | 创建者 |
+| create_time | datetime | | 空 | 创建时间 |
+| update_by | varchar | 64 | 空 | 更新者 |
+| update_time | datetime | | 空 | 更新时间 |
+
+（11）心理文章推荐表（recommend_article）：存储系统推荐的心理知识文章信息，其数据结构如表4-11所示。
+
+表4-11 心理文章推荐表
+
+| 字段 | 类型 | 长度 | 约束 | 描述 |
+|------|------|------|------|------|
+| article_id | bigint | 20 | primary key、非空 | 文章ID |
+| title | varchar | 100 | 非空 | 文章标题 |
+| content | text | | 非空 | 文章内容（Markdown格式） |
+| summary | varchar | 500 | 空 | 文章摘要 |
+| author | varchar | 64 | 空 | 作者 |
+| read_count | int | 10 | 空 | 阅读量 |
+| category | varchar | 50 | 空 | 文章分类 |
+| status | char | 1 | 空 | 状态（0正常 1下架） |
+| create_by | varchar | 64 | 空 | 创建者 |
+| create_time | datetime | | 空 | 创建时间 |
+| update_by | varchar | 64 | 空 | 更新者 |
+| update_time | datetime | | 空 | 更新时间 |
+
+（12）心理课程推荐表（recommend_course）：存储系统推荐的心理课程信息，其数据结构如表4-12所示。
+
+表4-12 心理课程推荐表
+
+| 字段 | 类型 | 长度 | 约束 | 描述 |
+|------|------|------|------|------|
+| course_id | bigint | 20 | primary key、非空 | 课程ID |
+| title | varchar | 100 | 非空 | 课程标题 |
+| mp4_url | varchar | 255 | 非空 | 视频文件链接 |
+| cover_url | varchar | 255 | 空 | 封面图链接 |
+| lecturer | varchar | 64 | 空 | 讲师 |
+| duration | int | 10 | 空 | 视频时长（秒） |
+| chapters | int | 10 | 空 | 章节数 |
+| level | varchar | 20 | 空 | 课程难度（0初级/1中级/2高级） |
+| description | varchar | 500 | 空 | 课程简介 |
+| status | char | 1 | 空 | 状态（0正常 1下架） |
+| create_by | varchar | 64 | 空 | 创建者 |
+| create_time | datetime | | 空 | 创建时间 |
+| update_by | varchar | 64 | 空 | 更新者 |
+| update_time | datetime | | 空 | 更新时间 |
+
+（13）心理音乐推荐表（recommend_music）：存储系统推荐的放松音乐资源信息，其数据结构如表4-13所示。
+
+表4-13 心理音乐推荐表
+
+| 字段 | 类型 | 长度 | 约束 | 描述 |
+|------|------|------|------|------|
+| music_id | bigint | 20 | primary key、非空 | 音乐ID |
+| title | varchar | 100 | 非空 | 音乐标题 |
+| mp3_url | varchar | 255 | 非空 | 音频文件链接 |
+| cover_url | varchar | 255 | 空 | 封面图链接 |
+| artist | varchar | 64 | 空 | 演唱者/作者 |
+| genre | varchar | 50 | 空 | 音乐风格 |
+| duration | int | 10 | 空 | 时长（秒） |
+| description | varchar | 500 | 空 | 音乐简介 |
+| status | char | 1 | 空 | 状态（0正常 1下架） |
 | create_by | varchar | 64 | 空 | 创建者 |
 | create_time | datetime | | 空 | 创建时间 |
 | update_by | varchar | 64 | 空 | 更新者 |
