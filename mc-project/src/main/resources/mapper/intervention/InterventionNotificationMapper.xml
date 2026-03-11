@@ -51,11 +51,20 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="studentId != null">
                 AND n.student_id = #{studentId}
             </if>
+            <if test="studentName != null and studentName != ''">
+                AND s.name like concat('%', #{studentName}, '%')
+            </if>
             <if test="userId != null">
                 AND n.user_id = #{userId}
             </if>
+            <if test="userName != null and userName != ''">
+                AND u.nick_name like concat('%', #{userName}, '%')
+            </if>
             <if test="deptId != null">
                 AND n.dept_id = #{deptId}
+            </if>
+            <if test="deptName != null and deptName != ''">
+                AND d.dept_name like concat('%', #{deptName}, '%')
             </if>
             <if test="notificationType != null and notificationType != ''">
                 AND n.notification_type = #{notificationType}
@@ -74,6 +83,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
         </where>
         order by n.create_time desc
+    </select>
+
+    <!-- 查询高风险未通知的评测结果 -->
+    <select id="selectHighRiskUnnotifiedResults" resultType="com.mc.intervention.domain.vo.HighRiskUnnotifiedVo">
+        select
+            e.result_id as resultId,
+            e.student_id as studentId,
+            s.name as studentName,
+            s.student_no as studentNo,
+            s.grade as grade,
+            s.major as major,
+            s.class_name as className,
+            e.risk_level as riskLevel,
+            q.title as questionnaireTitle,
+            e.create_time as evaluationTime
+        from evaluation_result e
+        left join student_info s on e.student_id = s.student_id
+        left join questionnaire q on e.questionnaire_id = q.questionnaire_id
+        left join intervention_notification n on e.result_id = n.result_id
+        where e.risk_level = '高'
+          and e.completion_status = '1'
+          and n.result_id is null
+        order by e.create_time desc
     </select>
 
     <select id="selectNotificationById" parameterType="Long" resultMap="InterventionNotificationResult">

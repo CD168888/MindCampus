@@ -1,6 +1,7 @@
 package com.mc.intervention.service;
 
 import com.mc.intervention.domain.InterventionNotification;
+import com.mc.intervention.domain.vo.HighRiskUnnotifiedVo;
 import com.mc.intervention.domain.vo.InterventionNotificationVo;
 
 import java.util.List;
@@ -18,6 +19,13 @@ public interface IInterventionNotificationService {
      * @return 干预通知表集合
      */
     public List<InterventionNotification> selectNotificationList(InterventionNotificationVo notification);
+
+    /**
+     * 查询高风险未通知的评测结果
+     *
+     * @return 高风险未通知列表
+     */
+    public List<HighRiskUnnotifiedVo> selectHighRiskUnnotifiedResults();
 
     /**
      * 查询干预通知表信息
@@ -102,13 +110,12 @@ public interface IInterventionNotificationService {
     public int updateNotificationProcessStatus(Long notificationId, String processStatus);
 
     /**
-     * 生成干预通知
+     * 生成干预通知（异步）
      *
-     * @param resultId  评测结果ID
-     * @param studentId 学生ID
-     * @return 结果
+     * @param resultId   评测结果ID
+     * @param studentId  学生ID
      */
-    public int generateNotification(Long resultId, Long studentId);
+    public void generateNotification(Long resultId, Long studentId);
 
     /**
      * 批量生成干预通知

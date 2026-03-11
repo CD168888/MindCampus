@@ -7,6 +7,7 @@ import com.mc.common.core.page.TableDataInfo;
 import com.mc.common.enums.BusinessType;
 import com.mc.common.utils.poi.ExcelUtil;
 import com.mc.intervention.domain.InterventionNotification;
+import com.mc.intervention.domain.vo.HighRiskUnnotifiedVo;
 import com.mc.intervention.domain.vo.InterventionNotificationVo;
 import com.mc.intervention.service.IInterventionNotificationService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -115,8 +116,9 @@ public class InterventionNotificationController extends BaseController {
     @PreAuthorize("@ss.hasPermi('intervention:notification:add')")
     @Log(title = "干预通知表", businessType = BusinessType.INSERT)
     @PostMapping("/generate")
-    public R<Integer> generateNotification(@RequestParam Long resultId, @RequestParam Long studentId) {
-        return R.ok(notificationService.generateNotification(resultId, studentId));
+    public R<Void> generateNotification(@RequestParam Long resultId, @RequestParam Long studentId) {
+        notificationService.generateNotification(resultId, studentId);
+        return R.ok();
     }
 
     /**
@@ -127,5 +129,14 @@ public class InterventionNotificationController extends BaseController {
     @PostMapping("/batchGenerate")
     public R<Integer> batchGenerateNotification(@RequestBody List<Long> resultIds) {
         return R.ok(notificationService.batchGenerateNotification(resultIds));
+    }
+
+    /**
+     * 查询高风险未通知的评测结果
+     */
+    @PreAuthorize("@ss.hasPermi('intervention:notification:list')")
+    @GetMapping("/highRiskUnnotified")
+    public R<List<HighRiskUnnotifiedVo>> getHighRiskUnnotified() {
+        return R.ok(notificationService.selectHighRiskUnnotifiedResults());
     }
 }

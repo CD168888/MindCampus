@@ -1,6 +1,7 @@
 package com.mc.intervention.mapper;
 
 import com.mc.intervention.domain.InterventionNotification;
+import com.mc.intervention.domain.vo.HighRiskUnnotifiedVo;
 import com.mc.intervention.domain.vo.InterventionNotificationVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,6 +22,13 @@ public interface InterventionNotificationMapper {
      * @return 干预通知表数据
      */
     public List<InterventionNotification> selectNotificationList(InterventionNotificationVo notification);
+
+    /**
+     * 查询高风险未通知的评测结果
+     *
+     * @return 高风险未通知列表
+     */
+    public List<HighRiskUnnotifiedVo> selectHighRiskUnnotifiedResults();
 
     /**
      * 查询干预通知表信息

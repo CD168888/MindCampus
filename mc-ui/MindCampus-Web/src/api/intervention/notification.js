@@ -63,3 +63,20 @@ export function updateProcessStatus(notificationId, processStatus) {
     params: { notificationId, processStatus }
   })
 }
+
+// 批量生成干预通知
+export function generateNotification(resultIds) {
+  return request({
+    url: '/intervention/notification/batchGenerate',
+    method: 'post',
+    data: resultIds
+  })
+}
+
+// 查询高风险未通知的评测结果
+export function listHighRiskUnnotified() {
+  return request({
+    url: '/intervention/notification/highRiskUnnotified',
+    method: 'get'
+  })
+}
