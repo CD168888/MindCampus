@@ -11,6 +11,21 @@ import java.util.List;
  */
 public interface IInterventionRiskConfigService {
     /**
+     * 获取所有风险等级配置（低、中、高），如果不存在则创建默认配置
+     *
+     * @return 风险等级配置列表（按低、中、高排序）
+     */
+    public List<InterventionRiskConfig> getOrCreateAllConfig();
+
+    /**
+     * 根据风险等级获取配置，如果不存在则创建默认配置
+     *
+     * @param riskLevel 风险等级（低、中、高）
+     * @return 风险等级配置信息
+     */
+    public InterventionRiskConfig getOrCreateConfigByLevel(String riskLevel);
+
+    /**
      * 查询风险等级配置表列表
      *
      * @param config 风险等级配置表

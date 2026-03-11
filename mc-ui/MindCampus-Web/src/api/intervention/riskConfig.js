@@ -3,46 +3,20 @@
  */
 import request from '@/utils/request'
 
-// 查询风险等级配置列表
-export function listRiskConfig(query) {
+// 获取所有风险等级配置（低、中、高）
+export function getRiskConfig() {
   return request({
-    url: '/intervention/risk/list',
-    method: 'get',
-    params: query
-  })
-}
-
-// 查询风险等级配置详细
-export function getRiskConfig(configId) {
-  return request({
-    url: '/intervention/risk/' + configId,
+    url: '/intervention/risk/config',
     method: 'get'
-  })
-}
-
-// 新增风险等级配置
-export function addRiskConfig(data) {
-  return request({
-    url: '/intervention/risk',
-    method: 'post',
-    data: data
   })
 }
 
 // 修改风险等级配置
 export function updateRiskConfig(data) {
   return request({
-    url: '/intervention/risk',
+    url: '/intervention/risk/config',
     method: 'put',
     data: data
-  })
-}
-
-// 删除风险等级配置
-export function delRiskConfig(configId) {
-  return request({
-    url: '/intervention/risk/' + configId,
-    method: 'delete'
   })
 }
 

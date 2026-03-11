@@ -6,6 +6,7 @@ import com.mc.intervention.service.IInterventionRiskConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -18,6 +19,57 @@ import java.util.List;
 public class InterventionRiskConfigServiceImpl implements IInterventionRiskConfigService {
     @Autowired
     private InterventionRiskConfigMapper configMapper;
+
+    /**
+     * 获取所有风险等级配置（低、中、高），如果不存在则创建默认配置
+     */
+    @Override
+    public List<InterventionRiskConfig> getOrCreateAllConfig() {
+        List<InterventionRiskConfig> result = new ArrayList<>();
+        String[] levels = {"低", "中", "高"};
+        for (String level : levels) {
+            InterventionRiskConfig config = getOrCreateConfigByLevel(level);
+            result.add(config);
+        }
+        return result;
+    }
+
+    /**
+     * 根据风险等级获取配置，如果不存在则创建默认配置
+     */
+    @Override
+    public InterventionRiskConfig getOrCreateConfigByLevel(String riskLevel) {
+        InterventionRiskConfig query = new InterventionRiskConfig();
+        query.setRiskLevel(riskLevel);
+        List<InterventionRiskConfig> configs = configMapper.selectConfigList(query);
+
+        if (configs != null && !configs.isEmpty()) {
+            return configs.get(0);
+        }
+
+        // 创建默认配置
+        InterventionRiskConfig config = new InterventionRiskConfig();
+        config.setRiskLevel(riskLevel);
+
+        if ("低".equals(riskLevel)) {
+            config.setMinScore(0);
+            config.setMaxScore(60);
+            config.setNotificationTemplate("学生测评分数为${score}分，风险等级为低，请关注学生心理健康。");
+        } else if ("中".equals(riskLevel)) {
+            config.setMinScore(61);
+            config.setMaxScore(80);
+            config.setNotificationTemplate("学生测评分数为${score}分，风险等级为中，建议关注并适时干预。");
+        } else if ("高".equals(riskLevel)) {
+            config.setMinScore(81);
+            config.setMaxScore(100);
+            config.setNotificationTemplate("学生测评分数为${score}分，风险等级为高，请及时采取干预措施！");
+        }
+
+        config.setStatus("0");
+        config.setCreateTime(new Date());
+        configMapper.insertConfig(config);
+        return config;
+    }
 
     /**
      * 查询风险等级配置表列表

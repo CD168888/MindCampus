@@ -1,258 +1,295 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="88px">
-      <el-form-item label="风险等级" prop="riskLevel">
-        <el-input v-model="queryParams.riskLevel" placeholder="请输入风险等级" clearable @keyup.enter="handleQuery" />
-      </el-form-item>
-      <el-form-item label="最小分数" prop="minScore">
-        <el-input v-model="queryParams.minScore" placeholder="请输入最小分数" clearable @keyup.enter="handleQuery" />
-      </el-form-item>
-      <el-form-item label="最大分数" prop="maxScore">
-        <el-input v-model="queryParams.maxScore" placeholder="请输入最大分数" clearable @keyup.enter="handleQuery" />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
-
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button type="primary" plain icon="Plus" @click="handleAdd"
-          v-hasPermi="['intervention:risk:add']">新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="success" plain icon="Edit" :disabled="single" @click="handleUpdate"
-          v-hasPermi="['intervention:risk:edit']">修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete"
-          v-hasPermi="['intervention:risk:remove']">删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button type="warning" plain icon="Download" @click="handleExport"
-          v-hasPermi="['intervention:risk:export']">导出</el-button>
-      </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
-    </el-row>
-
-    <el-table v-loading="loading" :data="configList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="配置ID" align="center" prop="configId" />
-      <el-table-column label="风险等级" align="center" prop="riskLevel" />
-      <el-table-column label="最小分数" align="center" prop="minScore" />
-      <el-table-column label="最大分数" align="center" prop="maxScore" />
-      <el-table-column label="通知模板" align="center" prop="notificationTemplate" :show-overflow-tooltip="true" />
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template #default="scope">
-          <el-button link type="primary" icon="View" @click="handleView(scope.row)" v-hasPermi="['intervention:risk:query']">查看</el-button>
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['intervention:risk:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['intervention:risk:remove']">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum"
-      v-model:limit="queryParams.pageSize" @pagination="getList" />
-
-    <!-- 添加或修改风险等级配置对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="风险等级" prop="riskLevel">
-          <el-input v-model="form.riskLevel" placeholder="请输入风险等级" />
-        </el-form-item>
-        <el-form-item label="最小分数" prop="minScore">
-          <el-input v-model="form.minScore" type="number" placeholder="请输入最小分数" />
-        </el-form-item>
-        <el-form-item label="最大分数" prop="maxScore">
-          <el-input v-model="form.maxScore" type="number" placeholder="请输入最大分数" />
-        </el-form-item>
-        <el-form-item label="通知模板" prop="notificationTemplate">
-          <el-input v-model="form.notificationTemplate" type="textarea" placeholder="请输入通知模板" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+    <el-card>
+      <template #header>
+        <div class="card-header">
+          <span>风险等级配置</span>
+          <el-button v-if="!editing" type="primary" @click="handleEdit">
+            编辑
+          </el-button>
+          <div v-else>
+            <el-button type="success" @click="handleSave">保存</el-button>
+            <el-button @click="handleCancel">取消</el-button>
+          </div>
         </div>
       </template>
-    </el-dialog>
+
+      <el-table :data="tableData" border v-loading="loading">
+        <el-table-column label="风险等级" prop="riskLevel" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getRiskTagType(row.riskLevel)">{{ row.riskLevel }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="分数区间" width="250" align="center">
+          <template #default="{ row, $index }">
+            <div class="score-range" v-if="editing">
+              <el-input-number
+                v-model="row.minScore"
+                :min="0"
+                :max="100"
+                size="small"
+                controls-position="right"
+                @change="handleScoreChange($index)"
+              />
+              <span class="separator">-</span>
+              <el-input-number
+                v-model="row.maxScore"
+                :min="0"
+                :max="100"
+                size="small"
+                controls-position="right"
+                @change="handleScoreChange($index)"
+              />
+            </div>
+            <span v-else>{{ row.minScore }} - {{ row.maxScore }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="通知模板" min-width="300">
+          <template #default="{ row }">
+            <el-input
+              v-if="editing"
+              v-model="row.notificationTemplate"
+              type="textarea"
+              :rows="2"
+              placeholder="通知模板"
+            />
+            <span v-else class="template-text">{{ row.notificationTemplate }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-switch
+              v-model="row.status"
+              active-value="0"
+              inactive-value="1"
+              :disabled="!editing"
+            />
+            <span class="status-text">{{ row.status === '0' ? '正常' : '停用' }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div class="tips" v-if="editing">
+        <el-alert
+          title="分数区间说明：低风险分数必须小于中风险，中风险分数必须小于高风险，且三个区间的总分范围为 0-100"
+          type="info"
+          :closable="false"
+          show-icon
+        />
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script setup name="RiskConfig">
-import { ref, reactive, toRefs, onMounted, getCurrentInstance } from 'vue'
-import { listRiskConfig, getRiskConfig, addRiskConfig, updateRiskConfig, delRiskConfig } from '@/api/intervention/riskConfig'
-import Pagination from '@/components/Pagination'
-import RightToolbar from '@/components/RightToolbar'
-import { parseTime } from '@/utils/ruoyi'
+import {getRiskConfig, updateRiskConfig} from '@/api/intervention/riskConfig'
 
 const { proxy } = getCurrentInstance()
 
-const configList = ref([])
-const open = ref(false)
-const loading = ref(true)
-const showSearch = ref(true)
-const ids = ref([])
-const single = ref(true)
-const multiple = ref(true)
-const total = ref(0)
-const title = ref("")
+const loading = ref(false)
+const editing = ref(false)
 
-const data = reactive({
-  form: {
+// 表格数据
+const tableData = ref([
+  {
     configId: null,
-    riskLevel: null,
-    minScore: null,
-    maxScore: null,
-    notificationTemplate: null
+    riskLevel: '低',
+    minScore: 0,
+    maxScore: 60,
+    notificationTemplate: '',
+    status: '0'
   },
-  queryParams: {
-    pageNum: 1,
-    pageSize: 10,
-    riskLevel: null,
-    minScore: null,
-    maxScore: null
+  {
+    configId: null,
+    riskLevel: '中',
+    minScore: 61,
+    maxScore: 80,
+    notificationTemplate: '',
+    status: '0'
   },
-  rules: {
-    riskLevel: [
-      { required: true, message: '风险等级不能为空', trigger: 'blur' }
-    ],
-    minScore: [
-      { required: true, message: '最小分数不能为空', trigger: 'blur' }
-    ],
-    maxScore: [
-      { required: true, message: '最大分数不能为空', trigger: 'blur' }
-    ],
-    notificationTemplate: [
-      { required: true, message: '通知模板不能为空', trigger: 'blur' }
-    ]
+  {
+    configId: null,
+    riskLevel: '高',
+    minScore: 81,
+    maxScore: 100,
+    notificationTemplate: '',
+    status: '0'
   }
-})
+])
 
-const { form, queryParams, rules } = toRefs(data)
+// 保存编辑前的数据
+let originalData = []
 
-/** 查询风险等级配置列表 */
-function getList() {
+/** 获取风险标签类型 */
+function getRiskTagType(riskLevel) {
+  const types = {
+    '低': 'success',
+    '中': 'warning',
+    '高': 'danger'
+  }
+  return types[riskLevel] || 'info'
+}
+
+/** 分数变化时自动调整 */
+function clamp(value, min, max) {
+  return value < min ? min : value > max ? max : value
+}
+
+function handleScoreChange(index) {
+  const [low, medium, high] = tableData.value
+
+  const normalize = item => {
+    item.minScore = clamp(item.minScore, 0, 100)
+    item.maxScore = clamp(Math.max(item.minScore, item.maxScore), item.minScore, 100)
+  }
+
+  normalize(low)
+  normalize(medium)
+  normalize(high)
+
+  if (index === 0) {
+    medium.minScore = low.maxScore + 1
+    normalize(medium)
+    high.minScore = medium.maxScore + 1
+    normalize(high)
+  }
+
+  if (index === 1) {
+    low.maxScore = medium.minScore - 1
+    normalize(low)
+    high.minScore = medium.maxScore + 1
+    normalize(high)
+  }
+
+  if (index === 2) {
+    medium.maxScore = high.minScore - 1
+    normalize(medium)
+    low.maxScore = medium.minScore - 1
+    normalize(low)
+  }
+}
+
+/** 获取配置 */
+function getConfig() {
   loading.value = true
-  listRiskConfig(queryParams.value).then(response => {
-    configList.value = response.rows
-    total.value = response.total
+  getRiskConfig().then(response => {
+    const configs = response.data || []
+    if (configs.length > 0) {
+      // 按低、中、高排序
+      const levelOrder = { '低': 0, '中': 1, '高': 2 }
+      configs.sort((a, b) => levelOrder[a.riskLevel] - levelOrder[b.riskLevel])
+
+      tableData.value = configs
+    }
+    loading.value = false
+  }).catch(() => {
     loading.value = false
   })
 }
 
-/** 搜索按钮操作 */
-function handleQuery() {
-  queryParams.value.pageNum = 1
-  getList()
+/** 编辑 */
+function handleEdit() {
+  originalData = JSON.parse(JSON.stringify(tableData.value))
+  editing.value = true
 }
 
-/** 重置按钮操作 */
-function resetQuery() {
-  proxy.resetForm("queryRef")
-  handleQuery()
+/** 取消编辑 */
+function handleCancel() {
+  tableData.value = originalData
+  editing.value = false
 }
 
-// 多选框选中数据
-function handleSelectionChange(selection) {
-  ids.value = selection.map(item => item.configId)
-  single.value = selection.length != 1
-  multiple.value = !selection.length
-}
+/** 保存 */
+function handleSave() {
+  // 验证分数连续性
+  const sortedData = [...tableData.value].sort((a, b) => a.minScore - b.minScore)
 
-/** 新增按钮操作 */
-function handleAdd() {
-  reset()
-  open.value = true
-  title.value = "添加风险等级配置"
-}
-
-/** 修改按钮操作 */
-function handleUpdate(row) {
-  reset()
-  const configId = row.configId || ids.value
-  getRiskConfig(configId).then(response => {
-    form.value = response.data
-    open.value = true
-    title.value = "修改风险等级配置"
-  })
-}
-
-/** 查看按钮操作 */
-function handleView(row) {
-  reset()
-  getRiskConfig(row.configId).then(response => {
-    form.value = response.data
-    open.value = true
-    title.value = "查看风险等级配置"
-  })
-}
-
-/** 提交按钮 */
-function submitForm() {
-  proxy.$refs["formRef"].validate(valid => {
-    if (valid) {
-      if (form.value.configId != null) {
-        updateRiskConfig(form.value).then(response => {
-          proxy.$modal.msgSuccess("修改成功")
-          open.value = false
-          getList()
-        })
-      } else {
-        addRiskConfig(form.value).then(response => {
-          proxy.$modal.msgSuccess("新增成功")
-          open.value = false
-          getList()
-        })
-      }
+  for (let i = 0; i < sortedData.length - 1; i++) {
+    if (sortedData[i].maxScore >= sortedData[i + 1].minScore) {
+      proxy.$modal.msgError('分数区间必须连续，不能有重叠或断层')
+      return
     }
-  })
-}
-
-/** 取消按钮 */
-function cancel() {
-  open.value = false
-  reset()
-}
-
-/** 重置表单 */
-function reset() {
-  form.value = {
-    configId: null,
-    riskLevel: null,
-    minScore: null,
-    maxScore: null,
-    notificationTemplate: null
   }
-  proxy.resetForm("formRef")
-}
 
-/** 删除按钮操作 */
-function handleDelete(row) {
-  const configIds = row.configId || ids.value
-  proxy.$modal.confirm('是否确认删除风险等级配置编号为"' + configIds + '"的数据项？').then(function () {
-    return delRiskConfig(configIds)
-  }).then(() => {
-    getList()
-    proxy.$modal.msgSuccess("删除成功")
-  }).catch(() => { })
-}
+  // 验证分数范围覆盖 0-100
+  const minScore = Math.min(...tableData.value.map(item => item.minScore))
+  const maxScore = Math.max(...tableData.value.map(item => item.maxScore))
 
-/** 导出按钮操作 */
-function handleExport() {
-  proxy.download('intervention/risk/export', {
-    ...queryParams.value
-  }, `intervention-risk-${new Date().getTime()}.xlsx`)
+  if (minScore !== 0 || maxScore !== 100) {
+    proxy.$modal.msgError('分数区间必须覆盖 0-100')
+    return
+  }
+
+  // 逐个保存配置
+  loading.value = true
+  const savePromises = tableData.value.map(item => {
+    const data = {
+      configId: item.configId,
+      riskLevel: item.riskLevel,
+      minScore: item.minScore,
+      maxScore: item.maxScore,
+      notificationTemplate: item.notificationTemplate,
+      status: item.status
+    }
+    return updateRiskConfig(data)
+  })
+
+  Promise.all(savePromises).then(() => {
+    proxy.$modal.msgSuccess('保存成功')
+    editing.value = false
+    getConfig()
+  }).catch(() => {
+    loading.value = false
+  })
 }
 
 onMounted(() => {
-  getList()
+  getConfig()
 })
 </script>
+
+<style scoped>
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.score-range {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.score-range .el-input-number {
+  width: 90px;
+}
+
+.separator {
+  color: #909399;
+}
+
+.status-text {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.template-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tips {
+  margin-top: 20px;
+}
+
+:deep(.el-table .cell) {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+</style>
