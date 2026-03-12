@@ -4,10 +4,13 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mc.common.core.domain.entity.SysUser;
 import com.mc.counselor.domain.CounselorInfo;
 import com.mc.counselor.mapper.CounselorInfoMapper;
+import com.mc.counselor.service.ICounselorDeptService;
 import com.mc.counselor.service.ICounselorInfoService;
 import com.mc.system.mapper.SysUserMapper;
+import com.mc.system.service.ISysDeptService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,6 +27,10 @@ public class CounselorInfoServiceImpl extends ServiceImpl<CounselorInfoMapper, C
     private CounselorInfoMapper counselorInfoMapper;
     @Autowired
     private SysUserMapper sysUserMapper;
+    @Autowired
+    private ICounselorDeptService counselorDeptService;
+    @Autowired
+    private ISysDeptService sysDeptService;
 
     /**
      * 查询辅导员管理
@@ -65,7 +72,23 @@ public class CounselorInfoServiceImpl extends ServiceImpl<CounselorInfoMapper, C
      * @return 结果
      */
     @Override
+    @Transactional
     public int updateCounselorInfo(CounselorInfo counselorInfo) {
+        Long counselorId = counselorInfo.getCounselorId();
+
+        // 获取辅导员管理的部门ID数组
+        Long[] deptIdArray = counselorDeptService.selectDeptIdsByCounselorId(counselorId);
+
+        // 用 Stream 直接遍历数组，无需额外转 List
+        Arrays.stream(deptIdArray)
+                .filter(deptId -> deptId != null)
+                .map(sysDeptService::selectDeptById)
+                .filter(sysDept -> sysDept != null)
+                .forEach(sysDept -> {
+                    sysDept.setLeader(counselorInfo.getName());
+                    sysDeptService.updateDept(sysDept);
+                });
+
         return updateById(counselorInfo) ? 1 : 0;
     }
 
