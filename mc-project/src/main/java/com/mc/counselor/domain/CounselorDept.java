@@ -1,5 +1,6 @@
 package com.mc.counselor.domain;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mc.common.core.domain.BaseEntityPlus;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -16,6 +17,7 @@ public class CounselorDept extends BaseEntityPlus {
     private static final long serialVersionUID = 1L;
 
     /** 关联ID */
+    @TableId
     private Long deptCounselorId;
 
     /** 辅导员ID */

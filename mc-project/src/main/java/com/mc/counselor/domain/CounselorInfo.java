@@ -1,5 +1,6 @@
 package com.mc.counselor.domain;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mc.common.annotation.Excel;
 import com.mc.common.core.domain.BaseEntityPlus;
@@ -19,6 +20,7 @@ public class CounselorInfo extends BaseEntityPlus {
     /**
      * 辅导员ID
      */
+    @TableId
     private Long counselorId;
 
     /**
