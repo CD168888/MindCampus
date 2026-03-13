@@ -1,135 +1,182 @@
 <template>
   <view class="home-container">
-    <!-- 英雄区域 -->
-    <view class="hero-section">
-      <view class="hero-greeting">你好，{{ userName || '同学' }} 👋</view>
-      <view class="hero-desc">欢迎来到心理健康服务平台</view>
+    <view class="ambient-background"></view>
 
-      <!-- 轮播图 -->
-      <banner-carousel @click="onBannerClick" @link-click="onBannerLinkClick"></banner-carousel>
-
-    </view>
-
-    <!-- 心理测评入口 -->
-    <assessment-card icon="📋" title="心理健康测评" subtitle="了解你的心理健康状况，获取专业建议" @click="openAssessment"></assessment-card>
-
-
-    <!-- 心灵鸡汤 -->
-    <daily-quote @click="goToQuoteList"></daily-quote>
-
-    <!-- 心理音乐推荐 -->
-    <view class="music-section">
-      <view class="section-header">
-        <view class="section-title">
-          <uni-icons type="sound-filled" size="20" color="#1677FF"></uni-icons>
-          <text class="title-text">推荐音乐</text>
-        </view>
-        <view class="section-more" @tap="goToMusicList">更多 ›</view>
+    <view class="glass-header">
+      <view class="greeting-box">
+        <text class="greeting-date">今日推荐</text>
+        <text class="greeting-text">你好，{{ userName || '同学' }}</text>
       </view>
-
-      <!-- 推荐音乐列表（3个） -->
-      <view class="music-list">
-        <view class="music-item" v-for="item in recommendedMusicList" :key="item.musicId" @tap="playMusic(item)">
-          <view class="music-icon-wrapper">
-            <image v-if="item.coverUrl" class="music-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill"></image>
-            <view v-else class="music-cover-placeholder">
-              <uni-icons type="sound-filled" size="24" color="#FFFFFF"></uni-icons>
-            </view>
-          </view>
-          <view class="music-info">
-            <view class="music-title">{{ item.title }}</view>
-            <view class="music-artist">{{ item.artist || '未知' }} · {{ formatDuration(item.duration) }}</view>
-          </view>
-        </view>
-      </view>
-
-      <view v-if="recommendedMusicList.length === 0" class="empty-music">
-        <text class="empty-text">暂无推荐音乐</text>
+      <view class="user-avatar-glass">
+        <uni-icons type="person-filled" size="24" color="#1D1D1F"></uni-icons>
       </view>
     </view>
 
-    <!-- 心理课程推荐 -->
-    <view class="course-section">
-      <view class="section-header">
-        <view class="section-title">
-          <uni-icons type="videocam-filled" size="20" color="#1CD07E"></uni-icons>
-          <text class="title-text">推荐课程</text>
-        </view>
-        <view class="section-more" @tap="goToCourseList">更多 ›</view>
+    <view class="scroll-content">
+      
+      <view class="banner-section">
+        <banner-carousel @click="onBannerClick" @link-click="onBannerLinkClick"></banner-carousel>
       </view>
 
-      <view class="course-list">
-        <view class="course-item" v-for="item in courseList" :key="item.courseId" @tap="openCourse(item)">
-          <view class="course-cover-wrapper">
-            <image v-if="item.coverUrl" class="course-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill">
-            </image>
-            <view v-else class="course-cover-placeholder">
-              <uni-icons type="videocam-filled" size="28" color="#FFFFFF"></uni-icons>
+      <view class="quote-pill-container" @tap="goToQuoteList">
+        <view class="glass-pill quote-bar">
+          <view class="quote-icon-box">
+            <uni-icons type="sound-filled" size="16" color="#007AFF"></uni-icons>
+            <text class="quote-label">寄语</text>
+          </view>
+          
+          <swiper class="quote-swiper" vertical="true" autoplay="true" circular="true" interval="4000">
+            <swiper-item class="quote-swiper-item" v-for="(quote, index) in quoteList" :key="index">
+              <text class="quote-text">{{ quote }}</text>
+            </swiper-item>
+          </swiper>
+
+          <uni-icons type="right" size="14" color="#86868B"></uni-icons>
+        </view>
+      </view>
+
+      <view class="task-section">
+        <view class="glass-card task-card" @tap="openAssessment">
+          <view class="task-left">
+            <view class="task-icon-bg">
+              <uni-icons type="compose" size="28" color="#FFFFFF"></uni-icons>
+            </view>
+            <view class="task-info">
+              <text class="task-title">校园心理问卷</text>
+              <text class="task-desc">有新的测评任务待完成</text>
             </view>
           </view>
-          <view class="course-info">
-            <view class="course-title">{{ item.title }}</view>
-            <view class="course-meta">
-              <view class="meta-item">
-                <uni-icons type="person" size="12" color="#CCCCCC"></uni-icons>
-                <text>{{ item.lecturer || '未知' }}</text>
-              </view>
-              <view class="meta-item">
-                <uni-icons type="clock" size="12" color="#CCCCCC"></uni-icons>
-                <text>{{ formatDuration(item.duration) }}</text>
-              </view>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view v-if="courseList.length === 0" class="empty-course">
-        <text class="empty-text">暂无推荐课程</text>
-      </view>
-    </view>
-
-    <!-- 心理文章推荐 -->
-    <view class="article-section">
-      <view class="section-header">
-        <view class="section-title">
-          <uni-icons type="compose" size="20" color="#FF8D3E"></uni-icons>
-          <text class="title-text">推荐阅读</text>
-        </view>
-        <view class="section-more" @tap="goToArticleList">更多 ›</view>
-      </view>
-
-      <view class="article-list">
-        <view class="article-item" v-for="item in articleList" :key="item.articleId" @tap="openArticle(item)">
-          <view class="article-icon-wrapper">
-            <uni-icons :type="getCategoryIcon(item.category)" size="18" color="#FF8D3E"></uni-icons>
-          </view>
-          <view class="article-content">
-            <view class="article-title">{{ item.title }}</view>
-            <view class="article-excerpt">{{ item.summary || '暂无摘要' }}</view>
-            <view class="article-meta">
-              <view class="meta-item">
-                <uni-icons type="eye" size="12" color="#CCCCCC"></uni-icons>
-                <text>{{ formatReadCount(item.readCount) }}</text>
-              </view>
-              <view class="meta-item">
-                <uni-icons type="person" size="12" color="#CCCCCC"></uni-icons>
-                <text>{{ item.author || '匿名' }}</text>
-              </view>
+          <view class="task-right">
+            <view class="task-btn">
+              去完成 <uni-icons type="right" size="12" color="#2CB5A0"></uni-icons>
             </view>
           </view>
         </view>
       </view>
 
-      <view v-if="articleList.length === 0" class="empty-article">
-        <text class="empty-text">暂无推荐文章</text>
+      <view class="section-container" v-if="recommendedMusicList.length > 0">
+        <view class="section-header">
+          <view class="header-left">
+            <uni-icons type="headphones" size="22" color="#1D1D1F"></uni-icons>
+            <text class="section-title">愈音工坊</text>
+          </view>
+          <view class="header-right" @tap="goToMusicList">
+            <text class="section-more">更多</text>
+            <uni-icons type="right" size="14" color="#86868B"></uni-icons>
+          </view>
+        </view>
+
+        <scroll-view scroll-x="true" class="horizontal-scroll" :show-scrollbar="false">
+          <view class="music-scroll-content">
+            <view class="music-item" v-for="item in recommendedMusicList" :key="item.musicId" @tap="playMusic(item)">
+              <view class="music-cover-wrapper">
+                <image v-if="item.coverUrl" class="music-cover" :src="getImageUrl(item.coverUrl)" mode="aspectFill"></image>
+                <view v-else class="music-cover-placeholder">
+                  <uni-icons type="headphones" size="36" color="#FFFFFF"></uni-icons>
+                </view>
+                <view class="cover-gradient-overlay"></view>
+                <view class="music-play-btn-glass">
+                  <view class="play-triangle"></view>
+                </view>
+              </view>
+              <view class="music-text-box">
+                <text class="music-title">{{ item.title }}</text>
+                <text class="music-artist">{{ item.artist || '未知' }}</text>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
       </view>
+
+      <view class="section-container" v-if="courseList.length > 0">
+        <view class="section-header">
+          <view class="header-left">
+            <uni-icons type="videocam-filled" size="22" color="#1D1D1F"></uni-icons>
+            <text class="section-title">精品课程</text>
+          </view>
+          <view class="header-right" @tap="goToCourseList">
+            <text class="section-more">更多</text>
+            <uni-icons type="right" size="14" color="#86868B"></uni-icons>
+          </view>
+        </view>
+
+        <scroll-view scroll-x="true" class="horizontal-scroll" :show-scrollbar="false">
+          <view class="course-scroll-content">
+            <view class="course-card" v-for="item in courseList" :key="item.courseId" @tap="openCourse(item)">
+              <image v-if="item.coverUrl" class="course-cover-img" :src="getImageUrl(item.coverUrl)" mode="aspectFill"></image>
+              <view v-else class="course-cover-placeholder">
+                <uni-icons type="videocam" size="48" color="#FFFFFF"></uni-icons>
+              </view>
+
+              <view class="glass-badge course-badge">
+                <uni-icons type="clock" size="12" color="#1D1D1F" style="margin-right: 4rpx;"></uni-icons>
+                {{ formatDuration(item.duration) }}
+              </view>
+
+              <view class="course-gradient-overlay"></view>
+
+              <view class="course-info-overlay">
+                <text class="course-title-overlay">{{ item.title }}</text>
+                <text class="course-lecturer-overlay">
+                  <uni-icons type="person" size="14" color="#E5E5EA" style="margin-right: 6rpx;"></uni-icons>
+                  {{ item.lecturer || '特邀导师' }}
+                </text>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="section-container">
+        <view class="section-header">
+          <view class="header-left">
+            <uni-icons type="map-filled" size="22" color="#1D1D1F"></uni-icons>
+            <text class="section-title">深度阅读</text>
+          </view>
+          <view class="header-right" @tap="goToArticleList">
+            <text class="section-more">更多</text>
+            <uni-icons type="right" size="14" color="#86868B"></uni-icons>
+          </view>
+        </view>
+
+        <view class="article-list" v-if="articleList.length > 0">
+          <view class="glass-card article-card" v-for="item in articleList" :key="item.articleId" @tap="openArticle(item)">
+            <view class="article-content">
+              <text class="article-title">{{ item.title }}</text>
+              <text class="article-excerpt">{{ item.summary || '暂无摘要' }}</text>
+              
+              <view class="article-meta">
+                <view class="meta-tag">
+                  <uni-icons :type="getCategoryIcon(item.category)" size="12" color="#007AFF"></uni-icons>
+                  <text class="meta-category-text">{{ item.category || '心理健康' }}</text>
+                </view>
+                <view class="meta-info-group">
+                  <text class="meta-author">
+                    <uni-icons type="person" size="12" color="#86868B"></uni-icons> {{ item.author || '匿名' }}
+                  </text>
+                  <text class="meta-author">
+                    <uni-icons type="eye" size="12" color="#86868B"></uni-icons> {{ formatReadCount(item.readCount) }}
+                  </text>
+                </view>
+              </view>
+            </view>
+            <view class="article-arrow">
+              <uni-icons type="right" size="16" color="#C7C7CC"></uni-icons>
+            </view>
+          </view>
+        </view>
+
+        <view v-if="articleList.length === 0" class="empty-state glass-card">
+          <uni-icons type="info" size="24" color="#86868B"></uni-icons>
+          <text class="empty-text">正在准备优质内容...</text>
+        </view>
+      </view>
+
     </view>
   </view>
 </template>
 
 <script>
-import DailyQuote from '@/components/daily-quote/daily-quote.vue'
-import AssessmentCard from '@/components/assessment-card/assessment-card.vue'
 import BannerCarousel from '@/components/banner-carousel/banner-carousel.vue'
 import {getRecommendedMusic} from '@/api/music'
 import {getRecommendedArticles} from '@/api/article'
@@ -138,55 +185,44 @@ import config from '@/config'
 
 export default {
   components: {
-    DailyQuote,
-    AssessmentCard,
     BannerCarousel
   },
   data() {
     return {
       userName: '同学',
       isPlaying: false,
-
-      // 当前播放音乐
       currentMusic: {
         title: '',
         artist: '',
         duration: ''
       },
-
-      // 推荐音乐列表（首页显示3个）
       recommendedMusicList: [],
-
-      // 文章列表
       articleList: [],
-
-      // 课程列表
-      courseList: []
+      courseList: [],
+      
+      quoteList: [
+        '接受自己的不完美，是治愈的开始。',
+        '万物皆有裂痕，那是光照进来的地方。',
+        '今天也要好好照顾自己的情绪呀。',
+        '慢慢来，允许自己偶尔停下脚步。'
+      ]
     }
   },
-
   onLoad() {
     this.getUserInfo()
     this.loadRecommendedMusic()
     this.loadRecommendedArticles()
     this.loadRecommendedCourses()
   },
-
   methods: {
-    // 获取用户信息
     getUserInfo() {
       const name = this.$store.state.user.name
-      if (name) {
-        this.userName = name
-      }
+      if (name) this.userName = name
     },
-
-    // 加载推荐音乐
     loadRecommendedMusic() {
       getRecommendedMusic().then(res => {
         if (res.code === 200 && res.data) {
           this.recommendedMusicList = res.data
-          // 如果有推荐音乐，设置第一个为当前播放
           if (this.recommendedMusicList.length > 0) {
             this.currentMusic = {
               title: this.recommendedMusicList[0].title,
@@ -195,150 +231,55 @@ export default {
             }
           }
         }
-      }).catch(err => {
-        console.error('加载推荐音乐失败:', err)
-      })
+      }).catch(err => console.error('加载推荐音乐失败:', err))
     },
-
-    // 格式化时长（秒转分:秒）
     formatDuration(seconds) {
       if (!seconds) return '0:00'
       const mins = Math.floor(seconds / 60)
       const secs = seconds % 60
       return `${mins}:${secs.toString().padStart(2, '0')}`
     },
-
-    // 获取图片完整URL
     getImageUrl(url) {
       if (!url) return ''
       if (url.startsWith('http')) return url
-      // 从 config 获取 baseUrl
       const baseUrl = config.baseUrl || 'http://localhost:8080'
       return url.startsWith('/') ? baseUrl + url : baseUrl + '/' + url
     },
-
-    // 轮播图点击（没有链接时触发）
-    onBannerClick(banner) {
-      console.log('轮播图点击:', banner)
-      // 可以在这里处理没有链接的轮播图点击事件
-    },
-
-    // 轮播图链接点击（自定义链接处理）
-    onBannerLinkClick(linkUrl) {
-      console.log('轮播图链接点击:', linkUrl)
-      // 可以在这里处理自定义链接
-    },
-
-    // 打开心理测评
-    openAssessment() {
-      uni.navigateTo({
-        url: '/pages/assessment/list'
-      })
-    },
-
-    // 跳转到心灵鸡汤列表
-    goToQuoteList() {
-      this.$modal.showToast('查看更多鸡汤')
-      // TODO: 跳转到鸡汤列表页面
-      // this.$tab.navigateTo('/pages/quotes/list')
-    },
-
-    // 切换音乐播放状态
+    onBannerClick(banner) { console.log('轮播图点击:', banner) },
+    onBannerLinkClick(linkUrl) { console.log('轮播图链接点击:', linkUrl) },
+    openAssessment() { uni.navigateTo({ url: '/pages/assessment/list' }) },
+    goToQuoteList() { uni.navigateTo({ url: '/pages/quotes/list' }) }, 
     toggleMusic() {
       this.isPlaying = !this.isPlaying
       this.$modal.showToast(this.isPlaying ? '开始播放' : '暂停播放')
     },
-
-    // 播放指定音乐
     playMusic(item) {
-      // 跳转到播放页面
       const musicList = JSON.stringify(this.recommendedMusicList)
-      uni.navigateTo({
-        url: `/pages/music/player?musicId=${item.musicId}&musicList=${encodeURIComponent(musicList)}`
-      })
+      uni.navigateTo({ url: `/pages/music/player?musicId=${item.musicId}&musicList=${encodeURIComponent(musicList)}` })
     },
-
-    // 前往音乐列表
-    goToMusicList() {
-      uni.navigateTo({
-        url: '/pages/music/list'
-      })
-    },
-
-    // 加载推荐文章
+    goToMusicList() { uni.navigateTo({ url: '/pages/music/list' }) },
     loadRecommendedArticles() {
       getRecommendedArticles().then(res => {
-        if (res.code === 200 && res.data) {
-          this.articleList = res.data
-        }
-      }).catch(err => {
-        console.error('加载推荐文章失败:', err)
-      })
+        if (res.code === 200 && res.data) this.articleList = res.data
+      }).catch(err => console.error('加载推荐文章失败:', err))
     },
-
-    // 打开文章详情
-    openArticle(item) {
-      uni.navigateTo({
-        url: `/pages/article/detail?articleId=${item.articleId}`
-      })
-    },
-
-    // 前往文章列表
-    goToArticleList() {
-      uni.navigateTo({
-        url: '/pages/article/list'
-      })
-    },
-
-    // 加载推荐课程
+    openArticle(item) { uni.navigateTo({ url: `/pages/article/detail?articleId=${item.articleId}` }) },
+    goToArticleList() { uni.navigateTo({ url: '/pages/article/list' }) },
     loadRecommendedCourses() {
       getRecommendedCourses().then(res => {
-        if (res.code === 200 && res.data) {
-          this.courseList = res.data
-        }
-      }).catch(err => {
-        console.error('加载推荐课程失败:', err)
-      })
+        if (res.code === 200 && res.data) this.courseList = res.data
+      }).catch(err => console.error('加载推荐课程失败:', err))
     },
-
-    // 打开课程详情
-    openCourse(item) {
-      uni.navigateTo({
-        url: `/pages/course/detail?courseId=${item.courseId}`
-      })
-    },
-
-    // 前往课程列表
-    goToCourseList() {
-      uni.navigateTo({
-        url: '/pages/course/list'
-      })
-    },
-
-    // 根据分类返回对应的图标
+    openCourse(item) { uni.navigateTo({ url: `/pages/course/detail?courseId=${item.courseId}` }) },
+    goToCourseList() { uni.navigateTo({ url: '/pages/course/list' }) },
     getCategoryIcon(category) {
-      const categoryMap = {
-        '压力管理': 'fire',
-        '情绪调节': 'heart',
-        '人际关系': 'hand-up',
-        '学习方法': 'book',
-        '心理健康': 'staff',
-        '正念冥想': 'flower',
-        '睡眠改善': 'moon',
-        '自我成长': 'seedling',
-      }
-      return categoryMap[category] || 'book-filled'
+      const categoryMap = { '压力管理': 'fire', '情绪调节': 'heart', '人际关系': 'hand-up', '学习方法': 'book', '心理健康': 'staff', '正念冥想': 'flower', '睡眠改善': 'moon', '自我成长': 'seedling' }
+      return categoryMap[category] || 'folder'
     },
-
-    // 格式化阅读量
     formatReadCount(count) {
       if (!count) return '0'
-      if (count >= 10000) {
-        return (count / 10000).toFixed(1) + 'w'
-      }
-      if (count >= 1000) {
-        return (count / 1000).toFixed(1) + 'k'
-      }
+      if (count >= 10000) return (count / 10000).toFixed(1) + 'w'
+      if (count >= 1000) return (count / 1000).toFixed(1) + 'k'
       return count.toString()
     }
   }
@@ -346,491 +287,630 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '@/static/scss/theme.scss';
+/* ==================== iOS 风格核心变量 ==================== */
+$ios-text-primary: #1D1D1F;
+$ios-text-secondary: #86868B;
+$ios-blue: #007AFF;
+$radius-xl: 40rpx;
+$radius-lg: 32rpx;
 
 .home-container {
   min-height: 100vh;
-  background: $gradient-soft;
+  position: relative;
+  background-color: #F5F5F7; 
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
-/* ==================== 英雄区域（梦幻渐变 + 平滑过渡）==================== */
-.hero-section {
-  padding: $spacing-xl $spacing-lg $spacing-2xl;
-  background: $gradient-hero;
-  padding-top: calc($spacing-xl + env(safe-area-inset-top));
+/* --- 弥散光影背景 --- */
+.ambient-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(224, 242, 241, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(255, 243, 224, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(232, 234, 246, 0.8) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(240, 238, 245, 0.8) 0px, transparent 50%); 
+  pointer-events: none;
+}
+
+/* --- 毛玻璃通用类 --- */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+  border-radius: $radius-lg;
+}
+
+/* ==================== 顶部导航 ==================== */
+.glass-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: calc(20rpx + env(safe-area-inset-top)) 40rpx 20rpx;
+  background: rgba(245, 245, 247, 0.7);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
+}
+
+.greeting-date {
+  font-size: 24rpx;
+  color: $ios-text-secondary;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.greeting-text {
+  font-size: 56rpx;
+  font-weight: 700;
+  color: $ios-text-primary;
+  letter-spacing: -1rpx;
+}
+
+.user-avatar-glass {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10rpx;
+}
+
+/* ==================== 页面滚动区 ==================== */
+.scroll-content {
   position: relative;
-  overflow: visible;
+  z-index: 1;
+  padding-top: 30rpx;
+}
 
-  // 添加装饰性渐变圆圈（缩小）
-  &::before {
-    content: '';
-    position: absolute;
-    top: -80rpx;
-    right: -80rpx;
-    width: 300rpx;
-    height: 300rpx;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-    border-radius: $radius-full;
-    z-index: 0;
-  }
+/* ==================== 轮播图区域 ==================== */
+.banner-section {
+  padding: 0 30rpx 30rpx;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  transform: translateZ(0); 
+}
 
-  // 底部平滑过渡层（缩短高度）
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -1rpx;
-    left: 0;
-    right: 0;
-    height: 120rpx;
-    background: linear-gradient(to bottom,
-        transparent 0%,
-        rgba(255, 255, 255, 0.3) 30%,
-        rgba(255, 255, 255, 0.7) 60%,
-        rgba(249, 250, 251, 0.9) 85%,
-        #f9fafb 100%);
-    z-index: 1;
+/* ==================== 每日一言胶囊 ==================== */
+.quote-pill-container {
+  padding: 0 30rpx 40rpx;
+  transform: translateZ(0);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  border-radius: 50rpx;
+  padding: 16rpx 24rpx;
+  display: flex;
+  align-items: center;
+  
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.8;
   }
 }
 
-.hero-greeting {
-  font-size: $font-3xl;
-  font-weight: $font-bold;
-  color: $bg-white;
-  margin-bottom: $spacing-sm;
+.quote-icon-box {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding-right: 16rpx;
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+
+.quote-label {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: $ios-blue;
+}
+
+.quote-swiper {
+  flex: 1;
+  height: 36rpx;
+  margin-right: 16rpx;
+}
+
+.quote-swiper-item {
+  display: flex;
+  align-items: center;
+}
+
+.quote-text {
+  font-size: 26rpx;
+  color: $ios-text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* ==================== 问卷调查任务卡片 (色彩调优) ==================== */
+.task-section {
+  padding: 0 30rpx 50rpx;
+}
+
+.task-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  transition: transform 0.2s ease;
+  background: rgba(255, 255, 255, 0.7); /* 让卡片主体稍亮一些 */
+  
+  &:active {
+    transform: scale(0.97);
+    background: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.task-left {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+/* 焕新：使用柔和的治愈青色渐变，更契合心理健康主题 */
+.task-icon-bg {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #48D1CC 0%, #2CB5A0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 20rpx rgba(44, 181, 160, 0.25);
+}
+
+.task-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: $ios-text-primary;
+  margin-bottom: 8rpx;
   letter-spacing: -0.5rpx;
-  position: relative;
-  z-index: 1;
 }
 
-.hero-desc {
-  font-size: $font-base;
-  color: rgba(255, 255, 255, 0.90);
-  margin-bottom: $spacing-lg;
-  position: relative;
-  z-index: 1;
-  font-weight: $font-medium;
+.task-desc {
+  font-size: 26rpx;
+  color: $ios-text-secondary;
 }
 
+.task-right {
+  flex-shrink: 0;
+}
 
-/* ==================== 推荐模块通用样式 ==================== */
-.music-section,
-.article-section,
-.course-section {
-  padding: 0 $spacing-lg $spacing-lg;
+/* 焕新：iOS 风格 Tinted Button，轻盈通透 */
+.task-btn {
+  background: rgba(44, 181, 160, 0.12); /* 浅色透明底 */
+  color: #2CB5A0; /* 主题色文字 */
+  font-size: 26rpx;
+  font-weight: 600;
+  padding: 14rpx 26rpx;
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+/* ==================== 模块标题通用 ==================== */
+.section-container {
+  margin-bottom: 60rpx;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: $spacing-md;
-  padding: 0 $spacing-xs;
+  padding: 0 40rpx;
+  margin-bottom: 30rpx;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
 }
 
 .section-title {
+  font-size: 38rpx;
+  font-weight: 700;
+  color: $ios-text-primary;
+  letter-spacing: -0.5rpx;
+}
+
+.header-right {
   display: flex;
   align-items: center;
-  gap: $spacing-xs;
-  font-size: $font-lg;
-  font-weight: $font-bold;
-  color: $text-primary;
-  letter-spacing: -0.5rpx;
-
-  .title-text {
-    font-family: $font-family-base;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  
+  &:active {
+    background: rgba(0, 0, 0, 0.08);
   }
 }
 
 .section-more {
-  font-size: $font-sm;
-  color: $primary-color;
-  font-weight: $font-bold;
-  padding: $spacing-xs $spacing-sm;
-  border-radius: $radius-sm;
-  transition: all $transition-fast $ease-out;
-
-  &:active {
-    opacity: $opacity-hover;
-    background: rgba(22, 119, 255, 0.05);
-  }
+  font-size: 26rpx;
+  color: $ios-text-secondary;
+  font-weight: 500;
+  margin-right: 4rpx;
 }
 
-/* ==================== 音乐推荐（蓝色主题）==================== */
-.music-list {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-md;
+/* ==================== 愈音工坊 ==================== */
+.horizontal-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.music-scroll-content {
+  display: inline-flex;
+  padding: 0 30rpx 10rpx; 
+  gap: 28rpx;
 }
 
 .music-item {
-  display: flex;
-  align-items: center;
-  background: linear-gradient(135deg, rgba(22, 119, 255, 0.06) 0%, rgba(77, 148, 255, 0.04) 100%);
-  backdrop-filter: blur(10rpx);
-  border-radius: $radius-lg;
-  padding: $spacing-lg;
-  transition: all $transition-base $ease-out;
-  box-shadow: 0 4rpx 16rpx rgba(22, 119, 255, 0.08), 0 2rpx 8rpx rgba(22, 119, 255, 0.04);
-  border: 1rpx solid rgba(22, 119, 255, 0.12);
-  position: relative;
-  overflow: hidden;
-
-  // 装饰性渐变层
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(22, 119, 255, 0.12) 0%, rgba(77, 148, 255, 0.08) 100%);
-    opacity: 0;
-    transition: opacity $transition-base $ease-out;
-  }
-
-  // 装饰性光晕
-  &::after {
-    content: '';
-    position: absolute;
-    top: -30%;
-    right: -15%;
-    width: 120rpx;
-    height: 120rpx;
-    background: radial-gradient(circle, rgba(22, 119, 255, 0.12) 0%, transparent 70%);
-    border-radius: $radius-full;
-    pointer-events: none;
-  }
-
+  width: 260rpx; 
+  display: inline-flex;
+  flex-direction: column;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  
   &:active {
-    transform: translateY(-2rpx) scale(0.99);
-    box-shadow: 0 8rpx 24rpx rgba(22, 119, 255, 0.12), 0 4rpx 12rpx rgba(22, 119, 255, 0.08);
-
-    &::before {
-      opacity: 1;
-    }
+    transform: scale(0.93); 
+    opacity: 0.9;
   }
 }
 
-.music-icon-wrapper {
+.music-cover-wrapper {
+  width: 260rpx;
+  height: 260rpx;
+  border-radius: 36rpx; 
+  margin-bottom: 20rpx;
   position: relative;
-  z-index: 1;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.05),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.8),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+  transform: translateZ(0); 
 }
 
 .music-cover {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: $radius-md;
-  margin-right: $spacing-md;
-  background: $bg-gray-100;
-  flex-shrink: 0;
-  box-shadow: 0 2rpx 8rpx rgba(22, 119, 255, 0.15);
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .music-cover-placeholder {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: $radius-md;
-  margin-right: $spacing-md;
-  background: linear-gradient(135deg, #1677FF 0%, #4D94FF 100%);
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #A8BEEA 0%, #7C98D6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2rpx 8rpx rgba(22, 119, 255, 0.25);
 }
 
-.music-info {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  z-index: 1;
+.cover-gradient-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.15) 100%);
+  pointer-events: none; 
+}
+
+.music-play-btn-glass {
+  position: absolute;
+  bottom: 16rpx;
+  right: 16rpx;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5); 
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 0.5px solid rgba(255, 255, 255, 0.6);
+}
+
+.play-triangle {
+  width: 0;
+  height: 0;
+  border-top: 10rpx solid transparent;
+  border-bottom: 10rpx solid transparent;
+  border-left: 14rpx solid $ios-text-primary; 
+  margin-left: 4rpx; 
+  border-radius: 2rpx; 
+}
+
+.music-text-box {
+  display: flex;
+  flex-direction: column;
+  padding: 0 4rpx; 
 }
 
 .music-title {
-  font-size: $font-base;
-  font-weight: $font-semibold;
-  color: $text-primary;
-  margin-bottom: $spacing-xs;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
+  margin-bottom: 6rpx;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: $font-family-base;
 }
 
 .music-artist {
-  font-size: $font-sm;
-  color: $text-tertiary;
+  font-size: 24rpx;
+  color: $ios-text-secondary;
+  font-weight: 500;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: $font-family-base;
 }
 
-.empty-music {
-  padding: $spacing-2xl;
-  text-align: center;
+/* ==================== 精品课程 ==================== */
+.course-scroll-content {
+  display: inline-flex;
+  padding: 0 30rpx 20rpx;
+  gap: 30rpx;
 }
 
-/* ==================== 文章推荐（橙色主题）==================== */
-.article-list {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-md;
-}
-
-.article-item {
-  display: flex;
-  background: linear-gradient(135deg, rgba(255, 141, 62, 0.06) 0%, rgba(255, 179, 125, 0.04) 100%);
-  backdrop-filter: blur(10rpx);
-  border-radius: $radius-lg;
-  padding: $spacing-lg;
-  box-shadow: 0 4rpx 16rpx rgba(255, 141, 62, 0.08), 0 2rpx 8rpx rgba(255, 141, 62, 0.04);
-  transition: all $transition-base $ease-out;
-  border: 1rpx solid rgba(255, 141, 62, 0.12);
-  position: relative;
+.course-card {
+  width: 580rpx; 
+  height: 360rpx; 
+  border-radius: 40rpx; 
   overflow: hidden;
-
-  // 装饰性渐变层
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(255, 141, 62, 0.12) 0%, rgba(255, 179, 125, 0.08) 100%);
-    opacity: 0;
-    transition: opacity $transition-base $ease-out;
-  }
-
-  // 装饰性光晕
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -50%;
-    left: -20%;
-    width: 120rpx;
-    height: 120rpx;
-    background: radial-gradient(circle, rgba(255, 141, 62, 0.15) 0%, transparent 70%);
-    border-radius: $radius-full;
-    pointer-events: none;
-  }
-
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  background: transparent;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  transform: translateZ(0); 
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  
   &:active {
-    transform: translateY(-2rpx) scale(0.99);
-    box-shadow: 0 8rpx 24rpx rgba(255, 141, 62, 0.12), 0 4rpx 12rpx rgba(255, 141, 62, 0.08);
-
-    &::before {
-      opacity: 1;
-    }
+    transform: scale(0.96); 
   }
 }
 
-.article-icon-wrapper {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: $radius-md;
-  background: linear-gradient(135deg, rgba(255, 141, 62, 0.15) 0%, rgba(255, 179, 125, 0.12) 100%);
+.course-cover-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.course-cover-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #81ECEC 0%, #00CEC9 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: $spacing-md;
-  flex-shrink: 0;
-  position: relative;
   z-index: 1;
-  box-shadow: 0 2rpx 8rpx rgba(255, 141, 62, 0.15);
+}
+
+.glass-badge.course-badge {
+  position: absolute;
+  top: 24rpx;
+  right: 24rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #1D1D1F;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  display: flex;
+  align-items: center;
+  z-index: 3;
+}
+
+.course-gradient-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%; 
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.course-info-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 36rpx 40rpx;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+}
+
+.course-title-overlay {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #FFFFFF; 
+  margin-bottom: 12rpx;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 4rpx 12rpx rgba(0,0,0,0.3); 
+}
+
+.course-lecturer-overlay {
+  font-size: 26rpx;
+  color: #E5E5EA; 
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+/* ==================== 深度阅读列表 (排版焕新) ==================== */
+.article-list {
+  padding: 0 30rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 28rpx;
+}
+
+.article-card {
+  padding: 36rpx; /* 增加内边距，让排版更加透气 */
+  border-radius: 36rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.55); /* 稍微增加白底透明度 */
+  
+  &:active {
+    opacity: 0.8;
+    transform: scale(0.98);
+    transition: all 0.2s ease;
+  }
+  
+  /* 点睛之笔：卡片右上角微弱的环境光晕伪元素 */
+  &::before {
+    content: '';
+    position: absolute;
+    top: -40rpx;
+    right: -40rpx;
+    width: 160rpx;
+    height: 160rpx;
+    background: radial-gradient(circle, rgba(0, 122, 255, 0.06) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
 }
 
 .article-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  position: relative;
-  z-index: 1;
-  min-width: 0;
+  padding-right: 24rpx;
+  z-index: 1; /* 确保文字在光晕上方 */
 }
 
 .article-title {
-  font-size: $font-base;
-  font-weight: $font-semibold;
-  color: $text-primary;
-  margin-bottom: $spacing-xs;
-  letter-spacing: -0.5rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 34rpx;
+  font-weight: 700; /* 加粗标题，建立明显的视觉层级 */
+  color: $ios-text-primary;
+  line-height: 1.4;
+  margin-bottom: 14rpx;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  font-family: $font-family-base;
+  overflow: hidden;
 }
 
 .article-excerpt {
-  font-size: $font-xs;
-  color: $text-tertiary;
-  line-height: $line-height-normal;
-  margin-bottom: $spacing-xs;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 28rpx; /* 稍微放大摘要文字 */
+  color: $ios-text-secondary;
+  line-height: 1.6; /* 增大行高，提升阅读舒适度 */
+  margin-bottom: 28rpx;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  font-family: $font-family-base;
+  overflow: hidden;
 }
 
 .article-meta {
   display: flex;
-  gap: $spacing-md;
-  font-size: $font-xs;
-  color: $text-quaternary;
-  font-weight: $font-normal;
-
-  .meta-item {
-    display: flex;
-    align-items: center;
-    gap: 4rpx;
-    font-family: $font-family-base;
-  }
+  align-items: center;
+  justify-content: space-between;
 }
 
-.empty-article {
-  padding: $spacing-2xl;
-  text-align: center;
-}
-
-/* ==================== 课程推荐（绿色主题）==================== */
-.course-list {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-md;
-}
-
-.course-item {
-  display: flex;
-  background: linear-gradient(135deg, rgba(28, 208, 126, 0.06) 0%, rgba(82, 224, 157, 0.04) 100%);
-  backdrop-filter: blur(10rpx);
-  border-radius: $radius-lg;
-  padding: $spacing-lg;
-  box-shadow: 0 4rpx 16rpx rgba(28, 208, 126, 0.08), 0 2rpx 8rpx rgba(28, 208, 126, 0.04);
-  transition: all $transition-base $ease-out;
-  border: 1rpx solid rgba(28, 208, 126, 0.12);
-  position: relative;
-  overflow: hidden;
-
-  // 装饰性渐变层
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(28, 208, 126, 0.12) 0%, rgba(82, 224, 157, 0.08) 100%);
-    opacity: 0;
-    transition: opacity $transition-base $ease-out;
-  }
-
-  // 装饰性光晕
-  &::after {
-    content: '';
-    position: absolute;
-    top: -30%;
-    left: 50%;
-    width: 150rpx;
-    height: 150rpx;
-    background: radial-gradient(circle, rgba(28, 208, 126, 0.12) 0%, transparent 70%);
-    border-radius: $radius-full;
-    pointer-events: none;
-  }
-
-  &:active {
-    transform: translateY(-2rpx) scale(0.99);
-    box-shadow: 0 8rpx 24rpx rgba(28, 208, 126, 0.12), 0 4rpx 12rpx rgba(28, 208, 126, 0.08);
-
-    &::before {
-      opacity: 1;
-    }
-  }
-}
-
-.course-cover-wrapper {
-  position: relative;
-  z-index: 1;
-}
-
-.course-cover {
-  width: 160rpx;
-  height: 100rpx;
-  border-radius: $radius-md;
-  margin-right: $spacing-md;
-  background: $bg-gray-100;
-  flex-shrink: 0;
-  box-shadow: 0 2rpx 8rpx rgba(28, 208, 126, 0.15);
-}
-
-.course-cover-placeholder {
-  width: 160rpx;
-  height: 100rpx;
-  border-radius: $radius-md;
-  margin-right: $spacing-md;
-  background: linear-gradient(135deg, #1CD07E 0%, #52E09D 100%);
+.meta-tag {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2rpx 8rpx rgba(28, 208, 126, 0.25);
+  gap: 6rpx;
+  background: rgba(0, 122, 255, 0.08);
+  padding: 6rpx 16rpx;
+  border-radius: 12rpx;
 }
 
-.course-info {
-  flex: 1;
+.meta-category-text {
+  font-size: 24rpx;
+  color: $ios-blue;
+  font-weight: 600;
+}
+
+.meta-info-group {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-width: 0;
-  position: relative;
+  gap: 24rpx;
+}
+
+.meta-author {
+  font-size: 24rpx;
+  color: $ios-text-secondary;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.article-arrow {
+  flex-shrink: 0;
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   z-index: 1;
 }
 
-.course-title {
-  font-size: $font-base;
-  font-weight: $font-semibold;
-  color: $text-primary;
-  margin-bottom: $spacing-xs;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  font-family: $font-family-base;
-  line-height: $line-height-tight;
-}
-
-.course-meta {
+.empty-state {
+  margin: 0 30rpx;
+  padding: 60rpx 0;
   display: flex;
-  gap: $spacing-md;
-  font-size: $font-xs;
-  color: $text-quaternary;
-  font-weight: $font-normal;
-
-  .meta-item {
-    display: flex;
-    align-items: center;
-    gap: 4rpx;
-    font-family: $font-family-base;
-  }
-}
-
-.empty-course {
-  padding: $spacing-2xl;
-  text-align: center;
+  justify-content: center;
+  align-items: center;
+  gap: 12rpx;
 }
 
 .empty-text {
-  font-size: $font-sm;
-  color: $text-tertiary;
-  font-family: $font-family-base;
+  color: $ios-text-secondary;
+  font-size: 28rpx;
 }
 </style>
