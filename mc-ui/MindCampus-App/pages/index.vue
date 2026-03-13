@@ -172,12 +172,18 @@
         </view>
       </view>
 
+      <view class="bottom-spacer"></view>
+
     </view>
+
+    <custom-tab-bar currentPath="/pages/index"></custom-tab-bar>
+
   </view>
 </template>
 
 <script>
 import BannerCarousel from '@/components/banner-carousel/banner-carousel.vue'
+import CustomTabBar from '@/components/custom-tab-bar/custom-tab-bar.vue' // 🍎 引入胶囊导航
 import {getRecommendedMusic} from '@/api/music'
 import {getRecommendedArticles} from '@/api/article'
 import {getRecommendedCourses} from '@/api/course'
@@ -185,7 +191,8 @@ import config from '@/config'
 
 export default {
   components: {
-    BannerCarousel
+    BannerCarousel,
+    CustomTabBar // 🍎 注册组件
   },
   data() {
     return {
@@ -213,6 +220,10 @@ export default {
     this.loadRecommendedMusic()
     this.loadRecommendedArticles()
     this.loadRecommendedCourses()
+  },
+  onShow() {
+    // 🍎 核心修改：每次回到首页，强制隐藏原生 tabBar
+    uni.hideTabBar({ animation: false })
   },
   methods: {
     getUserInfo() {
@@ -299,7 +310,13 @@ $radius-lg: 32rpx;
   position: relative;
   background-color: #F5F5F7; 
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+  /* 🍎 移除了这里的 padding-bottom，交给底部的 bottom-spacer 来控制 */
+}
+
+/* 🍎 新增：为悬浮胶囊预留的防遮挡占位符 */
+.bottom-spacer {
+  height: calc(160rpx + env(safe-area-inset-bottom));
+  width: 100%;
 }
 
 /* --- 弥散光影背景 --- */
@@ -447,7 +464,7 @@ $radius-lg: 32rpx;
   width: 100%;
 }
 
-/* ==================== 问卷调查任务卡片 (色彩调优) ==================== */
+/* ==================== 问卷调查任务卡片 ==================== */
 .task-section {
   padding: 0 30rpx 50rpx;
 }
@@ -458,7 +475,7 @@ $radius-lg: 32rpx;
   align-items: center;
   padding: 32rpx;
   transition: transform 0.2s ease;
-  background: rgba(255, 255, 255, 0.7); /* 让卡片主体稍亮一些 */
+  background: rgba(255, 255, 255, 0.7); 
   
   &:active {
     transform: scale(0.97);
@@ -472,7 +489,6 @@ $radius-lg: 32rpx;
   gap: 24rpx;
 }
 
-/* 焕新：使用柔和的治愈青色渐变，更契合心理健康主题 */
 .task-icon-bg {
   width: 96rpx;
   height: 96rpx;
@@ -506,10 +522,9 @@ $radius-lg: 32rpx;
   flex-shrink: 0;
 }
 
-/* 焕新：iOS 风格 Tinted Button，轻盈通透 */
 .task-btn {
-  background: rgba(44, 181, 160, 0.12); /* 浅色透明底 */
-  color: #2CB5A0; /* 主题色文字 */
+  background: rgba(44, 181, 160, 0.12); 
+  color: #2CB5A0; 
   font-size: 26rpx;
   font-weight: 600;
   padding: 14rpx 26rpx;
@@ -787,7 +802,7 @@ $radius-lg: 32rpx;
   align-items: center;
 }
 
-/* ==================== 深度阅读列表 (排版焕新) ==================== */
+/* ==================== 深度阅读列表 ==================== */
 .article-list {
   padding: 0 30rpx;
   display: flex;
@@ -796,14 +811,14 @@ $radius-lg: 32rpx;
 }
 
 .article-card {
-  padding: 36rpx; /* 增加内边距，让排版更加透气 */
+  padding: 36rpx; 
   border-radius: 36rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.55); /* 稍微增加白底透明度 */
+  background: rgba(255, 255, 255, 0.55); 
   
   &:active {
     opacity: 0.8;
@@ -811,7 +826,6 @@ $radius-lg: 32rpx;
     transition: all 0.2s ease;
   }
   
-  /* 点睛之笔：卡片右上角微弱的环境光晕伪元素 */
   &::before {
     content: '';
     position: absolute;
@@ -830,12 +844,12 @@ $radius-lg: 32rpx;
   display: flex;
   flex-direction: column;
   padding-right: 24rpx;
-  z-index: 1; /* 确保文字在光晕上方 */
+  z-index: 1;
 }
 
 .article-title {
   font-size: 34rpx;
-  font-weight: 700; /* 加粗标题，建立明显的视觉层级 */
+  font-weight: 700;
   color: $ios-text-primary;
   line-height: 1.4;
   margin-bottom: 14rpx;
@@ -846,9 +860,9 @@ $radius-lg: 32rpx;
 }
 
 .article-excerpt {
-  font-size: 28rpx; /* 稍微放大摘要文字 */
+  font-size: 28rpx; 
   color: $ios-text-secondary;
-  line-height: 1.6; /* 增大行高，提升阅读舒适度 */
+  line-height: 1.6; 
   margin-bottom: 28rpx;
   display: -webkit-box;
   -webkit-line-clamp: 2;
