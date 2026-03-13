@@ -124,7 +124,7 @@ public class CounselorInfoServiceImpl extends ServiceImpl<CounselorInfoMapper, C
         List<SysUser> sysUsers = sysUserMapper.selectUserList(new SysUser());
 
         Map<Long, SysUser> userMap = sysUsers.stream()
-                .filter(user -> "01".equals(user.getUserType()) && user.getUserId() != null && user.getUserId() != 1)
+                .filter(user -> "02".equals(user.getUserType()) && user.getUserId() != null && user.getUserId() != 1)
                 .collect(Collectors.toMap(SysUser::getUserId, user -> user));
 
         Set<Long> boundUserIds = this.list().stream()
