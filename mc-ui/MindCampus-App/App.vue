@@ -4,14 +4,16 @@ import {getToken} from '@/utils/auth'
 
 export default {
     onLaunch: function() {
+      // 添加：全局隐藏系统原生 tabBar，为自定义玻璃胶囊让路
+      uni.hideTabBar({
+        animation: false
+      });
+      
       this.initApp()
     },
     methods: {
-      // 初始化应用
       initApp() {
-        // 初始化应用配置
         this.initConfig()
-        // 检查用户登录状态
         //#ifdef H5
         this.checkLogin()
         //#endif
