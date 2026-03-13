@@ -186,13 +186,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where notification_id = #{notificationId}
     </update>
 
-    <update id="updateNotificationReadStatus" parameterType="java.lang.Long">
+    <update id="updateNotificationReadStatus">
         update intervention_notification
         set read_status = #{readStatus}
         where notification_id = #{notificationId}
     </update>
 
-    <update id="updateNotificationProcessStatus" parameterType="java.lang.Long">
+    <update id="updateNotificationProcessStatus">
         update intervention_notification
         set process_status = #{processStatus}
         where notification_id = #{notificationId}

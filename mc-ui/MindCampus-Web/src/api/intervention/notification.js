@@ -20,6 +20,14 @@ export function getNotification(notificationId) {
   })
 }
 
+// 查看记录（更新阅读状态并返回处理记录）
+export function viewRecord(notificationId) {
+  return request({
+    url: '/intervention/notification/viewRecord/' + notificationId,
+    method: 'get'
+  })
+}
+
 // 新增干预通知
 export function addNotification(data) {
   return request({
@@ -49,7 +57,7 @@ export function delNotification(notificationId) {
 // 更新干预通知阅读状态
 export function updateReadStatus(notificationId, readStatus) {
   return request({
-    url: '/intervention/notification/updateReadStatus',
+    url: '/intervention/notification/readStatus',
     method: 'put',
     params: { notificationId, readStatus }
   })
@@ -58,7 +66,7 @@ export function updateReadStatus(notificationId, readStatus) {
 // 更新干预通知处理状态
 export function updateProcessStatus(notificationId, processStatus) {
   return request({
-    url: '/intervention/notification/updateProcessStatus',
+    url: '/intervention/notification/processStatus',
     method: 'put',
     params: { notificationId, processStatus }
   })

@@ -10,10 +10,12 @@ import com.mc.evaluation.domain.QuestionnaireAnswer;
 import com.mc.evaluation.mapper.QuestionnaireAnswerMapper;
 import com.mc.evaluation.service.IEvaluationResultService;
 import com.mc.intervention.domain.InterventionNotification;
+import com.mc.intervention.domain.InterventionProcessRecord;
 import com.mc.intervention.domain.InterventionRiskConfig;
 import com.mc.intervention.domain.vo.HighRiskUnnotifiedVo;
 import com.mc.intervention.domain.vo.InterventionNotificationVo;
 import com.mc.intervention.mapper.InterventionNotificationMapper;
+import com.mc.intervention.mapper.InterventionProcessRecordMapper;
 import com.mc.intervention.service.IInterventionNotificationService;
 import com.mc.intervention.service.IInterventionRiskConfigService;
 import com.mc.student.domain.Student;
@@ -42,6 +44,9 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
 
     @Autowired
     private InterventionNotificationMapper notificationMapper;
+
+    @Autowired
+    private InterventionProcessRecordMapper processRecordMapper;
 
     @Autowired
     private IEvaluationResultService evaluationResultService;
@@ -179,14 +184,12 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
     @Override
     public void generateNotification(Long resultId, Long studentId) {
         try {
-            // 1. 根据评测结果查询风险等级
             EvaluationResult evaluationResult = evaluationResultService.selectEvaluationResultByResultId(resultId);
             if (evaluationResult == null) {
                 log.warn("评测结果不存在 - resultId: {}", resultId);
                 return;
             }
 
-            // 2. 获取风险等级配置
             String riskLevel = evaluationResult.getRiskLevel();
             InterventionRiskConfig riskConfig = riskConfigService.selectConfigByRiskLevel(riskLevel);
             if (riskConfig == null) {
@@ -194,19 +197,16 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
                 return;
             }
 
-            // 3. 检查配置是否启用
             if (!"0".equals(riskConfig.getStatus())) {
                 log.info("风险等级配置已停用 - riskLevel: {}", riskLevel);
                 return;
             }
 
-            // 4. 获取通知模板
             String template = riskConfig.getNotificationTemplate();
             if (template == null || template.trim().isEmpty()) {
                 template = "学生 {studentName} 的心理健康评测结果为 {riskLevel} 风险，建议及时关注并给予支持。";
             }
 
-            // 5. 根据学生ID查询学生信息
             Student student = studentInfoService.selectStudentInfoByStudentId(studentId);
             if (student == null) {
                 log.warn("学生信息不存在 - studentId: {}", studentId);
@@ -219,7 +219,6 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
                 return;
             }
 
-            // 6. 根据用户ID查询用户信息，获取部门ID
             SysUser user = sysUserService.selectUserById(userId);
             if (user == null) {
                 log.warn("用户信息不存在 - userId: {}", userId);
@@ -232,14 +231,12 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
                 return;
             }
 
-            // 7. 根据部门ID查询辅导员ID
             Long counselorId = counselorDeptService.selectCounselorIdByDeptId(deptId);
             if (counselorId == null) {
                 log.warn("辅导员信息不存在 - deptId: {}", deptId);
                 return;
             }
 
-            // 8. 查询辅导员信息，获取用户ID
             CounselorInfo counselorInfo = counselorInfoService.selectCounselorInfoByCounselorId(counselorId);
             if (counselorInfo == null) {
                 log.warn("辅导员详细信息不存在 - counselorId: {}", counselorId);
@@ -252,14 +249,11 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
                 return;
             }
 
-            // 9. 获取问卷答题信息
             List<QuestionnaireAnswer> answers = questionnaireAnswerMapper.selectByResultId(resultId);
             String questionnaireContent = buildQuestionnaireContent(answers);
 
-            // 10. 获取AI分析结果
             String aiAnalysis = evaluationResult.getAiAnalysis();
 
-            // 11. 调用AI生成通知内容
             String notificationContent = generateNotificationContent(
                     student,
                     evaluationResult,
@@ -268,7 +262,6 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
                     template
             );
 
-            // 12. 创建通知记录
             InterventionNotification notification = new InterventionNotification();
             notification.setResultId(resultId);
             notification.setStudentId(studentId);
@@ -282,8 +275,21 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
             notification.setCreateTime(new Date());
 
             notificationMapper.insertNotification(notification);
-            log.info("干预通知生成成功 - resultId: {}, studentId: {}, counselorUserId: {}",
-                    resultId, studentId, counselorUserId);
+            Long notificationId = notification.getNotificationId();
+            log.info("干预通知生成成功 - resultId: {}, studentId: {}, counselorUserId: {}, notificationId: {}",
+                    resultId, studentId, counselorUserId, notificationId);
+
+            InterventionProcessRecord processRecord = new InterventionProcessRecord();
+            processRecord.setNotificationId(notificationId);
+            processRecord.setUserId(counselorUserId);
+            processRecord.setProcessContent(null);
+            processRecord.setProcessResult(null);
+            processRecord.setProcessTime(null);
+            processRecord.setStatus("0");
+            processRecord.setCreateTime(new Date());
+
+            processRecordMapper.insertRecord(processRecord);
+            log.info("干预处理记录创建成功 - notificationId: {}, counselorUserId: {}", notificationId, counselorUserId);
 
         } catch (Exception e) {
             log.error("生成干预通知失败 - resultId: {}, studentId: {}", resultId, studentId, e);
@@ -323,7 +329,6 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
                     .call()
                     .content();
 
-            // 如果AI返回为空或异常，使用默认内容
             if (result == null || result.trim().isEmpty()) {
                 return buildDefaultContent(student, evaluationResult, template);
             }

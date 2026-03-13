@@ -1,7 +1,9 @@
 package com.mc.intervention.service.impl;
 
 
+import com.mc.common.utils.SecurityUtils;
 import com.mc.intervention.domain.InterventionProcessRecord;
+import com.mc.intervention.domain.vo.InterventionProcessRecordVo;
 import com.mc.intervention.mapper.InterventionProcessRecordMapper;
 import com.mc.intervention.service.IInterventionNotificationService;
 import com.mc.intervention.service.IInterventionProcessRecordService;
@@ -30,6 +32,21 @@ public class InterventionProcessRecordServiceImpl implements IInterventionProces
     @Override
     public List<InterventionProcessRecord> selectRecordList(InterventionProcessRecord record) {
         return recordMapper.selectRecordList(record);
+    }
+
+    /**
+     * 查询干预处理记录表列表（带关联信息，支持权限过滤）
+     * 管理员可查看所有记录，辅导员只能查看属于自己的记录
+     */
+    @Override
+    public List<InterventionProcessRecordVo> selectRecordVoList(InterventionProcessRecordVo vo) {
+        Long currentUserId = SecurityUtils.getUserId();
+        
+        if (SecurityUtils.isAdmin(currentUserId)) {
+            return recordMapper.selectRecordVoList(vo);
+        } else {
+            return recordMapper.selectRecordVoListByUserId(vo, currentUserId);
+        }
     }
 
     /**
@@ -95,7 +112,6 @@ public class InterventionProcessRecordServiceImpl implements IInterventionProces
      */
     @Override
     public int processNotification(Long notificationId, Long userId, String processContent, String processResult) {
-        // 创建处理记录
         InterventionProcessRecord record = new InterventionProcessRecord();
         record.setNotificationId(notificationId);
         record.setUserId(userId);
@@ -105,10 +121,8 @@ public class InterventionProcessRecordServiceImpl implements IInterventionProces
         record.setStatus("0");
         record.setCreateTime(new Date());
 
-        // 插入处理记录
         int result = recordMapper.insertRecord(record);
 
-        // 更新通知处理状态
         if (result > 0) {
             notificationService.updateNotificationProcessStatus(notificationId, "1");
         }

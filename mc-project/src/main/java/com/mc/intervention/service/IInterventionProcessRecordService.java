@@ -2,6 +2,7 @@ package com.mc.intervention.service;
 
 
 import com.mc.intervention.domain.InterventionProcessRecord;
+import com.mc.intervention.domain.vo.InterventionProcessRecordVo;
 
 import java.util.List;
 
@@ -18,6 +19,15 @@ public interface IInterventionProcessRecordService {
      * @return 干预处理记录表集合
      */
     public List<InterventionProcessRecord> selectRecordList(InterventionProcessRecord record);
+
+    /**
+     * 查询干预处理记录表列表（带关联信息，支持权限过滤）
+     * 管理员可查看所有记录，辅导员只能查看属于自己的记录
+     *
+     * @param vo 查询参数
+     * @return 干预处理记录表集合
+     */
+    public List<InterventionProcessRecordVo> selectRecordVoList(InterventionProcessRecordVo vo);
 
     /**
      * 查询干预处理记录表信息

@@ -51,10 +51,10 @@
 
     <el-table v-loading="loading" :data="notificationList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="通知ID" align="center" prop="notificationId" width="80" />
+      <el-table-column label="通知编号" align="center" prop="notificationId" width="80" />
       <el-table-column label="学生姓名" align="center" prop="studentName" />
       <el-table-column label="辅导员" align="center" prop="userName" />
-      <el-table-column label="班级" align="center" prop="className" />
+      <el-table-column label="班级" align="center" prop="deptName" />
       <el-table-column label="风险等级" align="center" prop="riskLevel">
         <template #default="scope">
           <el-tag :type="scope.row.riskLevel === '高' ? 'danger' : scope.row.riskLevel === '中' ? 'warning' : 'success'">
@@ -83,10 +83,9 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200">
         <template #default="scope">
-          <el-button link type="primary" icon="View" @click="handleView(scope.row)" v-hasPermi="['intervention:notification:query']">查看</el-button>
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['intervention:notification:edit']">修改</el-button>
+          <el-button link type="primary" icon="View" @click="handleViewRecord(scope.row)" v-hasPermi="['intervention:notification:query']">查看记录</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['intervention:notification:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -95,42 +94,55 @@
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum"
       v-model:limit="queryParams.pageSize" @pagination="getList" />
 
-    <!-- 添加或修改干预通知对话框 -->
-    <el-dialog :title="title" v-model="open" width="600px" append-to-body>
-      <el-form ref="notificationRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="学生" prop="studentId">
-          <el-input v-model="form.studentId" placeholder="请输入学生ID" disabled />
+    <!-- 查看记录对话框 -->
+    <el-dialog title="干预处理记录" v-model="openRecord" width="700px" append-to-body>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="通知ID">{{ recordForm.notificationId }}</el-descriptions-item>
+        <el-descriptions-item label="学生姓名">{{ recordForm.studentName }}</el-descriptions-item>
+        <el-descriptions-item label="风险等级">
+          <el-tag :type="recordForm.riskLevel === '高' ? 'danger' : recordForm.riskLevel === '中' ? 'warning' : 'success'">
+            {{ recordForm.riskLevel || '未知' }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="发送时间">{{ parseTime(recordForm.sendTime) }}</el-descriptions-item>
+        <el-descriptions-item label="通知内容" :span="2">{{ recordForm.notificationContent }}</el-descriptions-item>
+      </el-descriptions>
+
+      <el-divider content-position="left">处理记录</el-divider>
+
+      <el-form ref="recordFormRef" :model="recordForm" :rules="recordRules" label-width="100px">
+        <el-form-item label="处理内容" prop="processContent">
+          <el-input 
+            v-model="recordForm.processContent" 
+            type="textarea" 
+            :rows="4" 
+            placeholder="请输入处理内容" 
+            :disabled="recordForm.processStatus === '2'"
+          />
         </el-form-item>
-        <el-form-item label="辅导员" prop="userId">
-          <el-input v-model="form.userId" placeholder="请输入用户ID" disabled />
-        </el-form-item>
-        <el-form-item label="部门" prop="deptId">
-          <el-input v-model="form.deptId" placeholder="请输入部门ID" disabled />
-        </el-form-item>
-        <el-form-item label="通知类型" prop="notificationType">
-          <el-input v-model="form.notificationType" placeholder="请输入通知类型" />
-        </el-form-item>
-        <el-form-item label="通知内容" prop="notificationContent">
-          <el-input v-model="form.notificationContent" type="textarea" :rows="4" placeholder="请输入通知内容" />
-        </el-form-item>
-        <el-form-item label="阅读状态" prop="readStatus">
-          <el-radio-group v-model="form.readStatus">
-            <el-radio label="0">未读</el-radio>
-            <el-radio label="1">已读</el-radio>
+        <el-form-item label="处理状态" prop="status">
+          <el-radio-group v-model="recordForm.status" :disabled="recordForm.processStatus === '2'">
+            <el-radio v-for="dict in record_status" :key="dict.value" :label="dict.value">{{ dict.label }}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="处理状态" prop="processStatus">
-          <el-radio-group v-model="form.processStatus">
-            <el-radio label="0">待处理</el-radio>
-            <el-radio label="1">处理中</el-radio>
-            <el-radio label="2">已处理</el-radio>
-          </el-radio-group>
+        <el-form-item label="处理结果" prop="processResult">
+          <el-input 
+            v-model="recordForm.processResult" 
+            type="textarea" 
+            :rows="3" 
+            placeholder="请输入处理结果" 
+            :disabled="recordForm.processStatus === '2'"
+          />
+        </el-form-item>
+        <el-form-item label="处理时间" v-if="recordForm.processTime">
+          <span>{{ parseTime(recordForm.processTime) }}</span>
         </el-form-item>
       </el-form>
+
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button type="primary" @click="submitRecordForm" :disabled="recordForm.processStatus === '2'">保存处理记录</el-button>
+          <el-button @click="cancelRecord">关 闭</el-button>
         </div>
       </template>
     </el-dialog>
@@ -177,17 +189,21 @@ import {
   getNotification,
   listHighRiskUnnotified,
   listNotification,
-  updateNotification
+  updateNotification,
+  viewRecord
 } from '@/api/intervention/notification'
+import { updateProcessRecord } from '@/api/intervention/processRecord'
 import Pagination from '@/components/Pagination'
 import RightToolbar from '@/components/RightToolbar'
-import {parseTime} from '@/utils/ruoyi'
+import { parseTime } from '@/utils/ruoyi'
 
 const { proxy } = getCurrentInstance()
+const { record_status } = proxy.useDict('record_status')
 
 const notificationList = ref([])
 const open = ref(false)
 const openGenerate = ref(false)
+const openRecord = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
 const ids = ref([])
@@ -201,6 +217,9 @@ const highRiskLoading = ref(false)
 const highRiskList = ref([])
 const highRiskSelected = ref([])
 const generateLoading = ref(false)
+
+// 记录表单
+const recordForm = ref({})
 
 const data = reactive({
   form: {},
@@ -220,10 +239,18 @@ const data = reactive({
     notificationContent: [
       { required: true, message: '通知内容不能为空', trigger: 'blur' }
     ]
+  },
+  recordRules: {
+    processContent: [
+      { required: true, message: '处理内容不能为空', trigger: 'blur' }
+    ],
+    processResult: [
+      { required: true, message: '处理结果不能为空', trigger: 'blur' }
+    ]
   }
 })
 
-const { form, queryParams, rules } = toRefs(data)
+const { form, queryParams, rules, recordRules } = toRefs(data)
 
 /** 查询干预通知列表 */
 function getList() {
@@ -310,14 +337,61 @@ function handleUpdate(row) {
   })
 }
 
-/** 查看按钮操作 */
-function handleView(row) {
-  reset()
-  getNotification(row.notificationId).then(response => {
-    form.value = response.data
-    open.value = true
-    title.value = '查看干预通知'
+/** 查看记录按钮操作 */
+function handleViewRecord(row) {
+  viewRecord(row.notificationId).then(response => {
+    recordForm.value = {
+      recordId: response.data?.recordId,
+      notificationId: row.notificationId,
+      studentName: row.studentName,
+      riskLevel: row.riskLevel,
+      sendTime: row.sendTime,
+      notificationContent: row.notificationContent,
+      processContent: response.data?.processContent || '',
+      status: response.data?.status || '0',
+      processResult: response.data?.processResult || '',
+      processTime: response.data?.processTime,
+      processStatus: row.processStatus
+    }
+    openRecord.value = true
+    getList()
   })
+}
+
+/** 提交处理记录 */
+function submitRecordForm() {
+  proxy.$refs['recordFormRef'].validate(valid => {
+    if (valid) {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const day = String(now.getDate()).padStart(2, '0')
+      const hours = String(now.getHours()).padStart(2, '0')
+      const minutes = String(now.getMinutes()).padStart(2, '0')
+      const seconds = String(now.getSeconds()).padStart(2, '0')
+      const processTimeStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+      
+      const data = {
+        recordId: recordForm.value.recordId,
+        notificationId: recordForm.value.notificationId,
+        processContent: recordForm.value.processContent,
+        status: recordForm.value.status,
+        processResult: recordForm.value.processResult,
+        processTime: processTimeStr
+      }
+      updateProcessRecord(data).then(() => {
+        proxy.$modal.msgSuccess('保存成功')
+        openRecord.value = false
+        getList()
+      })
+    }
+  })
+}
+
+/** 取消记录对话框 */
+function cancelRecord() {
+  openRecord.value = false
+  recordForm.value = {}
 }
 
 /** 提交按钮 */
@@ -371,7 +445,7 @@ function handleDelete(row) {
   }).then(() => {
     getList()
     proxy.$modal.msgSuccess('删除成功')
-  }).catch(() => {})
+  }).catch(() => { })
 }
 
 /** 导出按钮操作 */

@@ -17,10 +17,20 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateBy" column="update_by" />
         <result property="updateTime" column="update_time" />
         <result property="remark" column="remark" />
-        <!-- 关联信息 -->
         <result property="userName" column="user_name" />
         <result property="notificationContent" column="notification_content" />
         <result property="studentName" column="student_name" />
+    </resultMap>
+
+    <resultMap type="com.mc.intervention.domain.vo.InterventionProcessRecordVo" id="InterventionProcessRecordVoResult">
+        <id property="recordId" column="record_id" />
+        <result property="notificationId" column="notification_id" />
+        <result property="studentName" column="student_name" />
+        <result property="notificationContent" column="notification_content" />
+        <result property="processContent" column="process_content" />
+        <result property="status" column="status" />
+        <result property="processResult" column="process_result" />
+        <result property="processTime" column="process_time" />
     </resultMap>
 
     <sql id="selectRecordVo">
@@ -30,6 +40,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                u.nick_name as user_name, n.notification_content, s.name as student_name
         from intervention_process_record r
         left join sys_user u on r.user_id = u.user_id
+        left join intervention_notification n on r.notification_id = n.notification_id
+        left join student_info s on n.student_id = s.student_id
+    </sql>
+
+    <sql id="selectRecordVoNew">
+        select r.record_id, r.notification_id, r.process_content, 
+               r.process_time, r.process_result, r.status,
+               n.notification_content, s.name as student_name
+        from intervention_process_record r
         left join intervention_notification n on r.notification_id = n.notification_id
         left join student_info s on n.student_id = s.student_id
     </sql>
@@ -51,6 +70,63 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
         </where>
         order by r.create_time desc
+    </select>
+
+    <select id="selectRecordVoList" parameterType="com.mc.intervention.domain.vo.InterventionProcessRecordVo" resultMap="InterventionProcessRecordVoResult">
+        <include refid="selectRecordVoNew" />
+        <where>
+            <if test="recordId != null">
+                AND r.record_id = #{recordId}
+            </if>
+            <if test="notificationId != null">
+                AND r.notification_id = #{notificationId}
+            </if>
+            <if test="studentName != null and studentName != ''">
+                AND s.name like concat('%', #{studentName}, '%')
+            </if>
+            <if test="notificationContent != null and notificationContent != ''">
+                AND n.notification_content like concat('%', #{notificationContent}, '%')
+            </if>
+            <if test="processContent != null and processContent != ''">
+                AND r.process_content like concat('%', #{processContent}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND r.status = #{status}
+            </if>
+            <if test="processResult != null and processResult != ''">
+                AND r.process_result like concat('%', #{processResult}, '%')
+            </if>
+        </where>
+        order by r.process_time desc
+    </select>
+
+    <select id="selectRecordVoListByUserId" resultMap="InterventionProcessRecordVoResult">
+        <include refid="selectRecordVoNew" />
+        <where>
+            n.user_id = #{userId}
+            <if test="vo.recordId != null">
+                AND r.record_id = #{vo.recordId}
+            </if>
+            <if test="vo.notificationId != null">
+                AND r.notification_id = #{vo.notificationId}
+            </if>
+            <if test="vo.studentName != null and vo.studentName != ''">
+                AND s.name like concat('%', #{vo.studentName}, '%')
+            </if>
+            <if test="vo.notificationContent != null and vo.notificationContent != ''">
+                AND n.notification_content like concat('%', #{vo.notificationContent}, '%')
+            </if>
+            <if test="vo.processContent != null and vo.processContent != ''">
+                AND r.process_content like concat('%', #{vo.processContent}, '%')
+            </if>
+            <if test="vo.status != null and vo.status != ''">
+                AND r.status = #{vo.status}
+            </if>
+            <if test="vo.processResult != null and vo.processResult != ''">
+                AND r.process_result like concat('%', #{vo.processResult}, '%')
+            </if>
+        </where>
+        order by r.process_time desc
     </select>
 
     <select id="selectRecordById" parameterType="Long" resultMap="InterventionProcessRecordResult">

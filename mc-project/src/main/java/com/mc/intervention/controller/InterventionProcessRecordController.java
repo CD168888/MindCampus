@@ -5,8 +5,11 @@ import com.mc.common.core.controller.BaseController;
 import com.mc.common.core.domain.R;
 import com.mc.common.core.page.TableDataInfo;
 import com.mc.common.enums.BusinessType;
+import com.mc.common.utils.SecurityUtils;
 import com.mc.common.utils.poi.ExcelUtil;
 import com.mc.intervention.domain.InterventionProcessRecord;
+import com.mc.intervention.domain.vo.InterventionProcessRecordVo;
+import com.mc.intervention.service.IInterventionNotificationService;
 import com.mc.intervention.service.IInterventionProcessRecordService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,14 +29,17 @@ public class InterventionProcessRecordController extends BaseController {
     @Autowired
     private IInterventionProcessRecordService recordService;
 
+    @Autowired
+    private IInterventionNotificationService notificationService;
+
     /**
      * 查询干预处理记录表列表
      */
     @PreAuthorize("@ss.hasPermi('intervention:process:list')")
     @GetMapping("/list")
-    public TableDataInfo list(InterventionProcessRecord record) {
+    public TableDataInfo list(InterventionProcessRecordVo vo) {
         startPage();
-        List<InterventionProcessRecord> list = recordService.selectRecordList(record);
+        List<InterventionProcessRecordVo> list = recordService.selectRecordVoList(vo);
         return getDataTable(list);
     }
 
@@ -43,19 +49,27 @@ public class InterventionProcessRecordController extends BaseController {
     @PreAuthorize("@ss.hasPermi('intervention:process:export')")
     @Log(title = "干预处理记录表", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, InterventionProcessRecord record) {
-        List<InterventionProcessRecord> list = recordService.selectRecordList(record);
-        ExcelUtil<InterventionProcessRecord> util = new ExcelUtil<InterventionProcessRecord>(InterventionProcessRecord.class);
+    public void export(HttpServletResponse response, InterventionProcessRecordVo vo) {
+        List<InterventionProcessRecordVo> list = recordService.selectRecordVoList(vo);
+        ExcelUtil<InterventionProcessRecordVo> util = new ExcelUtil<>(InterventionProcessRecordVo.class);
         util.exportExcel(response, list, "干预处理记录表数据");
     }
 
     /**
      * 获取干预处理记录表详细信息
+     * 辅导员查看时更新对应通知的阅读状态
      */
     @PreAuthorize("@ss.hasPermi('intervention:process:query')")
     @GetMapping(value = "/{recordId}")
     public R<InterventionProcessRecord> getInfo(@PathVariable("recordId") Long recordId) {
-        return R.ok(recordService.selectRecordById(recordId));
+        InterventionProcessRecord record = recordService.selectRecordById(recordId);
+        if (record != null && record.getNotificationId() != null) {
+            Long currentUserId = SecurityUtils.getUserId();
+            if (!SecurityUtils.isAdmin(currentUserId)) {
+                notificationService.updateNotificationReadStatus(record.getNotificationId(), "1");
+            }
+        }
+        return R.ok(record);
     }
 
     /**

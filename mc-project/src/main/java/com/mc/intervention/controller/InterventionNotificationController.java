@@ -5,11 +5,14 @@ import com.mc.common.core.controller.BaseController;
 import com.mc.common.core.domain.R;
 import com.mc.common.core.page.TableDataInfo;
 import com.mc.common.enums.BusinessType;
+import com.mc.common.utils.SecurityUtils;
 import com.mc.common.utils.poi.ExcelUtil;
 import com.mc.intervention.domain.InterventionNotification;
+import com.mc.intervention.domain.InterventionProcessRecord;
 import com.mc.intervention.domain.vo.HighRiskUnnotifiedVo;
 import com.mc.intervention.domain.vo.InterventionNotificationVo;
 import com.mc.intervention.service.IInterventionNotificationService;
+import com.mc.intervention.service.IInterventionProcessRecordService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +30,9 @@ import java.util.List;
 public class InterventionNotificationController extends BaseController {
     @Autowired
     private IInterventionNotificationService notificationService;
+
+    @Autowired
+    private IInterventionProcessRecordService processRecordService;
 
     /**
      * 查询干预通知表列表
@@ -58,6 +64,21 @@ public class InterventionNotificationController extends BaseController {
     @GetMapping(value = "/{notificationId}")
     public R<InterventionNotification> getInfo(@PathVariable("notificationId") Long notificationId) {
         return R.ok(notificationService.selectNotificationById(notificationId));
+    }
+
+    /**
+     * 查看记录（辅导员查看时更新阅读状态，管理员查看不影响阅读状态）
+     */
+    @PreAuthorize("@ss.hasPermi('intervention:notification:query')")
+    @GetMapping(value = "/viewRecord/{notificationId}")
+    public R<InterventionProcessRecord> viewRecord(@PathVariable("notificationId") Long notificationId) {
+        Long currentUserId = SecurityUtils.getUserId();
+        if (!SecurityUtils.isAdmin(currentUserId)) {
+            notificationService.updateNotificationReadStatus(notificationId, "1");
+        }
+        List<InterventionProcessRecord> records = processRecordService.selectRecordByNotificationId(notificationId);
+        InterventionProcessRecord record = records != null && !records.isEmpty() ? records.get(0) : null;
+        return R.ok(record);
     }
 
     /**

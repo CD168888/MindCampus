@@ -1,7 +1,9 @@
 package com.mc.intervention.mapper;
 
 import com.mc.intervention.domain.InterventionProcessRecord;
+import com.mc.intervention.domain.vo.InterventionProcessRecordVo;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -19,6 +21,23 @@ public interface InterventionProcessRecordMapper {
      * @return 干预处理记录表数据
      */
     public List<InterventionProcessRecord> selectRecordList(InterventionProcessRecord record);
+
+    /**
+     * 查询干预处理记录表数据（带关联信息）
+     *
+     * @param vo 查询参数
+     * @return 干预处理记录表数据
+     */
+    public List<InterventionProcessRecordVo> selectRecordVoList(InterventionProcessRecordVo vo);
+
+    /**
+     * 查询干预处理记录表数据（根据用户ID过滤）
+     *
+     * @param vo     查询参数
+     * @param userId 用户ID（辅导员ID）
+     * @return 干预处理记录表数据
+     */
+    public List<InterventionProcessRecordVo> selectRecordVoListByUserId(@Param("vo") InterventionProcessRecordVo vo, @Param("userId") Long userId);
 
     /**
      * 查询干预处理记录表信息
