@@ -1,59 +1,62 @@
 <template>
   <view class="assessment-detail-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="ambient-background"></view>
+
+    <view class="glass-header" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="navbar-content">
         <view class="navbar-left" @tap="goBack">
-          <text class="back-icon">←</text>
+          <view class="nav-icon-glass">
+            <uni-icons type="left" size="22" color="#1D1D1F"></uni-icons>
+          </view>
         </view>
         <view class="navbar-title">问卷详情</view>
         <view class="navbar-right"></view>
       </view>
     </view>
 
-    <!-- 加载中 -->
     <view v-if="loading" class="loading-container">
-      <uni-icons type="spinner-cycle" size="40" color="#6ee7b7"></uni-icons>
-      <text class="loading-text">加载中...</text>
+      <view class="glass-card loading-card">
+        <uni-icons type="spinner-cycle" size="36" color="#2CB5A0" class="spin-icon"></uni-icons>
+        <text class="loading-text">正在加载问卷内容...</text>
+      </view>
     </view>
 
-    <!-- 内容区域 -->
     <view v-else-if="questionnaire" class="content-wrapper">
-      <!-- 问卷头部 -->
-      <view class="questionnaire-header">
-        <view class="header-title">{{ questionnaire.title }}</view>
-        <view class="header-desc">{{ questionnaire.description }}</view>
-        <view class="header-meta">
-          <view class="meta-item">
-            <uni-icons type="compose" size="16" color="#a78bfa"></uni-icons>
-            <text class="meta-text">{{ questions.length }} 题</text>
+      
+      <view class="glass-card header-card">
+        <view class="header-info">
+          <text class="header-title">{{ questionnaire.title }}</text>
+          <text class="header-desc">{{ questionnaire.description }}</text>
+          
+          <view class="header-meta">
+            <view class="meta-tag">
+              <uni-icons type="list" size="14" color="#86868B"></uni-icons>
+              <text class="meta-text">共 {{ questions.length }} 题</text>
+            </view>
+            <view class="meta-tag">
+              <uni-icons type="clock" size="14" color="#86868B"></uni-icons>
+              <text class="meta-text">预计 {{ questions.length }} 分钟</text>
+            </view>
           </view>
-          <view class="meta-item">
-            <uni-icons type="clock" size="16" color="#6ee7b7"></uni-icons>
-            <text class="meta-text">约 {{ questions.length }} 分钟</text>
-          </view>
+        </view>
 
+        <view class="progress-section">
+          <view class="progress-header">
+            <text class="progress-title">答题进度</text>
+            <text class="progress-count cyan-text">{{ answeredCount }} <text class="text-muted">/ {{ questions.length }}</text></text>
+          </view>
+          <view class="progress-track">
+            <view class="progress-fill" :style="{ width: progressPercent + '%' }"></view>
+          </view>
         </view>
       </view>
 
-      <!-- 答题进度 -->
-      <view class="progress-section">
-        <view class="progress-header">
-          <text class="progress-title">答题进度</text>
-          <text class="progress-count">{{ answeredCount }} / {{ questions.length }}</text>
-        </view>
-        <view class="progress-bar">
-          <view class="progress-fill" :style="{ width: progressPercent + '%' }"></view>
-        </view>
-      </view>
-
-      <!-- 题目列表 -->
       <view class="questions-section">
-        <view v-for="(question, index) in questions" :key="question.questionId" class="question-card">
+        <view v-for="(question, index) in questions" :key="question.questionId" class="glass-card question-card">
           <view class="question-header">
-            <view class="question-number">第 {{ index + 1 }} 题</view>
-            <view v-if="answers[question.questionId]" class="question-status">
-              <uni-icons type="checkmarkempty" size="18" color="#10b981"></uni-icons>
+            <view class="question-number-badge">Q{{ index + 1 }}</view>
+            <view v-if="answers[question.questionId]" class="question-status bounce-in">
+              <uni-icons type="checkmarkempty" size="20" color="#2CB5A0"></uni-icons>
             </view>
           </view>
 
@@ -61,7 +64,6 @@
             <text class="question-text">{{ question.content }}</text>
           </view>
 
-          <!-- 选择题 -->
           <view v-if="question.type === 'choice'" class="options-list">
             <view
               v-for="(option, optionKey) in parseOptions(question.options)"
@@ -70,32 +72,33 @@
               :class="{ 'option-selected': answers[question.questionId] === optionKey }"
               @tap="selectOption(question.questionId, optionKey)"
             >
-              <view class="option-radio">
-                <view v-if="answers[question.questionId] === optionKey" class="option-radio-inner"></view>
+              <view class="option-key">{{ optionKey }}</view>
+              <text class="option-label">{{ option }}</text>
+              <view class="option-check" v-if="answers[question.questionId] === optionKey">
+                <uni-icons type="checkmarkempty" size="18" color="#2CB5A0"></uni-icons>
               </view>
-              <text class="option-label">{{ optionKey }}. {{ option }}</text>
             </view>
           </view>
 
-          <!-- 简答题 -->
           <view v-else class="answer-input">
             <textarea
               v-model="answers[question.questionId]"
-              placeholder="请输入你的答案..."
+              placeholder="分享一下你的想法..."
+              placeholder-class="textarea-placeholder"
               :maxlength="500"
               class="answer-textarea"
               @input="onInputAnswer(question.questionId, $event)"
             />
-            <text class="answer-count">{{ (answers[question.questionId] || '').length }}/500</text>
+            <text class="answer-count">{{ (answers[question.questionId] || '').length }} / 500</text>
           </view>
         </view>
       </view>
+    </view>
 
-      <!-- 提交按钮 -->
-      <view class="submit-section">
-        <button class="submit-btn" :disabled="!isAllAnswered" @tap="submitAnswers">
-          {{ isAllAnswered ? '提交问卷' : `还有 ${questions.length - answeredCount} 题未作答` }}
-        </button>
+    <view class="submit-glass-bar" v-if="!loading && questionnaire">
+      <view class="submit-btn" :class="{ 'btn-disabled': !isAllAnswered, 'btn-active': isAllAnswered }" @tap="submitAnswers">
+        <text>{{ isAllAnswered ? '完成并提交' : `还有 ${questions.length - answeredCount} 题未作答` }}</text>
+        <uni-icons v-if="isAllAnswered" type="paperplane-filled" size="18" color="#FFFFFF"></uni-icons>
       </view>
     </view>
   </view>
@@ -182,6 +185,7 @@ export default {
         uni.showModal({
           title: '提示',
           content: '当前答题尚未提交，确定要离开吗？',
+          confirmColor: '#2CB5A0',
           success: (res) => {
             if (res.confirm) {
               uni.navigateBack()
@@ -227,6 +231,7 @@ export default {
       uni.showModal({
         title: '确认提交',
         content: '提交后将无法修改，确定要提交吗？',
+        confirmColor: '#2CB5A0',
         success: async (res) => {
           if (res.confirm) {
             await this.doSubmit()
@@ -293,343 +298,411 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "@/static/scss/theme.scss";
+/* ==================== iOS 风格核心变量 ==================== */
+$ios-text-primary: #1D1D1F;
+$ios-text-secondary: #86868B;
+$theme-cyan: #2CB5A0;
 
 .assessment-detail-page {
   min-height: 100vh;
-  background: $bg-gray-50;
+  position: relative;
+  background-color: #F5F5F7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom)); /* 给底部悬浮栏留出空间 */
 }
 
-/* ==================== 自定义导航栏 ==================== */
-.custom-navbar {
-  background: $bg-white;
-  box-shadow: $shadow-xs;
+/* --- 弥散光影背景 --- */
+.ambient-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(224, 242, 241, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(255, 243, 224, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(232, 234, 246, 0.8) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(240, 238, 245, 0.8) 0px, transparent 50%);
+  pointer-events: none;
+}
+
+/* --- 毛玻璃通用类 --- */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+  border-radius: 36rpx;
+}
+
+/* ==================== 顶部导航 ==================== */
+.glass-header {
   position: sticky;
   top: 0;
-  z-index: 999;
+  z-index: 100;
+  background: rgba(245, 245, 247, 0.6);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
 }
 
 .navbar-content {
-  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 $spacing-lg;
+  height: 88rpx;
+  padding: 0 32rpx;
 }
 
-.navbar-left,
-.navbar-right {
+.navbar-left, .navbar-right {
   width: 80rpx;
-}
-
-.navbar-left {
   display: flex;
   align-items: center;
 }
 
-.back-icon {
-  font-size: 44rpx;
-  color: $text-primary;
-  font-weight: $font-normal;
-  line-height: 1;
+.nav-icon-glass {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease;
+  &:active { transform: scale(0.9); opacity: 0.8; }
 }
 
 .navbar-title {
-  font-size: $font-xl;
-  font-weight: $font-bold;
-  color: $text-primary;
-  letter-spacing: -0.5rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
+  letter-spacing: 1rpx;
 }
 
-/* ==================== 加载中 ==================== */
+/* ==================== 加载状态 ==================== */
 .loading-container {
+  position: relative;
+  z-index: 1;
+  padding: 120rpx 40rpx;
+  display: flex;
+  justify-content: center;
+}
+
+.loading-card {
+  padding: 60rpx 80rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 200rpx 0;
-  gap: $spacing-md;
+  gap: 24rpx;
+}
+
+.spin-icon {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .loading-text {
-  font-size: $font-sm;
-  color: $text-tertiary;
+  font-size: 28rpx;
+  color: $ios-text-secondary;
 }
 
 /* ==================== 内容区域 ==================== */
 .content-wrapper {
-  padding: $spacing-lg;
-  padding-bottom: 180rpx;
+  position: relative;
+  z-index: 1;
+  padding: 30rpx 32rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
 }
 
-/* ==================== 问卷头部 ==================== */
-.questionnaire-header {
-  background: $bg-white;
-  border-radius: $radius-xl;
-  padding: $spacing-lg;
-  margin-bottom: $spacing-md;
-  box-shadow: $shadow-sm;
+/* ==================== 问卷信息头部 ==================== */
+.header-card {
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.header-info {
+  margin-bottom: 40rpx;
 }
 
 .header-title {
-  font-size: $font-xl;
-  font-weight: $font-bold;
-  color: $text-primary;
-  margin-bottom: $spacing-sm;
-  letter-spacing: -0.5rpx;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: $ios-text-primary;
+  margin-bottom: 16rpx;
+  line-height: 1.3;
+  display: block;
 }
 
 .header-desc {
-  font-size: $font-sm;
-  color: $text-tertiary;
-  line-height: $line-height-relaxed;
-  margin-bottom: $spacing-md;
+  font-size: 28rpx;
+  color: $ios-text-secondary;
+  line-height: 1.5;
+  margin-bottom: 24rpx;
+  display: block;
 }
 
 .header-meta {
   display: flex;
-  align-items: center;
-  gap: $spacing-lg;
-  padding-top: $spacing-sm;
-  border-top: 1rpx solid $border-light;
+  gap: 20rpx;
 }
 
-.meta-item {
+.meta-tag {
   display: flex;
   align-items: center;
-  gap: $spacing-xs;
+  gap: 8rpx;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 8rpx 20rpx;
+  border-radius: 16rpx;
 }
 
 .meta-text {
-  font-size: $font-xs;
-  color: $text-secondary;
+  font-size: 24rpx;
+  color: $ios-text-secondary;
+  font-weight: 500;
 }
 
-/* ==================== 答题进度 ==================== */
+/* 进度条 */
 .progress-section {
-  background: $bg-white;
-  border-radius: $radius-xl;
-  padding: $spacing-lg;
-  margin-bottom: $spacing-md;
-  box-shadow: $shadow-sm;
+  padding-top: 30rpx;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .progress-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: $spacing-sm;
+  align-items: baseline;
+  margin-bottom: 16rpx;
 }
 
 .progress-title {
-  font-size: $font-base;
-  font-weight: $font-semibold;
-  color: $text-primary;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
 }
 
 .progress-count {
-  font-size: $font-sm;
-  font-weight: $font-semibold;
-  background: $gradient-primary;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 32rpx;
+  font-weight: 700;
+  font-family: "SF Pro Display", sans-serif;
 }
 
-.progress-bar {
+.cyan-text { color: $theme-cyan; }
+.text-muted { color: $ios-text-secondary; font-size: 24rpx; font-weight: 500; }
+
+.progress-track {
   height: 16rpx;
-  background: $bg-gray-100;
-  border-radius: $radius-full;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 10rpx;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: $gradient-primary;
-  border-radius: $radius-full;
-  transition: width $transition-base $ease-out;
+  background: linear-gradient(90deg, #74EBD5 0%, #2CB5A0 100%);
+  border-radius: 10rpx;
+  transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* ==================== 题目卡片 ==================== */
+/* ==================== 题目列表区 ==================== */
 .questions-section {
   display: flex;
   flex-direction: column;
-  gap: $spacing-md;
+  gap: 32rpx;
 }
 
 .question-card {
-  background: $bg-white;
-  border-radius: $radius-xl;
-  padding: $spacing-lg;
-  box-shadow: $shadow-sm;
+  padding: 40rpx;
 }
 
 .question-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: $spacing-sm;
-}
-
-.question-number {
-  font-size: $font-sm;
-  font-weight: $font-semibold;
-  color: $primary-color;
-  padding: 4rpx 12rpx;
-  background: rgba(110, 231, 183, 0.15);
-  border-radius: $radius-full;
-}
-
-.question-status {
-  display: flex;
   align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.question-number-badge {
+  background: $ios-text-primary;
+  color: #FFFFFF;
+  font-size: 24rpx;
+  font-weight: 700;
+  padding: 6rpx 16rpx;
+  border-radius: 12rpx;
+  letter-spacing: 1rpx;
+}
+
+.bounce-in {
+  animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .question-content {
-  display: flex;
-  align-items: flex-start;
-  gap: $spacing-xs;
-  margin-bottom: $spacing-md;
+  margin-bottom: 32rpx;
 }
 
 .question-text {
-  flex: 1;
-  font-size: $font-base;
-  color: $text-primary;
-  line-height: $line-height-relaxed;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
+  line-height: 1.5;
 }
 
-.question-score {
-  font-size: $font-xs;
-  color: $text-tertiary;
-  white-space: nowrap;
-}
-
-/* ==================== 选择题选项 ==================== */
+/* ==================== 选项卡片式交互 ==================== */
 .options-list {
   display: flex;
   flex-direction: column;
-  gap: $spacing-sm;
+  gap: 20rpx;
 }
 
 .option-item {
   display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  padding: $spacing-md;
-  background: $bg-gray-50;
-  border: 2rpx solid $border-light;
-  border-radius: $radius-lg;
-  transition: all $transition-base $ease-out;
-
+  align-items: flex-start;
+  padding: 28rpx 32rpx;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 24rpx;
+  transition: all 0.2s ease;
+  
   &:active {
     transform: scale(0.98);
-  }
-
-  &.option-selected {
-    background: linear-gradient(135deg, rgba(110, 231, 183, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
-    border-color: $primary-color;
+    background: rgba(255, 255, 255, 0.8);
   }
 }
 
-.option-radio {
-  width: 40rpx;
-  height: 40rpx;
-  border: 3rpx solid $border-base;
-  border-radius: $radius-full;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.option-selected {
+  background: rgba(44, 181, 160, 0.08); /* 极弱青色背景 */
+  border-color: rgba(44, 181, 160, 0.3);
+}
+
+.option-key {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: $ios-text-primary;
+  width: 48rpx;
   flex-shrink: 0;
-  transition: all $transition-base $ease-out;
-
-  .option-selected & {
-    border-color: $primary-color;
-  }
-}
-
-.option-radio-inner {
-  width: 20rpx;
-  height: 20rpx;
-  background: $gradient-primary;
-  border-radius: $radius-full;
+  line-height: 1.4;
 }
 
 .option-label {
   flex: 1;
-  font-size: $font-sm;
-  color: $text-secondary;
-  line-height: $line-height-normal;
-
-  .option-selected & {
-    color: $text-primary;
-    font-weight: $font-medium;
-  }
+  font-size: 30rpx;
+  color: $ios-text-secondary;
+  line-height: 1.4;
+  padding-right: 16rpx;
+  transition: color 0.2s ease;
 }
 
-/* ==================== 简答题 ==================== */
+.option-selected .option-key,
+.option-selected .option-label {
+  color: $ios-text-primary;
+  font-weight: 500;
+}
+
+.option-check {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 42rpx; /* 匹配文字行高实现视觉居中 */
+}
+
+/* ==================== 简答题文本框 ==================== */
 .answer-input {
   position: relative;
 }
 
 .answer-textarea {
   width: 100%;
-  min-height: 200rpx;
-  padding: $spacing-md;
-  background: $bg-gray-50;
-  border: 2rpx solid $border-light;
-  border-radius: $radius-lg;
-  font-size: $font-sm;
-  color: $text-primary;
-  line-height: $line-height-relaxed;
+  min-height: 240rpx;
+  padding: 32rpx;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 24rpx;
+  font-size: 30rpx;
+  color: $ios-text-primary;
+  line-height: 1.6;
+  transition: all 0.3s ease;
 
   &:focus {
-    border-color: $primary-color;
-    background: $bg-white;
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(44, 181, 160, 0.4);
+    box-shadow: 0 0 0 6rpx rgba(44, 181, 160, 0.1);
   }
+}
+
+.textarea-placeholder {
+  color: #A1A1A6;
 }
 
 .answer-count {
   position: absolute;
-  right: $spacing-sm;
-  bottom: $spacing-xs;
-  font-size: $font-xs;
-  color: $text-quaternary;
+  right: 24rpx;
+  bottom: 24rpx;
+  font-size: 24rpx;
+  color: $ios-text-secondary;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 4rpx 12rpx;
+  border-radius: 10rpx;
 }
 
-/* ==================== 提交按钮 ==================== */
-.submit-section {
+/* ==================== 底部悬浮提交栏 ==================== */
+.submit-glass-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: $spacing-lg;
-  background: $bg-white;
-  box-shadow: 0 -2rpx 20rpx rgba(0, 0, 0, 0.05);
+  padding: 24rpx 40rpx calc(24rpx + env(safe-area-inset-bottom));
+  background: rgba(245, 245, 247, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 0.5px solid rgba(0, 0, 0, 0.05);
+  z-index: 100;
 }
 
 .submit-btn {
   width: 100%;
-  height: 88rpx;
-  background: $gradient-primary;
-  border-radius: $radius-xl;
-  font-size: $font-lg;
-  font-weight: $font-bold;
-  color: $bg-white;
-  border: none;
-  box-shadow: $shadow-base;
-  transition: all $transition-base $ease-out;
+  height: 96rpx;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
 
-  &:active:not([disabled]) {
-    transform: translateY(-2rpx);
-    box-shadow: $shadow-lg;
-  }
+/* 未完成状态：灰色玻璃质感 */
+.btn-disabled {
+  background: rgba(0, 0, 0, 0.06);
+  color: $ios-text-secondary;
+}
 
-  &[disabled] {
-    background: $bg-gray-200;
-    color: $text-quaternary;
-    box-shadow: none;
+/* 激活状态：治愈青色高亮 */
+.btn-active {
+  background: linear-gradient(135deg, #48D1CC 0%, #2CB5A0 100%);
+  color: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(44, 181, 160, 0.3);
+  
+  &:active {
+    transform: scale(0.98);
+    box-shadow: 0 4rpx 12rpx rgba(44, 181, 160, 0.2);
   }
 }
 </style>
-

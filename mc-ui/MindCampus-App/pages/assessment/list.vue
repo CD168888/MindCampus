@@ -1,114 +1,148 @@
 <template>
   <view class="assessment-list-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="ambient-background"></view>
+
+    <view class="glass-header" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="navbar-content">
         <view class="navbar-left" @tap="goBack">
-          <text class="back-icon">←</text>
+          <view class="nav-icon-glass">
+            <uni-icons type="left" size="22" color="#1D1D1F"></uni-icons>
+          </view>
         </view>
         <view class="navbar-title">心理测评</view>
         <view class="navbar-right"></view>
       </view>
     </view>
 
-    <!-- 统计卡片 -->
-    <view class="stats-section">
-      <view class="stat-card stat-pending" @tap="scrollToSection('pending')">
-        <view class="stat-number">{{ stats.pending }}</view>
-        <view class="stat-label">待填问卷</view>
-      </view>
-      <view class="stat-card stat-completed" @tap="scrollToSection('completed')">
-        <view class="stat-number">{{ stats.completed }}</view>
-        <view class="stat-label">已完成</view>
-      </view>
-      <view class="stat-card stat-total">
-        <view class="stat-number">{{ stats.total }}</view>
-        <view class="stat-label">总计</view>
-      </view>
-    </view>
-
-    <!-- 待填问卷 -->
-    <view class="section pending-section" id="pending-section">
-      <view class="section-header">
-        <view class="section-indicator"></view>
-        <text class="section-title">待填问卷</text>
-      </view>
-
-      <view class="questionnaire-list">
-        <view v-for="item in pendingList" :key="item.questionnaireId" class="questionnaire-card pending-card"
-          :class="{ 'expired-card': item.status === 'expired' }" @tap="handleCardClick(item)">
-          <view class="card-body">
-            <view class="card-title">{{ item.title }}</view>
-            <view class="card-desc">{{ item.description }}</view>
+    <view class="page-content">
+      
+      <view class="stats-section">
+        <view class="glass-card stat-card stat-primary" @tap="scrollToSection('pending')">
+          <view class="stat-glow"></view>
+          <text class="stat-number cyan-text">{{ stats.pending }}</text>
+          <text class="stat-label">待填问卷</text>
+        </view>
+        <view class="stat-group">
+          <view class="glass-card stat-card stat-sub" @tap="scrollToSection('completed')">
+            <text class="stat-number">{{ stats.completed }}</text>
+            <text class="stat-label">已完成</text>
           </view>
-
-          <view class="card-meta">
-            <view class="meta-item">
-              <text class="meta-text">{{ item.questionCount }} 题</text>
-            </view>
-            <view class="meta-divider">·</view>
-            <view class="meta-item">
-              <text class="meta-text">约{{ item.duration }}分钟</text>
-            </view>
-            <view class="meta-divider">·</view>
-            <view class="meta-item">
-              <text class="meta-text">{{ item.publisher }}</text>
-            </view>
-          </view>
-
-          <view class="card-footer">
-            <view class="deadline">截止时间：{{ formatDate(item.deadline) }}</view>
-            <view class="action-badge" :class="item.status === 'expired' ? 'expired-badge' : 'pending-badge'">
-              {{ item.status === 'expired' ? '已截止' : '待填写' }}
-            </view>
+          <view class="glass-card stat-card stat-sub">
+            <text class="stat-number text-muted">{{ stats.total }}</text>
+            <text class="stat-label">总计</text>
           </view>
         </view>
       </view>
 
-      <view v-if="pendingList.length === 0" class="empty-state">
-        <text class="empty-icon">✨</text>
-        <text class="empty-text">暂无待填问卷</text>
-      </view>
-    </view>
-
-    <!-- 已完成 -->
-    <view class="section completed-section" id="completed-section">
-      <view class="section-header">
-        <view class="section-indicator completed-indicator"></view>
-        <text class="section-title">已完成</text>
-      </view>
-
-      <view class="questionnaire-list">
-        <view v-for="item in completedList" :key="item.questionnaireId" class="questionnaire-card completed-card">
-          <view class="card-body">
-            <view class="card-title">{{ item.title }}</view>
-            <view class="completed-time">已于 {{ formatDate(item.completedTime) }} 完成</view>
+      <view class="section pending-section" id="pending-section">
+        <view class="section-header">
+          <view class="header-left">
+            <uni-icons type="compose" size="22" color="#1D1D1F"></uni-icons>
+            <text class="section-title">待填任务</text>
           </view>
+        </view>
 
-          <view class="card-meta">
-            <view class="meta-item">
-              <text class="meta-text">{{ item.questionCount }} 题</text>
+        <view class="questionnaire-list">
+          <view v-for="item in pendingList" :key="item.questionnaireId" 
+                class="glass-card questionnaire-card"
+                :class="{ 'expired-card': item.status === 'expired' }" 
+                @tap="handleCardClick(item)">
+            
+            <view class="card-body">
+              <text class="card-title">{{ item.title }}</text>
+              <text class="card-desc">{{ item.description }}</text>
             </view>
 
-            <view class="meta-divider">·</view>
-            <view class="meta-item">
-              <text class="meta-text">{{ item.publisher }}</text>
+            <view class="card-meta">
+              <view class="meta-tag">
+                <uni-icons type="list" size="14" color="#86868B"></uni-icons>
+                <text class="meta-text">{{ item.questionCount }} 题</text>
+              </view>
+              <view class="meta-tag">
+                <uni-icons type="clock" size="14" color="#86868B"></uni-icons>
+                <text class="meta-text">约 {{ item.duration }} 分钟</text>
+              </view>
+              <view class="meta-tag">
+                <uni-icons type="person" size="14" color="#86868B"></uni-icons>
+                <text class="meta-text">{{ item.publisher }}</text>
+              </view>
             </view>
-          </view>
 
-          <view class="card-footer">
-            <view class="action-badge" :class="item.status === 'analyzing' ? 'analyzing-badge' : 'completed-badge'">
-              {{ item.status === 'analyzing' ? '待分析' : '已完成' }}
+            <view class="card-footer">
+              <view class="deadline-box">
+                <uni-icons type="calendar" size="14" :color="item.status === 'expired' ? '#A1A1A6' : '#FF9500'"></uni-icons>
+                <text class="deadline-text" :class="{'text-expired': item.status === 'expired'}">
+                  截止: {{ formatDate(item.deadline) }}
+                </text>
+              </view>
+              
+              <view class="action-btn" :class="item.status === 'expired' ? 'btn-expired' : 'btn-primary'">
+                <text>{{ item.status === 'expired' ? '已截止' : '去填写' }}</text>
+                <uni-icons v-if="item.status !== 'expired'" type="right" size="12" color="#2CB5A0"></uni-icons>
+              </view>
             </view>
-            <view class="view-result-btn" @tap.stop="viewResult(item)">查看结果</view>
           </view>
+        </view>
+
+        <view v-if="pendingList.length === 0" class="empty-state glass-card">
+          <uni-icons type="checkmarkempty" size="40" color="#2CB5A0"></uni-icons>
+          <text class="empty-title">太棒了，任务全清！</text>
+          <text class="empty-text">当前没有需要填写的测评问卷</text>
         </view>
       </view>
 
-      <view v-if="completedList.length === 0" class="empty-state">
-        <text class="empty-icon">📋</text>
-        <text class="empty-text">暂无已完成问卷</text>
+      <view class="section completed-section" id="completed-section">
+        <view class="section-header">
+          <view class="header-left">
+            <uni-icons type="folder-add" size="22" color="#1D1D1F"></uni-icons>
+            <text class="section-title">测评归档</text>
+          </view>
+        </view>
+
+        <view class="questionnaire-list">
+          <view v-for="item in completedList" :key="item.questionnaireId" class="glass-card questionnaire-card completed-card">
+            
+            <view class="card-body">
+              <view class="title-row">
+                <text class="card-title">{{ item.title }}</text>
+                <view class="status-badge" :class="item.status === 'analyzing' ? 'badge-warning' : 'badge-success'">
+                  {{ item.status === 'analyzing' ? '分析中' : '已完成' }}
+                </view>
+              </view>
+            </view>
+
+            <view class="card-meta">
+              <view class="meta-tag">
+                <uni-icons type="list" size="14" color="#86868B"></uni-icons>
+                <text class="meta-text">{{ item.questionCount }} 题</text>
+              </view>
+              <view class="meta-tag">
+                <uni-icons type="person" size="14" color="#86868B"></uni-icons>
+                <text class="meta-text">{{ item.publisher }}</text>
+              </view>
+            </view>
+
+            <view class="card-footer">
+              <view class="completed-time">
+                <uni-icons type="flag" size="14" color="#86868B"></uni-icons>
+                <text class="time-text">完成于 {{ formatDate(item.completedTime) }}</text>
+              </view>
+              
+              <view class="action-btn btn-secondary" @tap.stop="viewResult(item)" v-if="item.status !== 'analyzing'">
+                <text>查看报告</text>
+                <uni-icons type="right" size="12" color="#007AFF"></uni-icons>
+              </view>
+            </view>
+
+          </view>
+        </view>
+
+        <view v-if="completedList.length === 0" class="empty-state glass-card">
+          <uni-icons type="info" size="32" color="#86868B"></uni-icons>
+          <text class="empty-text">暂无已完成的测评记录</text>
+        </view>
       </view>
+
     </view>
   </view>
 </template>
@@ -269,365 +303,383 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "@/static/scss/theme.scss";
+/* ==================== iOS 风格核心变量 ==================== */
+$ios-text-primary: #1D1D1F;
+$ios-text-secondary: #86868B;
+$ios-blue: #007AFF;
+$ios-orange: #FF9500;
+$theme-cyan: #2CB5A0;
 
 .assessment-list-page {
   min-height: 100vh;
-  background: $bg-gray-50;
+  position: relative;
+  background-color: #F5F5F7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  padding-bottom: calc(80rpx + env(safe-area-inset-bottom));
 }
 
-/* ==================== 自定义导航栏 ==================== */
-.custom-navbar {
-  background: $bg-white;
-  box-shadow: $shadow-xs;
+/* --- 弥散光影背景 --- */
+.ambient-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(224, 242, 241, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(255, 243, 224, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(232, 234, 246, 0.8) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(240, 238, 245, 0.8) 0px, transparent 50%);
+  pointer-events: none;
+}
+
+/* --- 毛玻璃通用类 --- */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.03);
+  border-radius: 32rpx;
+}
+
+/* ==================== 顶部导航 (Sticky) ==================== */
+.glass-header {
   position: sticky;
   top: 0;
-  z-index: 999;
+  z-index: 100;
+  background: rgba(245, 245, 247, 0.6);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
 }
 
 .navbar-content {
-  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 $spacing-lg;
+  height: 88rpx;
+  padding: 0 32rpx;
 }
 
-.navbar-left,
-.navbar-right {
+.navbar-left, .navbar-right {
   width: 80rpx;
-}
-
-.navbar-left {
   display: flex;
   align-items: center;
 }
 
-.back-icon {
-  font-size: 44rpx;
-  color: $text-primary;
-  font-weight: $font-normal;
-  line-height: 1;
+.nav-icon-glass {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease;
+  &:active { transform: scale(0.9); opacity: 0.8; }
 }
 
 .navbar-title {
-  font-size: $font-xl;
-  font-weight: $font-bold;
-  color: $text-primary;
-  letter-spacing: -0.5rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
+  letter-spacing: 1rpx;
 }
 
-/* ==================== 统计卡片 ==================== */
+/* ==================== 页面滚动区 ==================== */
+.page-content {
+  position: relative;
+  z-index: 1;
+  padding-top: 30rpx;
+}
+
+/* ==================== 统计看板 ==================== */
 .stats-section {
-  padding: $spacing-lg;
+  padding: 0 32rpx 40rpx;
   display: flex;
-  gap: $spacing-md;
+  gap: 24rpx;
 }
 
 .stat-card {
-  flex: 1;
-  background: $bg-white;
-  border-radius: $radius-xl;
-  padding: $spacing-lg $spacing-md;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: $spacing-xs;
-  box-shadow: $shadow-sm;
-  transition: all $transition-base $ease-out;
+  justify-content: center;
+  padding: 32rpx;
+  transition: transform 0.2s ease;
+  
+  &:active { transform: scale(0.96); }
+}
+
+/* 重点突出的主数据卡片 */
+.stat-primary {
+  flex: 1.2;
   position: relative;
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.75);
+}
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3rpx;
-  }
+.stat-glow {
+  position: absolute;
+  top: -40rpx;
+  left: -40rpx;
+  width: 140rpx;
+  height: 140rpx;
+  background: radial-gradient(circle, rgba(44, 181, 160, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
 
-  &.stat-pending::before {
-    background: $gradient-primary;
-  }
+/* 侧边辅助数据区 */
+.stat-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
 
-  &.stat-completed::before {
-    background: $gradient-music;
-  }
-
-  &.stat-total::before {
-    background: linear-gradient(135deg, #fda4af 0%, #6ee7b7 100%);
-  }
-
-  &:active {
-    transform: translateY(-2rpx);
-    box-shadow: $shadow-base;
-  }
+.stat-sub {
+  flex: 1;
+  padding: 20rpx 32rpx;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .stat-number {
-  font-size: $font-3xl;
-  font-weight: $font-bold;
-  background: $gradient-primary;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 48rpx;
+  font-weight: 700;
+  color: $ios-text-primary;
   line-height: 1.2;
+  font-family: "SF Pro Display", sans-serif;
 }
 
-.stat-completed .stat-number {
-  background: $gradient-music;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.stat-sub .stat-number {
+  font-size: 36rpx;
 }
 
-.stat-total .stat-number {
-  background: linear-gradient(135deg, #fda4af 0%, #6ee7b7 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.cyan-text {
+  color: $theme-cyan;
+}
+
+.text-muted {
+  color: #A1A1A6;
 }
 
 .stat-label {
-  font-size: $font-xs;
-  color: $text-tertiary;
-  font-weight: $font-medium;
+  font-size: 24rpx;
+  color: $ios-text-secondary;
+  font-weight: 500;
+  margin-top: 4rpx;
 }
 
-/* ==================== 列表区域 ==================== */
+.stat-sub .stat-label {
+  margin-top: 0;
+}
+
+/* ==================== 列表通用头部 ==================== */
 .section {
-  padding: 0 $spacing-lg $spacing-lg;
+  padding: 0 32rpx 50rpx;
 }
 
 .section-header {
   display: flex;
   align-items: center;
-  gap: $spacing-sm;
-  margin-bottom: $spacing-md;
-  padding-left: $spacing-xs;
+  margin-bottom: 24rpx;
+  padding-left: 8rpx;
 }
 
-.section-indicator {
-  width: 6rpx;
-  height: 28rpx;
-  background: $gradient-primary;
-  border-radius: $radius-full;
-}
-
-.completed-indicator {
-  background: $gradient-music;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
 }
 
 .section-title {
-  font-size: $font-lg;
-  font-weight: $font-bold;
-  color: $text-primary;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: $ios-text-primary;
   letter-spacing: -0.5rpx;
 }
 
-/* ==================== 问卷卡片 ==================== */
+/* ==================== 问卷卡片通用 ==================== */
 .questionnaire-list {
   display: flex;
   flex-direction: column;
-  gap: $spacing-sm;
+  gap: 28rpx;
 }
 
 .questionnaire-card {
-  background: $bg-white;
-  border-radius: $radius-xl;
-  padding: $spacing-md;
-  box-shadow: $shadow-sm;
-  transition: all $transition-base $ease-out;
-  border: 1rpx solid transparent;
-
+  padding: 32rpx;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  
   &:active {
-    transform: translateY(-2rpx);
-    box-shadow: $shadow-base;
+    transform: scale(0.97);
+    background: rgba(255, 255, 255, 0.85);
   }
 }
 
-.pending-card {
-  position: relative;
-  padding-left: calc($spacing-md + 4rpx);
-
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4rpx;
-    background: $gradient-primary;
-    border-radius: $radius-full 0 0 $radius-full;
-  }
-
-  &:active {
-    box-shadow: $shadow-primary;
-  }
-}
-
-.completed-card {
-  position: relative;
-
-  // 透明蒙版效果
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: $radius-xl;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  // 确保内容在蒙版之上
-  .card-body,
-  .card-meta,
-  .card-footer {
-    position: relative;
-    z-index: 2;
-  }
+.expired-card {
+  opacity: 0.65;
+  filter: grayscale(30%);
 }
 
 /* 卡片主体 */
 .card-body {
-  margin-bottom: $spacing-sm;
+  margin-bottom: 24rpx;
+}
+
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16rpx;
 }
 
 .card-title {
-  font-size: $font-base;
-  font-weight: $font-bold;
-  color: $text-primary;
-  margin-bottom: $spacing-xs;
-  letter-spacing: -0.5rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
+  margin-bottom: 12rpx;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .card-desc {
-  font-size: $font-xs;
-  color: $text-tertiary;
-  line-height: $line-height-normal;
+  font-size: 26rpx;
+  color: $ios-text-secondary;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.completed-time {
-  font-size: $font-xs;
-  color: $text-quaternary;
-  margin-top: $spacing-xs;
-}
-
-/* 卡片元信息 */
+/* 卡片元信息 (标签排版) */
 .card-meta {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: $spacing-sm;
-  margin-bottom: $spacing-sm;
-  padding: $spacing-sm 0;
-  border-top: 1rpx solid $border-light;
-  border-bottom: 1rpx solid $border-light;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+  padding-bottom: 24rpx;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
-.meta-item {
+.meta-tag {
   display: flex;
   align-items: center;
-}
-
-.meta-divider {
-  font-size: $font-xs;
-  color: $text-quaternary;
-  font-weight: $font-normal;
+  gap: 8rpx;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 6rpx 16rpx;
+  border-radius: 12rpx;
 }
 
 .meta-text {
-  font-size: $font-xs;
-  color: $text-tertiary;
-  font-weight: $font-normal;
+  font-size: 22rpx;
+  color: $ios-text-secondary;
+  font-weight: 500;
 }
 
-/* 卡片底部 */
+/* 卡片底部操作栏 */
 .card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.deadline {
-  font-size: $font-xs;
-  color: $text-quaternary;
+.deadline-box, .completed-time {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
 }
 
-.action-badge {
-  padding: 6rpx 16rpx;
-  border-radius: $radius-full;
-  font-size: $font-xs;
-  font-weight: $font-semibold;
-  letter-spacing: 0.5rpx;
+.deadline-text {
+  font-size: 24rpx;
+  color: $ios-orange;
+  font-weight: 500;
 }
 
-.pending-badge {
-  background: linear-gradient(135deg, rgba(110, 231, 183, 0.15) 0%, rgba(167, 139, 250, 0.15) 100%);
-  color: $primary-color;
+.text-expired {
+  color: $ios-text-secondary;
 }
 
-.completed-badge {
-  background: rgba(16, 185, 129, 0.1);
-  color: $success-color;
+.time-text {
+  font-size: 24rpx;
+  color: $ios-text-secondary;
+  font-weight: 500;
 }
 
-.expired-badge {
-  background: rgba(156, 163, 175, 0.1);
-  color: #9ca3af;
+/* 状态角标 */
+.status-badge {
+  padding: 4rpx 16rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
-.analyzing-badge {
-  background: rgba(251, 191, 36, 0.1);
-  color: #f59e0b;
+.badge-success {
+  background: rgba(44, 181, 160, 0.1);
+  color: $theme-cyan;
 }
 
-.expired-card {
-  opacity: 0.6;
-  pointer-events: none;
+.badge-warning {
+  background: rgba(255, 149, 0, 0.1);
+  color: $ios-orange;
 }
 
-.view-result-btn {
-  padding: 6rpx 16rpx;
-  background: $gradient-primary;
-  border-radius: $radius-full;
-  font-size: $font-xs;
-  font-weight: $font-semibold;
-  color: $bg-white;
-  letter-spacing: 0.5rpx;
-  box-shadow: $shadow-xs;
-  transition: all $transition-base $ease-out;
-  position: relative;
-  z-index: 3;
+/* 操作按钮 (iOS Tinted Button 风格) */
+.action-btn {
+  padding: 12rpx 28rpx;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
 
-  &:active {
-    opacity: $opacity-active;
-    transform: scale(0.95);
-  }
+.btn-primary {
+  background: rgba(44, 181, 160, 0.12);
+  color: $theme-cyan;
+}
+
+.btn-secondary {
+  background: rgba(0, 122, 255, 0.1);
+  color: $ios-blue;
+}
+
+.btn-expired {
+  background: rgba(0, 0, 0, 0.05);
+  color: $ios-text-secondary;
 }
 
 /* ==================== 空状态 ==================== */
 .empty-state {
-  padding: $spacing-3xl $spacing-lg;
+  padding: 80rpx 40rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $spacing-md;
+  justify-content: center;
+  text-align: center;
 }
 
-.empty-icon {
-  font-size: 80rpx;
-  opacity: 0.5;
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
+  margin: 24rpx 0 12rpx;
 }
 
 .empty-text {
-  font-size: $font-sm;
-  color: $text-quaternary;
-  font-weight: $font-medium;
+  font-size: 26rpx;
+  color: $ios-text-secondary;
 }
 </style>

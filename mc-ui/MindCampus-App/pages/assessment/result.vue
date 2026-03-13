@@ -1,151 +1,143 @@
 <template>
   <view class="assessment-result-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="ambient-background"></view>
+
+    <view class="glass-header" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="navbar-content">
         <view class="navbar-left" @tap="goBack">
-          <text class="back-icon">←</text>
+          <view class="nav-icon-glass">
+            <uni-icons type="left" size="22" color="#1D1D1F"></uni-icons>
+          </view>
         </view>
-        <view class="navbar-title">测评结果</view>
+        <view class="navbar-title">测评报告</view>
         <view class="navbar-right"></view>
       </view>
     </view>
 
-    <!-- 加载中 -->
     <view v-if="loading" class="loading-container">
-      <uni-icons type="spinner-cycle" size="40" color="#6ee7b7"></uni-icons>
-      <text class="loading-text">加载中...</text>
+      <view class="glass-card loading-card">
+        <uni-icons type="spinner-cycle" size="36" color="#2CB5A0" class="spin-icon"></uni-icons>
+        <text class="loading-text">正在生成您的专属报告...</text>
+      </view>
     </view>
 
-    <!-- 内容区域 -->
     <view v-else-if="resultData" class="content-wrapper">
-      <!-- 结果概览 -->
-      <view class="result-overview">
-        <view class="overview-icon" :class="'risk-' + (result.riskLevel || '低')">
-          <text class="icon-text">{{ getRiskIcon(result.riskLevel) }}</text>
+      
+      <view class="glass-card overview-card">
+        <view class="overview-header">
+          <view class="icon-box" :class="'icon-risk-' + (result.riskLevel || '低')">
+            <text class="emoji-icon">{{ getRiskIcon(result.riskLevel) }}</text>
+          </view>
+          <text class="overview-title">{{ result.questionnaireTitle }}</text>
         </view>
-        <view class="overview-title">测评完成</view>
-        <view class="overview-subtitle">{{ result.questionnaireTitle }}</view>
         
-        <!-- 总得分 -->
         <view class="score-display" v-if="aiAnalysisData.total_score">
+          <view class="score-glow"></view>
           <text class="score-number">{{ aiAnalysisData.total_score }}</text>
-          <text class="score-label">总得分</text>
+          <text class="score-label">综合评估得分</text>
         </view>
         
-        <!-- 风险等级 -->
-        <view class="risk-badge" :class="'risk-badge-' + (result.riskLevel || '低')">
-          {{ getRiskText(result.riskLevel) }}
+        <view class="risk-badge" :class="'badge-risk-' + (result.riskLevel || '低')">
+          <view class="dot" :style="{ backgroundColor: getRiskColor(result.riskLevel) }"></view>
+          <text>{{ getRiskText(result.riskLevel) }}</text>
         </view>
       </view>
 
-      <!-- 统计信息（已移除） -->
-
-      <!-- AI分析 -->
-      <view class="ai-analysis-section">
+      <view class="glass-card ai-card">
         <view class="section-header">
-          <uni-icons type="star" size="20" color="#a78bfa"></uni-icons>
-          <text class="section-title">AI 分析报告</text>
+          <view class="header-left">
+            <uni-icons type="star-filled" size="20" color="#2CB5A0"></uni-icons>
+            <text class="section-title">AI 深度解析</text>
+          </view>
         </view>
         
         <view v-if="result.aiStatus === '1' && result.aiAnalysis" class="ai-content">
-          <!-- 雷达图 -->
-          <view class="radar-chart" v-if="aiAnalysisData.indicators">
-            <canvas canvas-id="radarChart" :style="{width: '300px', height: '300px'}" :width="300" :height="300"></canvas>
+          <view class="radar-chart-container" v-if="aiAnalysisData.indicators">
+            <canvas canvas-id="radarChart" style="width: 300px; height: 300px;" class="radar-canvas"></canvas>
           </view>
           
-          <!-- 主要问题 -->
           <view class="ai-section" v-if="aiAnalysisData.main_issues && aiAnalysisData.main_issues.length > 0">
-            <view class="section-subtitle">主要问题</view>
+            <view class="section-subtitle">
+              <uni-icons type="info" size="16" color="#FF9500"></uni-icons> 需要关注
+            </view>
             <view class="issues-list">
-              <view v-for="(issue, index) in aiAnalysisData.main_issues" :key="index" class="issue-item">
-                <uni-icons type="info" size="16" color="#f59e0b"></uni-icons>
-                <text class="issue-text">{{ issue }}</text>
+              <view v-for="(issue, index) in aiAnalysisData.main_issues" :key="index" class="list-item issue-item">
+                <text class="item-text">{{ issue }}</text>
               </view>
             </view>
           </view>
           
-          <!-- 建议 -->
           <view class="ai-section" v-if="aiAnalysisData.suggestions && aiAnalysisData.suggestions.length > 0">
-            <view class="section-subtitle">建议</view>
+            <view class="section-subtitle">
+              <uni-icons type="heart-filled" size="16" color="#2CB5A0"></uni-icons> 疗愈建议
+            </view>
             <view class="suggestions-list">
-              <view v-for="(suggestion, index) in aiAnalysisData.suggestions" :key="index" class="suggestion-item">
-                <uni-icons type="checkmark-circle" size="16" color="#6ee7b7"></uni-icons>
-                <text class="suggestion-text">{{ suggestion }}</text>
+              <view v-for="(suggestion, index) in aiAnalysisData.suggestions" :key="index" class="list-item suggestion-item">
+                <text class="item-text">{{ suggestion }}</text>
               </view>
             </view>
           </view>
           
-          <!-- 详细分析 -->
           <view class="ai-section" v-if="aiAnalysisData.detailed_analysis">
-            <view class="section-subtitle">详细分析</view>
-            <view class="analysis-text">
-              {{ aiAnalysisData.detailed_analysis }}
+            <view class="section-subtitle">
+              <uni-icons type="chatbubble-filled" size="16" color="#007AFF"></uni-icons> 详细解读
+            </view>
+            <view class="analysis-text-box">
+              <text class="analysis-text">{{ aiAnalysisData.detailed_analysis }}</text>
             </view>
           </view>
         </view>
         
         <view v-else class="ai-pending">
-          <uni-icons type="clock" size="24" color="#f59e0b"></uni-icons>
-          <text class="ai-pending-text">AI分析结果生成中，请稍后查看</text>
+          <uni-icons type="pulldown" size="32" color="#86868B" class="bounce-icon"></uni-icons>
+          <text class="ai-pending-text">AI 正在深度解读您的数据，请稍候...</text>
         </view>
       </view>
 
-      <!-- 答题详情 - 轮播图 -->
       <view class="answers-section">
-        <view class="section-header">
-          <uni-icons type="list" size="20" color="#6ee7b7"></uni-icons>
-          <text class="section-title">答题详情</text>
-          <text class="total-questions">(共 {{ resultData.totalQuestions }} 题)</text>
+        <view class="section-header answers-header">
+          <view class="header-left">
+            <uni-icons type="list" size="20" color="#1D1D1F"></uni-icons>
+            <text class="section-title">答题回顾</text>
+          </view>
+          <text class="total-questions">{{ resultData.totalQuestions }} 题</text>
         </view>
 
-        <view class="swiper-container">
-          <swiper :indicator-dots="true" :autoplay="false" :interval="3000" :duration="500" class="answer-swiper">
-            <swiper-item v-for="(answer, index) in resultData.answers" :key="answer.answerId">
-              <view class="answer-card">
-                <view class="answer-header">
-                  <view class="answer-number">第 {{ index + 1 }} 题</view>
-                </view>
+        <swiper :indicator-dots="false" :autoplay="false" class="answer-swiper" previous-margin="0" next-margin="40rpx">
+          <swiper-item v-for="(answer, index) in resultData.answers" :key="answer.answerId" class="swiper-item-wrapper">
+            <view class="glass-card answer-card">
+              <view class="answer-header">
+                <view class="answer-number-badge">Q{{ index + 1 }}</view>
+              </view>
 
-                <view class="answer-question">
-                  <text class="question-text">{{ answer.content }}</text>
-                </view>
+              <text class="question-text">{{ answer.content }}</text>
 
-                <!-- 选择题 -->
-                <view v-if="answer.type === 'choice'" class="answer-details">
-                  <view class="detail-row">
-                    <text class="detail-label">你的答案：</text>
-                    <text class="detail-value answer-user">
-                      {{ answer.userAnswer }}
-                    </text>
-                  </view>
-                  
-                  <!-- 选项列表 -->
-                  <view class="options-list" v-if="answer.options">
-                    <view v-for="(option, optKey) in parseOptions(answer.options)" :key="optKey" class="option-item">
-                      <text class="option-label">{{ optKey }}</text>
-                      <text class="option-text">{{ option }}</text>
-                    </view>
-                  </view>
-                </view>
-
-                <!-- 简答题 -->
-                <view v-else class="answer-details">
-                  <view class="detail-row detail-full">
-                    <text class="detail-label">你的答案：</text>
-                    <text class="detail-value answer-text">{{ answer.userAnswer }}</text>
-                  </view>
+              <view v-if="answer.type === 'choice'" class="options-list">
+                <view v-for="(option, optKey) in parseOptions(answer.options)" :key="optKey" 
+                      class="option-item" 
+                      :class="{ 'option-selected': answer.userAnswer === optKey }">
+                  <view class="option-key">{{ optKey }}</view>
+                  <text class="option-text">{{ option }}</text>
+                  <uni-icons v-if="answer.userAnswer === optKey" type="checkmarkempty" size="16" color="#2CB5A0"></uni-icons>
                 </view>
               </view>
-            </swiper-item>
-          </swiper>
-        </view>
-      </view>
 
-      <!-- 底部操作 -->
-      <view class="bottom-actions">
-        <button class="action-btn btn-secondary" @tap="goToList">返回列表</button>
-        <button class="action-btn btn-primary" @tap="shareResult">分享结果</button>
+              <view v-else class="answer-text-box">
+                <text class="answer-text">{{ answer.userAnswer }}</text>
+              </view>
+            </view>
+          </swiper-item>
+        </swiper>
+      </view>
+    </view>
+
+    <view class="bottom-glass-bar" v-if="!loading && resultData">
+      <view class="action-btn btn-secondary" @tap="goToList">
+        <text>返回列表</text>
+      </view>
+      <view class="action-btn btn-primary" @tap="shareResult">
+        <uni-icons type="paperplane-filled" size="18" color="#FFFFFF"></uni-icons>
+        <text>分享报告</text>
       </view>
     </view>
   </view>
@@ -162,40 +154,31 @@ export default {
       resultId: null,
       resultData: null,
       result: null,
-      aiAnalysisData: {}, // 解析后的AI分析数据
+      aiAnalysisData: {},
       radarChart: null
     }
   },
   onLoad(options) {
-    // 获取状态栏高度
     const systemInfo = uni.getSystemInfoSync()
     this.statusBarHeight = systemInfo.statusBarHeight || 0
-
-    // 获取结果ID
     this.resultId = options.id
     if (this.resultId) {
       this.loadResult()
     }
   },
-  onReady() {
-    // 页面渲染完成后绘制雷达图
-    this.$nextTick(() => {
-      this.drawRadarChart()
-    })
-  },
   watch: {
-    // 监听AI分析数据变化，重新绘制雷达图
     aiAnalysisData: {
       handler() {
         this.$nextTick(() => {
-          this.drawRadarChart()
+          setTimeout(() => {
+            this.drawRadarChart()
+          }, 300) // 给予一点延迟确保 canvas 容器已经渲染
         })
       },
       deep: true
     }
   },
   methods: {
-    // 加载结果详情
     async loadResult() {
       try {
         this.loading = true
@@ -205,100 +188,48 @@ export default {
           this.resultData = res.data
           this.result = res.data.result
           
-          // 解析AI分析数据
           if (this.result.aiAnalysis) {
             try {
               this.aiAnalysisData = JSON.parse(this.result.aiAnalysis)
-              console.log('AI分析数据:', this.aiAnalysisData)
-              
-              // 确保indicators对象存在
               if (!this.aiAnalysisData.indicators) {
                 this.aiAnalysisData.indicators = {}
               }
-              
-              // 为缺失的指标提供默认值
               const defaultIndicators = {
-                sleep_score: 50,
-                social_score: 50,
-                stress_score: 50,
-                anxiety_score: 50,
-                emotion_score: 50,
-                depression_score: 50,
-                self_efficacy_score: 50
+                sleep_score: 50, social_score: 50, stress_score: 50,
+                anxiety_score: 50, emotion_score: 50, depression_score: 50, self_efficacy_score: 50
               }
-              
-              // 合并默认值和实际数据
               for (const key in defaultIndicators) {
                 if (this.aiAnalysisData.indicators[key] === undefined) {
                   this.aiAnalysisData.indicators[key] = defaultIndicators[key]
                 }
               }
             } catch (e) {
-              console.error('解析AI分析数据失败:', e)
-              this.aiAnalysisData = {
-                indicators: {
-                  sleep_score: 50,
-                  social_score: 50,
-                  stress_score: 50,
-                  anxiety_score: 50,
-                  emotion_score: 50,
-                  depression_score: 50,
-                  self_efficacy_score: 50
-                }
-              }
+              this.aiAnalysisData = this.getDefaultAIAnalysis()
             }
           } else {
-            // 如果没有AI分析数据，提供默认数据
-            this.aiAnalysisData = {
-              indicators: {
-                sleep_score: 50,
-                social_score: 50,
-                stress_score: 50,
-                anxiety_score: 50,
-                emotion_score: 50,
-                depression_score: 50,
-                self_efficacy_score: 50
-              }
-            }
+            this.aiAnalysisData = this.getDefaultAIAnalysis()
           }
         } else {
-          uni.showToast({
-            title: res.msg || '加载失败',
-            icon: 'none'
-          })
+          uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
         }
       } catch (error) {
-        console.error('加载结果失败:', error)
-        uni.showToast({
-          title: '加载失败，请稍后重试',
-          icon: 'none'
-        })
+        uni.showToast({ title: '加载失败，请稍后重试', icon: 'none' })
       } finally {
         this.loading = false
       }
     },
 
-    // 返回上一页
-    goBack() {
-      uni.navigateBack()
+    getDefaultAIAnalysis() {
+      return {
+        indicators: { sleep_score: 50, social_score: 50, stress_score: 50, anxiety_score: 50, emotion_score: 50, depression_score: 50, self_efficacy_score: 50 }
+      }
     },
 
-    // 返回列表
-    goToList() {
-      uni.navigateBack({
-        delta: 2 // 返回两层，跳过答题页面
-      })
-    },
+    goBack() { uni.navigateBack() },
+    goToList() { uni.navigateBack({ delta: 2 }) },
+    shareResult() { uni.showToast({ title: '分享功能开发中', icon: 'none' }) },
 
-    // 分享结果
-    shareResult() {
-      uni.showToast({
-        title: '分享功能开发中',
-        icon: 'none'
-      })
-    },
-
-    // 获取风险图标
+    // 恢复 Emoji 图标方法
     getRiskIcon(riskLevel) {
       const icons = {
         '低': '😊',
@@ -308,176 +239,135 @@ export default {
       return icons[riskLevel] || '😊'
     },
 
-    // 获取风险文本
+    // 颜色和文本依然保留更温和的浅色系
+    getRiskColor(riskLevel) {
+      const colors = { '低': '#2CB5A0', '中': '#FF9500', '高': '#FF3B30' }
+      return colors[riskLevel] || '#2CB5A0'
+    },
+
     getRiskText(riskLevel) {
-      const texts = {
-        '低': '风险等级：低',
-        '中': '风险等级：中',
-        '高': '风险等级：高'
-      }
-      return texts[riskLevel] || '风险等级：低'
+      const texts = { '低': '状态良好', '中': '轻度风险', '高': '需要关注' }
+      return texts[riskLevel] || '状态良好'
     },
     
-    // 解析选项
     parseOptions(optionsStr) {
       try {
-        console.log('选项字符串:', optionsStr)
-        const options = JSON.parse(optionsStr)
-        console.log('解析后的选项:', options)
-        return options
+        return JSON.parse(optionsStr)
       } catch (e) {
-        console.error('解析选项失败:', e)
         return {}
       }
     },
     
-    // 绘制雷达图
+    // 重构高质感雷达图绘制逻辑，统一为治愈青色系
     drawRadarChart() {
-      if (!this.aiAnalysisData.indicators) {
-        return
-      }
+      if (!this.aiAnalysisData.indicators) return
       
-      const ctx = uni.createCanvasContext('radarChart')
-      if (!ctx) {
-        console.error('无法获取Canvas上下文')
-        return
-      }
+      const ctx = uni.createCanvasContext('radarChart', this)
+      if (!ctx) return
       
-      // 雷达图配置
       const width = 300
       const height = 300
       const centerX = width / 2
       const centerY = height / 2
       const radius = Math.min(centerX, centerY) - 40
       
-      // 指标配置
       const indicatorConfig = [
-        { key: 'sleep_score', name: '睡眠质量', color: '#FF6B6B' },
-        { key: 'social_score', name: '社交功能', color: '#4ECDC4' },
-        { key: 'stress_score', name: '压力水平', color: '#FFD166' },
-        { key: 'anxiety_score', name: '焦虑程度', color: '#06D6A0' },
-        { key: 'emotion_score', name: '情绪稳定性', color: '#118AB2' },
-        { key: 'depression_score', name: '抑郁倾向', color: '#7209B7' },
-        { key: 'self_efficacy_score', name: '自我效能感', color: '#00BBF9' }
+        { key: 'sleep_score', name: '睡眠' },
+        { key: 'social_score', name: '社交' },
+        { key: 'stress_score', name: '压力' },
+        { key: 'anxiety_score', name: '焦虑' },
+        { key: 'emotion_score', name: '情绪' },
+        { key: 'depression_score', name: '抑郁' },
+        { key: 'self_efficacy_score', name: '效能' }
       ]
       
-      const indicators = indicatorConfig.map(config => {
-        return {
-          name: config.name,
-          value: this.aiAnalysisData.indicators[config.key] || 0,
-          color: config.color
-        }
-      })
+      const indicators = indicatorConfig.map(config => ({
+        name: config.name,
+        value: this.aiAnalysisData.indicators[config.key] || 0
+      }))
       
       const angleStep = 2 * Math.PI / indicators.length
       
-      // 清空画布
       ctx.clearRect(0, 0, width, height)
       
-      // 绘制雷达图背景
+      // 绘制蜘蛛网底图
       ctx.beginPath()
       for (let i = 0; i < 5; i++) {
         const r = radius * (i + 1) / 5
-        ctx.moveTo(centerX + r, centerY)
-        for (let j = 1; j < indicators.length; j++) {
-          const angle = j * angleStep
-          const x = centerX + r * Math.cos(angle)
-          const y = centerY + r * Math.sin(angle)
-          ctx.lineTo(x, y)
+        ctx.moveTo(centerX + r * Math.cos(-Math.PI/2), centerY + r * Math.sin(-Math.PI/2))
+        for (let j = 1; j <= indicators.length; j++) {
+          const angle = j * angleStep - Math.PI/2
+          ctx.lineTo(centerX + r * Math.cos(angle), centerY + r * Math.sin(angle))
         }
         ctx.closePath()
-        ctx.strokeStyle = '#E5E7EB'
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)'
         ctx.lineWidth = 1
         ctx.stroke()
       }
       
-      // 绘制坐标轴
+      // 绘制中心辐射轴
       for (let i = 0; i < indicators.length; i++) {
-        const angle = i * angleStep
-        const x = centerX + radius * Math.cos(angle)
-        const y = centerY + radius * Math.sin(angle)
+        const angle = i * angleStep - Math.PI/2
         ctx.beginPath()
         ctx.moveTo(centerX, centerY)
-        ctx.lineTo(x, y)
-        ctx.strokeStyle = '#E5E7EB'
+        ctx.lineTo(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle))
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)'
         ctx.lineWidth = 1
         ctx.stroke()
       }
       
-      // 绘制数据区域
+      // 绘制数据核心多边形 (治愈青色)
       ctx.beginPath()
       for (let i = 0; i < indicators.length; i++) {
-        const angle = i * angleStep
+        const angle = i * angleStep - Math.PI/2
         const r = (indicators[i].value / 100) * radius
         const x = centerX + r * Math.cos(angle)
         const y = centerY + r * Math.sin(angle)
-        if (i === 0) {
-          ctx.moveTo(x, y)
-        } else {
-          ctx.lineTo(x, y)
-        }
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
       }
       ctx.closePath()
-      ctx.fillStyle = 'rgba(110, 231, 183, 0.3)'
+      ctx.fillStyle = 'rgba(44, 181, 160, 0.25)' // 半透明青色
       ctx.fill()
-      ctx.strokeStyle = '#6EE7B7'
+      ctx.strokeStyle = '#2CB5A0'
       ctx.lineWidth = 2
       ctx.stroke()
       
-      // 绘制数据点
+      // 绘制数据发光圆点
       for (let i = 0; i < indicators.length; i++) {
-        const angle = i * angleStep
+        const angle = i * angleStep - Math.PI/2
         const r = (indicators[i].value / 100) * radius
         const x = centerX + r * Math.cos(angle)
         const y = centerY + r * Math.sin(angle)
         ctx.beginPath()
         ctx.arc(x, y, 4, 0, 2 * Math.PI)
-        ctx.fillStyle = '#6EE7B7'
+        ctx.fillStyle = '#FFFFFF'
         ctx.fill()
-        ctx.strokeStyle = '#FFFFFF'
+        ctx.strokeStyle = '#2CB5A0'
         ctx.lineWidth = 2
         ctx.stroke()
       }
       
-      // 绘制指标名称
+      // 绘制指标文字
       ctx.font = '12px sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillStyle = '#4B5563'
+      
       for (let i = 0; i < indicators.length; i++) {
-        const angle = i * angleStep
-        const r = radius + 20
+        const angle = i * angleStep - Math.PI/2
+        const r = radius + 22
         const x = centerX + r * Math.cos(angle)
         const y = centerY + r * Math.sin(angle)
-        ctx.fillText(indicators[i].name, x, y)
+        
+        ctx.fillStyle = '#86868B'
+        ctx.fillText(indicators[i].name, x, y - 8)
+        
+        ctx.font = 'bold 12px sans-serif'
+        ctx.fillStyle = '#1D1D1F'
+        ctx.fillText(indicators[i].value, x, y + 8)
+        ctx.font = '12px sans-serif'
       }
       
-      // 绘制数值
-      ctx.font = '10px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillStyle = '#4B5563'
-      for (let i = 0; i < indicators.length; i++) {
-        const angle = i * angleStep
-        const r = (indicators[i].value / 100) * radius
-        const x = centerX + r * Math.cos(angle)
-        const y = centerY + r * Math.sin(angle) - 15
-        ctx.fillText(indicators[i].value, x, y)
-      }
-      
-      // 绘制中心标题
-      ctx.font = '14px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillStyle = '#111827'
-      ctx.fillText('各维度得分', centerX, centerY - 20)
-      
-      // 绘制图例
-      ctx.font = '12px sans-serif'
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'middle'
-      
-      // 执行绘制
       ctx.draw()
     }
   }
@@ -485,644 +375,491 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "@/static/scss/theme.scss";
-
-// 使用项目中已定义的uni.scss变量覆盖
-$font-sm: $uni-font-size-sm;
-$font-base: $uni-font-size-base;
-$font-lg: $uni-font-size-lg;
-
-$spacing-sm: $uni-spacing-col-sm;
-$spacing-md: $uni-spacing-col-base;
-$spacing-lg: $uni-spacing-col-lg;
-
-$radius-sm: $uni-border-radius-sm;
-$radius-base: $uni-border-radius-base;
-$radius-lg: $uni-border-radius-lg;
-$radius-full: $uni-border-radius-circle;
-
-$bg-white: $uni-bg-color;
-$text-primary: $uni-text-color;
-$text-secondary: $uni-text-color;
-$text-tertiary: $uni-text-color-grey;
-
-$border-light: $uni-border-color;
-
-$success-color: $uni-color-success;
-$warning-color: $uni-color-warning;
-$danger-color: $uni-color-error;
+/* ==================== iOS 风格核心变量 ==================== */
+$ios-text-primary: #1D1D1F;
+$ios-text-secondary: #86868B;
+$ios-blue: #007AFF;
+$theme-cyan: #2CB5A0;
 
 .assessment-result-page {
   min-height: 100vh;
-  background: $bg-gray-50;
+  position: relative;
+  background-color: #F5F5F7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
 }
 
-/* ==================== 自定义导航栏 ==================== */
-.custom-navbar {
-  background: $bg-white;
-  box-shadow: $shadow-xs;
+/* --- 弥散光影背景 --- */
+.ambient-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(224, 242, 241, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(255, 243, 224, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(232, 234, 246, 0.8) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(240, 238, 245, 0.8) 0px, transparent 50%);
+  pointer-events: none;
+}
+
+/* --- 毛玻璃通用类 --- */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+  border-radius: 36rpx;
+}
+
+/* ==================== 顶部导航 ==================== */
+.glass-header {
   position: sticky;
   top: 0;
-  z-index: 999;
+  z-index: 100;
+  background: rgba(245, 245, 247, 0.6);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
 }
 
 .navbar-content {
-  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 $spacing-lg;
+  height: 88rpx;
+  padding: 0 32rpx;
 }
 
-.navbar-left,
-.navbar-right {
+.navbar-left, .navbar-right {
   width: 80rpx;
-}
-
-.navbar-left {
   display: flex;
   align-items: center;
 }
 
-.back-icon {
-  font-size: 44rpx;
-  color: $text-primary;
-  font-weight: $font-normal;
-  line-height: 1;
+.nav-icon-glass {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease;
+  &:active { transform: scale(0.9); opacity: 0.8; }
 }
 
 .navbar-title {
-  font-size: $font-xl;
-  font-weight: $font-bold;
-  color: $text-primary;
-  letter-spacing: -0.5rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
+  letter-spacing: 1rpx;
 }
 
-/* ==================== 加载中 ==================== */
+/* ==================== 加载中状态 ==================== */
 .loading-container {
+  position: relative;
+  z-index: 1;
+  padding: 120rpx 40rpx;
+  display: flex;
+  justify-content: center;
+}
+
+.loading-card {
+  padding: 60rpx 80rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 200rpx 0;
-  gap: $spacing-md;
+  gap: 24rpx;
+}
+
+.spin-icon {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .loading-text {
-  font-size: $font-sm;
-  color: $text-tertiary;
+  font-size: 28rpx;
+  color: $ios-text-secondary;
 }
 
-/* ==================== 内容区域 ==================== */
+/* ==================== 内容区域容器 ==================== */
 .content-wrapper {
-  padding: $spacing-lg;
-  padding-bottom: 180rpx;
+  position: relative;
+  z-index: 1;
+  padding: 30rpx 32rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
 }
 
-/* ==================== 结果概览 ==================== */
-.result-overview {
-  background: $bg-white;
-  border-radius: $radius-xl;
-  padding: $spacing-2xl $spacing-lg;
-  margin-bottom: $spacing-md;
-  box-shadow: $shadow-sm;
+/* ==================== 结果概览 (大卡片) ==================== */
+.overview-card {
+  padding: 40rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
 }
 
-.overview-icon {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: $radius-full;
+.overview-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40rpx;
+}
+
+.icon-box {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: $spacing-md;
-
-  &.risk-低 {
-    background: linear-gradient(135deg, rgba(110, 231, 183, 0.2) 0%, rgba(167, 139, 250, 0.2) 100%);
-  }
-
-  &.risk-中 {
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(251, 146, 60, 0.2) 100%);
-  }
-
-  &.risk-高 {
-    background: linear-gradient(135deg, rgba(248, 113, 113, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%);
-  }
+  margin-bottom: 24rpx;
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.05);
 }
 
-.icon-text {
-  font-size: 80rpx;
-}
+.icon-risk-低 { background: rgba(44, 181, 160, 0.15); }
+.icon-risk-中 { background: rgba(255, 149, 0, 0.15); }
+.icon-risk-高 { background: rgba(255, 59, 48, 0.15); }
 
-.overview-title {
-  font-size: $font-xl;
-  font-weight: $font-bold;
-  color: $text-primary;
-  margin-bottom: $spacing-xs;
-}
-
-.overview-subtitle {
-  font-size: $font-sm;
-  color: $text-tertiary;
-  margin-bottom: $spacing-lg;
-}
-
-.score-display {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: $spacing-md;
-}
-
-.score-number {
-  font-size: 80rpx;
-  font-weight: $font-bold;
-  background: $gradient-primary;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* Emoji 尺寸调整 */
+.emoji-icon {
+  font-size: 56rpx;
   line-height: 1;
 }
 
-.score-label {
-  font-size: $font-xs;
-  color: $text-tertiary;
-  margin-top: $spacing-xs;
+.overview-title {
+  font-size: 30rpx;
+  color: $ios-text-secondary;
+  font-weight: 500;
 }
 
-.risk-badge {
-  padding: 8rpx 24rpx;
-  border-radius: $radius-full;
-  font-size: $font-sm;
-  font-weight: $font-semibold;
-
-  &.risk-badge-低 {
-    background: linear-gradient(135deg, rgba(110, 231, 183, 0.15) 0%, rgba(167, 139, 250, 0.15) 100%);
-    color: $success-color;
-  }
-
-  &.risk-badge-中 {
-    background: rgba(251, 191, 36, 0.15);
-    color: #f59e0b;
-  }
-
-  &.risk-badge-高 {
-    background: rgba(248, 113, 113, 0.15);
-    color: #ef4444;
-  }
-}
-
-/* ==================== 统计信息 ==================== */
-.statistics-section {
-  background: $bg-white;
-  border-radius: $radius-xl;
-  padding: $spacing-lg;
-  margin-bottom: $spacing-md;
-  box-shadow: $shadow-sm;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-}
-
-.stat-item {
+/* 得分大数字展示 */
+.score-display {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $spacing-xs;
+  margin-bottom: 40rpx;
 }
 
-.stat-value {
-  font-size: $font-2xl;
-  font-weight: $font-bold;
-  color: $text-primary;
+.score-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 180rpx;
+  height: 180rpx;
+  background: radial-gradient(circle, rgba(44, 181, 160, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-.stat-label {
-  font-size: $font-xs;
-  color: $text-tertiary;
+.score-number {
+  font-size: 100rpx;
+  font-weight: 800;
+  color: $theme-cyan;
+  font-family: "SF Pro Display", sans-serif;
+  line-height: 1;
+  letter-spacing: -2rpx;
+  text-shadow: 0 4px 16px rgba(44, 181, 160, 0.2);
 }
 
-.stat-divider {
-  width: 1rpx;
-  height: 60rpx;
-  background: $border-light;
+.score-label {
+  font-size: 26rpx;
+  color: $ios-text-secondary;
+  margin-top: 12rpx;
 }
 
-/* ==================== AI分析 ==================== */
-.ai-analysis-section {
-  background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(110, 231, 183, 0.1) 100%);
-  border-radius: $radius-xl;
-  padding: $spacing-lg;
-  margin-bottom: $spacing-md;
-  border: 2rpx solid rgba(167, 139, 250, 0.2);
+/* 风险等级角标 */
+.risk-badge {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 32rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+}
+
+.badge-risk-低 { background: rgba(44, 181, 160, 0.1); color: $theme-cyan; }
+.badge-risk-中 { background: rgba(255, 149, 0, 0.1); color: #FF9500; }
+.badge-risk-高 { background: rgba(255, 59, 48, 0.1); color: #FF3B30; }
+
+/* ==================== AI 分析报告 ==================== */
+.ai-card {
+  padding: 40rpx;
 }
 
 .section-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: $spacing-sm;
-  margin-bottom: $spacing-md;
+  margin-bottom: 30rpx;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
 }
 
 .section-title {
-  font-size: $font-base;
-  font-weight: $font-bold;
-  color: $text-primary;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: $ios-text-primary;
 }
 
 .ai-content {
-  padding: $spacing-md;
-  background: $bg-white;
-  border-radius: $radius-lg;
-}
-
-.ai-text {
-  font-size: $font-sm;
-  color: $text-secondary;
-  line-height: $line-height-relaxed;
-}
-
-.ai-pending {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: $spacing-xl;
-  color: #f59e0b;
-}
-
-.ai-pending-text {
-  margin-top: $spacing-sm;
-  font-size: $font-sm;
-  color: #f59e0b;
-}
-
-/* ==================== 答题详情 ==================== */
-.answers-section {
-  margin-bottom: $spacing-md;
-}
-
-.answer-list {
-  margin-top: $spacing-md;
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-sm;
-}
-
-.answer-card {
-  background: $bg-white;
-  border-radius: $radius-xl;
-  padding: $spacing-lg;
-  box-shadow: $shadow-sm;
-}
-
-.answer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: $spacing-sm;
-}
-
-.answer-number {
-  font-size: $font-sm;
-  font-weight: $font-semibold;
-  color: $primary-color;
-  padding: 4rpx 12rpx;
-  background: rgba(110, 231, 183, 0.15);
-  border-radius: $radius-full;
-}
-
-.answer-score-info {
-  font-size: $font-sm;
-}
-
-.score-obtained {
-  font-weight: $font-bold;
-  color: $primary-color;
-}
-
-.score-divider {
-  color: $text-quaternary;
-  margin: 0 4rpx;
-}
-
-.score-total {
-  color: $text-tertiary;
-}
-
-.answer-question {
-  margin-bottom: $spacing-md;
-}
-
-.question-text {
-  font-size: $font-base;
-  color: $text-primary;
-  line-height: $line-height-relaxed;
-}
-
-.answer-details {
-  padding-top: $spacing-sm;
-  border-top: 1rpx solid $border-light;
-}
-
-.detail-row {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: $spacing-xs;
-
-  &.detail-full {
-    flex-direction: column;
-    gap: $spacing-xs;
-  }
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.detail-label {
-  font-size: $font-sm;
-  color: $text-tertiary;
-  min-width: 140rpx;
-}
-
-.detail-value {
-  flex: 1;
-  font-size: $font-sm;
-  color: $text-secondary;
-}
-
-.answer-standard {
-  font-weight: $font-semibold;
-  color: $primary-color;
-}
-
-.answer-user {
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-
-  &.answer-correct {
-    color: $success-color;
-    font-weight: $font-semibold;
-  }
-
-  &.answer-wrong {
-    color: #ef4444;
-    font-weight: $font-semibold;
-  }
-}
-
-.answer-text {
-  line-height: $line-height-relaxed;
-  padding: $spacing-sm;
-  background: $bg-gray-50;
-  border-radius: $radius-md;
-}
-
-.result-icon {
-  font-weight: $font-bold;
-}
-
-/* ==================== 结果概览 ==================== */
-.result-overview {
-  text-align: center;
-  margin-bottom: $spacing-lg;
-}
-
-.total-score {
-  font-size: 48px;
-  font-weight: $font-bold;
-  color: $text-primary;
-  margin-bottom: $spacing-sm;
-}
-
-.risk-level {
-  font-size: 20px;
-  font-weight: $font-bold;
-  margin-bottom: $spacing-lg;
-}
-
-.risk-low {
-  color: $success-color;
-}
-
-.risk-medium {
-  color: $warning-color;
-}
-
-.risk-high {
-  color: $danger-color;
-}
-
-/* ==================== AI分析报告 ==================== */
-.ai-analysis-report {
-  margin-top: $spacing-lg;
-  padding: $spacing-lg;
-  background: $bg-gray-50;
-  border-radius: $radius-xl;
+  gap: 40rpx;
 }
 
 .radar-chart-container {
   display: flex;
   justify-content: center;
-  margin: $spacing-lg 0;
+  margin: 20rpx 0;
 }
 
-.radar-chart {
-  width: 300px;
-  height: 300px;
-}
-
-.main-issues {
-  margin-top: $spacing-lg;
-  padding: $spacing-md;
-  background: #fff5f5;
-  border-radius: $radius-lg;
-  border-left: 4px solid #ee0a24;
-}
-
-.suggestions {
-  margin-top: $spacing-lg;
-  padding: $spacing-md;
-  background: #f0f9eb;
-  border-radius: $radius-lg;
-  border-left: 4px solid #07c160;
-}
-
-.detailed-analysis {
-  margin-top: $spacing-lg;
-  padding: $spacing-md;
-  background: #e6f7ff;
-  border-radius: $radius-lg;
-  border-left: 4px solid #1890ff;
-}
-
-.analysis-section-title {
-  font-size: $font-lg;
-  font-weight: $font-bold;
-  color: $text-primary;
-  margin-bottom: $spacing-sm;
-}
-
-.analysis-section-content {
-  font-size: $font-sm;
-  color: $text-secondary;
-  line-height: $line-height-relaxed;
-}
-
-.analysis-list {
-  margin-left: $spacing-md;
-}
-
-.analysis-list-item {
-  font-size: $font-sm;
-  color: $text-secondary;
-  margin-bottom: $spacing-xs;
-  line-height: $line-height-relaxed;
-}
-
-/* ==================== 轮播图答题详情 ==================== */
-.swiper-container {
-  margin-top: $spacing-md;
-}
-
-.answer-swiper {
-  min-height: 280px;
-  border-radius: $radius-xl;
-  overflow: hidden;
-}
-
-.swiper-item {
-  padding: $spacing-md;
-  background: $bg-white;
-  min-height: 200px;
-  box-sizing: border-box;
+.ai-section {
   display: flex;
   flex-direction: column;
 }
 
-.question-content {
-  font-size: $font-lg;
-  color: $text-primary;
-  margin-bottom: $spacing-md;
-  line-height: $line-height-relaxed;
+.section-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
+  margin-bottom: 20rpx;
+}
+
+/* 列表容器 */
+.list-item {
+  padding: 24rpx;
+  border-radius: 20rpx;
+  margin-bottom: 16rpx;
+  font-size: 28rpx;
+  line-height: 1.5;
+  color: $ios-text-primary;
+}
+
+.issue-item {
+  background: rgba(255, 149, 0, 0.08);
+  border: 1px solid rgba(255, 149, 0, 0.15);
+}
+
+.suggestion-item {
+  background: rgba(44, 181, 160, 0.08);
+  border: 1px solid rgba(44, 181, 160, 0.15);
+}
+
+.analysis-text-box {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 32rpx;
+  border-radius: 24rpx;
+}
+
+.analysis-text {
+  font-size: 28rpx;
+  color: $ios-text-primary;
+  line-height: 1.6;
+}
+
+/* AI 处理中 */
+.ai-pending {
+  padding: 60rpx 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.bounce-icon {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10rpx); }
+}
+
+.ai-pending-text {
+  font-size: 28rpx;
+  color: $ios-text-secondary;
+}
+
+/* ==================== 答题回顾 ==================== */
+.answers-section {
+  margin-bottom: 40rpx;
+}
+
+.answers-header {
+  padding: 0 10rpx;
+}
+
+.total-questions {
+  font-size: 26rpx;
+  color: $ios-text-secondary;
+}
+
+.answer-swiper {
+  height: 520rpx; /* 固定高度确保卡片对齐 */
+}
+
+.swiper-item-wrapper {
+  padding-right: 20rpx; /* 卡片之间的间距 */
+  box-sizing: border-box;
+}
+
+.answer-card {
+  height: 100%;
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.answer-header {
+  margin-bottom: 24rpx;
+}
+
+.answer-number-badge {
+  display: inline-block;
+  background: $ios-text-primary;
+  color: #FFFFFF;
+  font-size: 24rpx;
+  font-weight: 700;
+  padding: 6rpx 16rpx;
+  border-radius: 12rpx;
+}
+
+.question-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
+  line-height: 1.5;
+  margin-bottom: 32rpx;
   flex-shrink: 0;
 }
 
 .options-list {
-  margin-top: $spacing-md;
   flex: 1;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
 }
 
 .option-item {
-  font-size: $font-sm;
-  color: $text-secondary;
-  margin-bottom: $spacing-sm;
-  line-height: $line-height-relaxed;
-  padding: $spacing-sm $spacing-md;
-  border-radius: $radius-lg;
-  background: $bg-gray-50;
-  border: 1px solid $border-light;
-  transition: all $transition-base $ease-out;
-  min-height: 60rpx;
   display: flex;
   align-items: flex-start;
-  white-space: normal;
-  word-wrap: break-word;
-  word-break: break-all;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
+  padding: 24rpx;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 20rpx;
+  transition: all 0.2s ease;
 }
 
-.option-label {
-  font-weight: $font-bold;
-  margin-right: $spacing-sm;
-  color: $text-primary;
-  min-width: 40rpx;
+.option-selected {
+  background: rgba(44, 181, 160, 0.1);
+  border-color: rgba(44, 181, 160, 0.4);
+}
+
+.option-key {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: $ios-text-primary;
+  width: 40rpx;
+  flex-shrink: 0;
 }
 
 .option-text {
   flex: 1;
-  word-wrap: break-word;
-  word-break: break-all;
+  font-size: 28rpx;
+  color: $ios-text-secondary;
+  line-height: 1.4;
+  padding-right: 16rpx;
 }
 
-.user-answer {
-  font-size: $font-sm;
-  color: $primary-color;
-  margin-top: $spacing-sm;
-  font-weight: $font-bold;
-  flex-shrink: 0;
+.option-selected .option-text {
+  color: $ios-text-primary;
+  font-weight: 500;
 }
 
-.swiper-pagination {
-  margin-top: 0rpx;
+.answer-text-box {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 20rpx;
+  padding: 24rpx;
 }
 
-.swiper-pagination .swiper-pagination-item {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: $border-light;
-  margin: 0 4px;
+.answer-text {
+  font-size: 28rpx;
+  color: $ios-text-primary;
+  line-height: 1.6;
 }
 
-.swiper-pagination .swiper-pagination-item-active {
-  background: $primary-color;
-  width: 12px;
-  height: 12px;
-}
-
-/* ==================== 底部操作 ==================== */
-.bottom-actions {
+/* ==================== 底部毛玻璃操作栏 ==================== */
+.bottom-glass-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: $spacing-lg;
-  background: $bg-white;
-  box-shadow: 0 -2rpx 20rpx rgba(0, 0, 0, 0.05);
+  padding: 24rpx 40rpx calc(24rpx + env(safe-area-inset-bottom));
+  background: rgba(245, 245, 247, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 0.5px solid rgba(0, 0, 0, 0.05);
   display: flex;
-  gap: $spacing-md;
+  gap: 24rpx;
+  z-index: 100;
 }
 
 .action-btn {
   flex: 1;
-  height: 88rpx;
-  border-radius: $radius-xl;
-  font-size: $font-base;
-  font-weight: $font-bold;
-  border: none;
-  transition: all $transition-base $ease-out;
-
-  &:active {
-    transform: translateY(-2rpx);
-  }
+  height: 90rpx;
+  border-radius: 45rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  transition: transform 0.2s ease;
+  
+  &:active { transform: scale(0.96); }
 }
 
 .btn-secondary {
-  background: $bg-gray-100;
-  color: $text-secondary;
-
-  &:active {
-    background: $bg-gray-200;
-  }
+  background: rgba(0, 0, 0, 0.05);
+  color: $ios-text-primary;
 }
 
 .btn-primary {
-  background: $gradient-primary;
-  color: $bg-white;
-  box-shadow: $shadow-base;
-
-  &:active {
-    box-shadow: $shadow-lg;
-  }
+  background: linear-gradient(135deg, #48D1CC 0%, #2CB5A0 100%);
+  color: #FFFFFF;
+  box-shadow: 0 8rpx 20rpx rgba(44, 181, 160, 0.25);
 }
 </style>
