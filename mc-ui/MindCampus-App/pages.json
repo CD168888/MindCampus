@@ -26,6 +26,7 @@
       "navigationBarTitleText": "AI 助手",
       "navigationBarBackgroundColor": "#FFFFFF",
       "navigationBarTextStyle": "black",
+      "navigationStyle": "custom",
       "app-plus": {
         "titleNView": {
           "buttons": [{
