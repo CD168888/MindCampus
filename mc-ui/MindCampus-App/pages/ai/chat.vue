@@ -4,7 +4,8 @@
 
     <view class="glass-header-fixed" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="navbar-content">
-        <view class="navbar-left" @tap="goBack">
+        <!-- 修改：点击左上角按钮跳转到首页 -->
+        <view class="navbar-left" @tap="goToIndex">
           <view class="nav-icon-glass">
             <uni-icons type="left" size="22" color="#1D1D1F"></uni-icons>
           </view>
@@ -207,6 +208,12 @@ export default {
     this.closeEventSource();
   },
   methods: {
+    // 跳转到首页的核心方法
+    goToIndex() {
+      uni.reLaunch({
+        url: '/pages/index'
+      })
+    },
     shouldShowTime(current, previous) {
       if (!previous) return true;
       return (current - previous) > 5 * 60 * 1000;
