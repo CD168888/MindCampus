@@ -1,139 +1,104 @@
 <template>
   <view class="publish-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="ambient-background"></view>
+
+    <view class="glass-header" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="navbar-content">
         <view class="navbar-left" @tap="goBack">
-          <text class="back-icon">✕</text>
+          <view class="nav-icon-glass">
+            <uni-icons type="closeempty" size="22" color="#1D1D1F"></uni-icons>
+          </view>
         </view>
-        <view class="navbar-title">发布帖子</view>
+        <view class="navbar-title">记录此刻</view>
         <view class="navbar-right"></view>
       </view>
     </view>
 
-    <!-- 表单内容 -->
     <scroll-view class="form-scroll" scroll-y>
-      <view class="form-content">
-        <!-- 标题输入 -->
-        <view class="form-item title-item">
-          <view class="item-header">
-            <view class="header-dot"></view>
-            <text class="header-label">标题</text>
-            <text class="required-mark">*</text>
-          </view>
-          <textarea class="title-input" v-model="form.title" placeholder="给你的帖子起个标题吧..." maxlength="100"
-            :auto-height="true" :show-confirm-bar="false" />
-          <view class="char-count">{{ form.title.length }}/100</view>
-        </view>
-
-        <!-- 内容输入 -->
-        <view class="form-item content-item">
-          <view class="item-header">
-            <view class="header-dot"></view>
-            <text class="header-label">内容</text>
-          </view>
-          <textarea class="content-input" v-model="form.content" placeholder="说说你的想法，分享你的故事..." maxlength="2000"
-            :auto-height="true" :show-confirm-bar="false" />
-          <view class="char-count">{{ form.content.length }}/2000</view>
-        </view>
-
-        <!-- 图片上传 -->
-        <view class="form-item image-item">
-          <view class="item-header">
-            <view class="header-dot"></view>
-            <text class="header-label">图片</text>
-            <text class="header-tip">最多9张</text>
-          </view>
-          <view class="image-upload">
-            <view class="image-list">
-              <!-- 已上传的图片 -->
-              <view class="image-wrapper" v-for="(img, index) in form.images" :key="index">
-                <image class="upload-image" :src="img" mode="aspectFill"></image>
-                <view class="image-mask">
-                  <view class="delete-btn" @tap.stop="deleteImage(index)">
-                    <uni-icons type="trash" size="18" color="#FFFFFF"></uni-icons>
-                  </view>
+      <view class="content-wrapper">
+        
+        <view class="glass-card editor-card">
+          <input 
+            class="title-input" 
+            v-model="form.title" 
+            placeholder="加个标题，让更多人看到你的故事..." 
+            placeholder-class="input-placeholder"
+            maxlength="40"
+          />
+          
+          <view class="divider"></view>
+          
+          <textarea 
+            class="content-input" 
+            v-model="form.content" 
+            placeholder="分享此时此刻的心情与感受..." 
+            placeholder-class="input-placeholder"
+            maxlength="2000"
+            :auto-height="true"
+            :show-confirm-bar="false"
+          />
+          <view class="char-count" v-if="form.content.length > 0">{{ form.content.length }}/2000</view>
+          
+          <view class="image-grid-section">
+            <view class="image-grid">
+              <view class="image-item" v-for="(img, index) in form.images" :key="index">
+                <image class="uploaded-img" :src="img" mode="aspectFill" @tap="previewImage(index)"></image>
+                <view class="delete-badge" @tap.stop="deleteImage(index)">
+                  <uni-icons type="closeempty" size="12" color="#FFFFFF"></uni-icons>
                 </view>
               </view>
-
-              <!-- 上传按钮 -->
-              <view v-if="form.images.length < 9" class="upload-btn" @tap="chooseImage">
-                <view class="upload-icon-wrapper">
-                  <uni-icons type="camera-filled" size="40" color="#4D94FF"></uni-icons>
-                </view>
-                <text class="upload-hint">添加图片</text>
+              
+              <view class="upload-btn" v-if="form.images.length < 9" @tap="chooseImage">
+                <uni-icons type="camera-filled" size="32" color="#86868B"></uni-icons>
                 <text class="upload-count">{{ form.images.length }}/9</text>
               </view>
             </view>
           </view>
         </view>
 
-        <!-- 设置选项 -->
-        <view class="form-item settings-item">
-          <view class="item-header">
-            <view class="header-dot"></view>
-            <text class="header-label">设置</text>
-          </view>
-
-          <!-- 匿名发布 -->
-          <view class="setting-option">
-            <view class="option-left">
-              <view class="option-icon anonymous-icon">
-                <uni-icons type="eye-slash-filled" size="20" color="#1677FF"></uni-icons>
+        <view class="glass-card settings-card">
+          <view class="setting-row">
+            <view class="setting-left">
+              <view class="icon-bg bg-blue">
+                <uni-icons type="eye-slash-filled" size="18" color="#FFFFFF"></uni-icons>
               </view>
-              <view class="option-content">
-                <text class="option-title">匿名发布</text>
-                <text class="option-desc">隐藏真实身份，保护隐私</text>
+              <view class="setting-text">
+                <text class="setting-title">匿名发布</text>
+                <text class="setting-desc">开启后，你的头像与昵称将受到保护</text>
               </view>
             </view>
-            <switch :checked="form.isAnonymous === '1'" @change="onAnonymousChange" color="#1677FF"
-              style="transform: scale(0.85);" />
+            <switch :checked="form.isAnonymous === '1'" @change="onAnonymousChange" color="#2CB5A0" style="transform: scale(0.85);"/>
           </view>
         </view>
 
-        <!-- 温馨提示 -->
-        <view class="tips-card">
+        <view class="glass-card tips-card">
           <view class="tips-header">
-            <uni-icons type="info-filled" size="16" color="#FF8D3E"></uni-icons>
-            <text class="tips-title">温馨提示</text>
+            <uni-icons type="info-filled" size="16" color="#FF9500"></uni-icons>
+            <text class="tips-title">社区发帖规范</text>
           </view>
-          <view class="tips-list">
-            <view class="tip-item">
-              <text class="tip-dot">•</text>
-              <text class="tip-text">请文明发言，尊重他人</text>
-            </view>
-            <view class="tip-item">
-              <text class="tip-dot">•</text>
-              <text class="tip-text">禁止发布违法违规内容</text>
-            </view>
-            <view class="tip-item">
-              <text class="tip-dot">•</text>
-              <text class="tip-text">共同维护和谐社区环境</text>
-            </view>
+          <view class="tips-content">
+            <text>• 欢迎分享真实的校园生活与心理感悟。</text>
+            <text>• 请友善交流，共同维护治愈和谐的社区环境。</text>
+            <text>• 严禁发布违法、色情、人身攻击等不良信息。</text>
           </view>
         </view>
 
-        <!-- 底部占位 -->
-        <view class="bottom-placeholder"></view>
+        <view class="bottom-spacer" :style="{ height: (safeAreaBottom + 120) + 'px' }"></view>
       </view>
     </scroll-view>
 
-    <!-- 底部发布按钮 -->
-    <view class="publish-footer" :style="{ paddingBottom: 'env(safe-area-inset-bottom)' }">
-      <view class="publish-btn" :class="{ 'disabled': !canPublish }" @tap="handlePublish">
-        <view class="btn-content">
-          <uni-icons type="paperplane-filled" size="20" color="#FFFFFF"></uni-icons>
-          <text class="btn-text">{{ publishing ? '发布中...' : '发布' }}</text>
-        </view>
+    <view class="bottom-glass-dock" :style="{ paddingBottom: `calc(24rpx + ${safeAreaBottom}px)` }">
+      <view class="publish-btn" :class="{ 'is-active': canPublish }" @tap="handlePublish">
+        <uni-icons type="paperplane-filled" size="20" :color="canPublish ? '#FFFFFF' : '#A1A1A6'"></uni-icons>
+        <text>{{ publishing ? '正在传递心声...' : '发布瞬间' }}</text>
       </view>
     </view>
 
-    <!-- 加载中遮罩 -->
-    <view v-if="publishing" class="loading-mask">
-      <view class="loading-content">
-        <view class="loading-spinner"></view>
-        <text class="loading-text">发布中...</text>
-      </view>
+    <view v-if="publishing" class="loading-overlay">
+       <view class="glass-card loading-modal">
+          <uni-icons type="spinner-cycle" size="36" color="#2CB5A0" class="spin-icon"></uni-icons>
+          <text class="loading-text">正在发布...</text>
+       </view>
     </view>
   </view>
 </template>
@@ -146,12 +111,13 @@ export default {
   data() {
     return {
       statusBarHeight: 0,
+      safeAreaBottom: 34,
       publishing: false,
       form: {
         title: '',
         content: '',
         images: [],
-        isAnonymous: '0' // 默认不匿名：0否 1是
+        isAnonymous: '0' // 0否 1是
       }
     }
   },
@@ -161,21 +127,19 @@ export default {
     }
   },
   onLoad() {
-    // 获取状态栏高度
     const systemInfo = uni.getSystemInfoSync()
     this.statusBarHeight = systemInfo.statusBarHeight || 0
+    this.safeAreaBottom = systemInfo.safeAreaInsets?.bottom || 34
   },
   methods: {
-    // 返回
     goBack() {
       if (this.form.title || this.form.content || this.form.images.length > 0) {
         uni.showModal({
-          title: '提示',
-          content: '确定要放弃编辑吗？',
+          title: '放弃编辑',
+          content: '当前有未发布的内容，确定要离开吗？',
+          confirmColor: '#FF3B30',
           success: (res) => {
-            if (res.confirm) {
-              uni.navigateBack()
-            }
+            if (res.confirm) uni.navigateBack()
           }
         })
       } else {
@@ -183,7 +147,6 @@ export default {
       }
     },
 
-    // 选择图片
     chooseImage() {
       const maxCount = 9 - this.form.images.length
       uni.chooseImage({
@@ -191,90 +154,75 @@ export default {
         sizeType: ['compressed'],
         sourceType: ['album', 'camera'],
         success: (res) => {
-          const tempFilePaths = res.tempFilePaths
-          this.uploadImages(tempFilePaths)
+          this.uploadImages(res.tempFilePaths)
         }
       })
     },
 
-    // 上传图片
     uploadImages(filePaths) {
-      uni.showLoading({
-        title: '上传中...',
-        mask: true
-      })
+      uni.showLoading({ title: '处理中...', mask: true })
 
       const uploadPromises = filePaths.map(filePath => {
         return upload({
           url: '/common/upload',
           filePath: filePath,
           name: 'file'
-        }).then(res => {
-          return res.url
-        })
+        }).then(res => res.url)
       })
 
       Promise.all(uploadPromises).then(urls => {
         uni.hideLoading()
         this.form.images = this.form.images.concat(urls)
-        this.$modal.showToast('上传成功')
       }).catch(err => {
         uni.hideLoading()
-        this.$modal.showToast(err || '上传失败')
+        uni.showToast({ title: '图片上传失败', icon: 'none' })
       })
     },
 
-    // 删除图片
     deleteImage(index) {
-      uni.showModal({
-        title: '提示',
-        content: '确定要删除这张图片吗？',
-        success: (res) => {
-          if (res.confirm) {
-            this.form.images.splice(index, 1)
-          }
-        }
+      uni.vibrateShort() // 触觉反馈
+      this.form.images.splice(index, 1)
+    },
+
+    previewImage(index) {
+      uni.previewImage({
+        current: index,
+        urls: this.form.images
       })
     },
 
-    // 匿名开关变化
     onAnonymousChange(e) {
       this.form.isAnonymous = e.detail.value ? '1' : '0'
+      uni.vibrateShort()
     },
 
-    // 发布帖子
     handlePublish() {
       if (!this.canPublish) {
-        this.$modal.showToast('请填写标题和内容')
+        uni.showToast({ title: '标题和正文是必填的哦', icon: 'none' })
         return
       }
 
       if (this.publishing) return
-
       this.publishing = true
 
       const data = {
         title: this.form.title.trim(),
         content: this.form.content.trim(),
         images: this.form.images.join(','),
-        isAnonymous: this.form.isAnonymous // 传递匿名状态
+        isAnonymous: this.form.isAnonymous
       }
 
       createPost(data).then(res => {
         this.publishing = false
-
         if (res.code === 200) {
-          this.$modal.showToast('发布成功')
-          setTimeout(() => {
-            uni.navigateBack()
-          }, 1500)
+          uni.showToast({ title: '发布成功', icon: 'success' })
+          setTimeout(() => { uni.navigateBack() }, 1500)
         } else {
-          this.$modal.showToast(res.msg || '发布失败')
+          uni.showToast({ title: res.msg || '发布失败', icon: 'none' })
         }
       }).catch(err => {
         this.publishing = false
-        console.error('发布帖子失败:', err)
-        this.$modal.showToast('发布失败，请重试')
+        uni.showToast({ title: '发布失败，请重试', icon: 'none' })
       })
     }
   }
@@ -282,24 +230,51 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '@/static/scss/theme.scss';
+/* ==================== iOS 风格核心变量 ==================== */
+$ios-text-primary: #1D1D1F;
+$ios-text-secondary: #86868B;
+$theme-cyan: #2CB5A0;
 
 .publish-page {
   min-height: 100vh;
   position: relative;
-  background: $gradient-soft;
+  background-color: #F5F5F7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
 }
 
-/* 自定义导航栏 */
-.custom-navbar {
+/* --- 弥散光影背景 --- */
+.ambient-background {
   position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 0;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(224, 242, 241, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(255, 243, 224, 0.8) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(232, 234, 246, 0.8) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(240, 238, 245, 0.8) 0px, transparent 50%);
+  pointer-events: none;
+}
+
+/* --- 毛玻璃通用类 --- */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.03);
+  border-radius: 36rpx;
+}
+
+/* ==================== 顶部导航 (Sticky) ==================== */
+.glass-header {
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
-  z-index: 999;
-  background: $glass-background;
-  backdrop-filter: $backdrop-blur;
-  border-bottom: 1rpx solid $border-base;
+  z-index: 100;
+  background: rgba(245, 245, 247, 0.65);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
 }
 
 .navbar-content {
@@ -310,432 +285,279 @@ export default {
   padding: 0 32rpx;
 }
 
-.navbar-left {
-  width: 80rpx;
+.navbar-left, .navbar-right { width: 80rpx; display: flex; align-items: center; }
+
+.nav-icon-glass {
+  width: 64rpx; height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease;
+  &:active { transform: scale(0.9); opacity: 0.8; }
 }
 
-.back-icon {
-  font-size: 44rpx;
-  color: $text-primary;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: $radius-full;
-  background: $bg-gray-100;
-  transition: all $transition-base $ease-out;
-  font-weight: 200;
+.navbar-title { font-size: 32rpx; font-weight: 600; color: $ios-text-primary; }
 
-  &:active {
-    transform: scale(0.9);
-    background: $bg-gray-200;
-  }
-}
-
-.navbar-title {
-  flex: 1;
-  text-align: center;
-  font-size: 32rpx;
-  font-weight: 600;
-  color: $text-primary;
-}
-
-.navbar-right {
-  width: 80rpx;
-}
-
-/* 表单内容 */
+/* ==================== 表单滚动区 ==================== */
 .form-scroll {
-  height: calc(100vh - 88rpx - env(safe-area-inset-top));
-  margin-top: calc(88rpx + env(safe-area-inset-top));
-}
-
-.form-content {
-  padding: $spacing-lg $spacing-xl 160rpx;
-}
-
-/* 表单项 */
-.form-item {
-  background: $bg-white;
-  border-radius: $radius-lg;
-  padding: $spacing-xl;
-  margin-bottom: $spacing-lg;
-  box-shadow: $shadow-sm;
   position: relative;
+  z-index: 1;
+  height: 100vh;
 }
 
-/* 表单项头部 */
-.item-header {
+.content-wrapper {
+  padding: 30rpx 32rpx 0;
   display: flex;
-  align-items: center;
-  gap: $spacing-base;
-  margin-bottom: $spacing-md;
+  flex-direction: column;
+  gap: 32rpx;
 }
 
-.header-dot {
-  width: 8rpx;
-  height: 8rpx;
-  border-radius: $radius-full;
-  background: $gradient-primary;
+/* ==================== 1. 编辑器画板 (Glass Editor) ==================== */
+.editor-card {
+  padding: 40rpx 36rpx;
+  display: flex;
+  flex-direction: column;
 }
 
-.header-label {
-  font-size: $font-sm;
-  font-weight: $font-semibold;
-  color: $text-primary;
-  font-family: $font-family-base;
-}
-
-.required-mark {
-  color: $danger-color;
-  font-size: $font-sm;
-  margin-left: -8rpx;
-}
-
-.header-tip {
-  font-size: $font-xs;
-  color: $text-tertiary;
-  margin-left: auto;
-  font-family: $font-family-base;
-}
-
-/* 标题输入 */
 .title-input {
-  width: 100%;
-  font-size: $font-base;
-  font-weight: $font-medium;
-  color: $text-primary;
-  line-height: $line-height-normal;
-  min-height: 80rpx;
-  padding-bottom: 40rpx;
-  font-family: $font-family-base;
+  font-size: 38rpx;
+  font-weight: 700;
+  color: $ios-text-primary;
+  height: 60rpx;
 }
 
-/* 内容输入 */
+.divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.04);
+  margin: 24rpx 0;
+}
+
 .content-input {
   width: 100%;
-  font-size: $font-sm;
-  color: $text-secondary;
-  line-height: $line-height-relaxed;
-  min-height: 300rpx;
-  padding-bottom: 40rpx;
-  font-family: $font-family-base;
+  font-size: 32rpx;
+  line-height: 1.6;
+  color: #3A3A3C;
+  min-height: 240rpx;
 }
 
-/* 字数统计 */
+.input-placeholder {
+  color: #C7C7CC;
+  font-weight: 400;
+}
+
 .char-count {
-  position: absolute;
-  right: $spacing-xl;
-  bottom: $spacing-xl;
-  font-size: $font-xs;
-  color: $text-quaternary;
-  font-family: $font-family-base;
+  text-align: right;
+  font-size: 24rpx;
+  color: $ios-text-secondary;
+  margin-top: 16rpx;
 }
 
-/* 图片上传 */
-.image-upload {
-  margin-top: $spacing-xs;
+/* ==================== 图片网格 (Apple Grid Style) ==================== */
+.image-grid-section {
+  margin-top: 24rpx;
 }
 
-.image-list {
+.image-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: $spacing-md;
+  gap: 16rpx;
 }
 
-.image-wrapper {
+.image-item {
   position: relative;
-  width: 100%;
-  padding-bottom: 100%;
-  border-radius: $radius-base;
-  overflow: hidden;
+  aspect-ratio: 1;
+  border-radius: 20rpx;
+  background: #FFF;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.03);
 }
 
-.upload-image {
-  position: absolute;
-  top: 0;
-  left: 0;
+.uploaded-img {
   width: 100%;
   height: 100%;
-  background: $bg-gray-100;
+  border-radius: 20rpx;
+  object-fit: cover;
 }
 
-.image-mask {
+.delete-badge {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0);
-  transition: all 0.3s ease;
+  top: -12rpx;
+  right: -12rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: #FF3B30;
+  border-radius: 50%;
+  border: 4rpx solid #FFF;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.image-wrapper:active .image-mask {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.delete-btn {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: $radius-full;
-  background: rgba($danger-color, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all $transition-base $ease-out;
-}
-
-.image-wrapper:active .delete-btn {
-  opacity: 1;
-  transform: scale(1);
+  box-shadow: 0 4rpx 8rpx rgba(255, 59, 48, 0.3);
+  z-index: 10;
+  
+  &:active { transform: scale(0.9); }
 }
 
 .upload-btn {
-  width: 100%;
-  padding-bottom: 100%;
-  position: relative;
-  border-radius: $radius-base;
-  background: $gradient-card;
-  border: 2rpx dashed $primary-lighter;
-  transition: all $transition-base $ease-out;
-
-  &:active {
-    background: linear-gradient(135deg, rgba($primary-color, 0.15) 0%, rgba($accent-color, 0.15) 100%);
-    border-color: $primary-light;
-    transform: scale(0.98);
-  }
-}
-
-.upload-icon-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) translateY(-20rpx);
-}
-
-.upload-hint {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) translateY(20rpx);
-  font-size: $font-xs;
-  color: $primary-light;
-  font-weight: $font-medium;
-  font-family: $font-family-base;
+  aspect-ratio: 1;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx dashed rgba(0, 0, 0, 0.1);
+  gap: 8rpx;
+  transition: all 0.2s ease;
+  
+  &:active { background: rgba(0, 0, 0, 0.05); }
 }
 
 .upload-count {
-  position: absolute;
-  bottom: $spacing-base;
-  right: $spacing-base;
-  font-size: 20rpx;
-  color: $text-quaternary;
-  background: rgba($bg-white, 0.9);
-  padding: 4rpx $spacing-sm;
-  border-radius: $radius-md;
-  font-family: $font-family-base;
+  font-size: 22rpx;
+  color: $ios-text-secondary;
 }
 
-/* 设置选项 */
-.setting-option {
+/* ==================== 2. 设置部件 (Widget Card) ==================== */
+.settings-card {
+  padding: 32rpx;
+}
+
+.setting-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: $spacing-lg;
-  background: $gradient-card;
-  border-radius: $radius-base;
-  margin-top: $spacing-xs;
+  align-items: center;
 }
 
-.option-left {
+.setting-left {
   display: flex;
   align-items: center;
-  gap: $spacing-md;
-  flex: 1;
+  gap: 20rpx;
 }
 
-.option-icon {
+.icon-bg {
   width: 72rpx;
   height: 72rpx;
-  border-radius: $radius-full;
+  border-radius: 20rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba($primary-color, 0.1) 0%, rgba($accent-color, 0.1) 100%);
 }
 
-.option-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6rpx;
+.bg-blue {
+  background: linear-gradient(135deg, #5AC8FA 0%, #007AFF 100%);
+  box-shadow: 0 8rpx 16rpx rgba(0, 122, 255, 0.25);
 }
 
-.option-title {
-  font-size: $font-sm;
-  font-weight: $font-semibold;
-  color: $text-primary;
-  font-family: $font-family-base;
+.setting-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: $ios-text-primary;
+  display: block;
 }
 
-.option-desc {
-  font-size: $font-xs;
-  color: $text-tertiary;
-  font-family: $font-family-base;
+.setting-desc {
+  font-size: 24rpx;
+  color: $ios-text-secondary;
+  display: block;
+  margin-top: 4rpx;
 }
 
-/* 温馨提示 */
+/* ==================== 3. 温馨提示部件 ==================== */
 .tips-card {
-  background: linear-gradient(135deg, rgba($warning-color, 0.1) 0%, rgba($secondary-color, 0.15) 100%);
-  border-radius: $radius-md;
-  padding: $spacing-lg;
-  margin-top: $spacing-xs;
-  border: 1rpx solid rgba($warning-color, 0.2);
+  background: linear-gradient(135deg, rgba(255, 149, 0, 0.08) 0%, rgba(255, 204, 0, 0.05) 100%);
+  border: 1px solid rgba(255, 149, 0, 0.15);
+  padding: 32rpx;
 }
 
 .tips-header {
   display: flex;
   align-items: center;
-  gap: $spacing-sm;
-  margin-bottom: $spacing-md;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
 }
 
 .tips-title {
-  font-size: $font-sm;
-  font-weight: $font-semibold;
-  color: $warning-color;
-  font-family: $font-family-base;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #FF9500;
 }
 
-.tips-list {
+.tips-content {
   display: flex;
   flex-direction: column;
-  gap: $spacing-sm;
+  gap: 12rpx;
 }
 
-.tip-item {
-  display: flex;
-  align-items: flex-start;
-  gap: $spacing-sm;
+.tips-content text {
+  font-size: 26rpx;
+  color: #86868B;
+  line-height: 1.5;
 }
 
-.tip-dot {
-  font-size: $font-xs;
-  color: $secondary-color;
-  line-height: $line-height-normal;
-}
-
-.tip-text {
-  flex: 1;
-  font-size: $font-xs;
-  color: $text-secondary;
-  line-height: $line-height-normal;
-  font-family: $font-family-base;
-}
-
-/* 底部占位 */
-.bottom-placeholder {
-  height: 40rpx;
-}
-
-/* 底部发布按钮 */
-.publish-footer {
+/* ==================== 底部悬浮操作舱 (Glass Dock) ==================== */
+.bottom-glass-dock {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 998;
-  padding: $spacing-lg $spacing-xl;
-  background: linear-gradient(180deg, transparent 0%, rgba($bg-white, 0.98) 20%, $bg-white 100%);
-  backdrop-filter: $backdrop-blur;
+  bottom: 0; left: 0; right: 0;
+  padding: 24rpx 40rpx;
+  background: rgba(245, 245, 247, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 0.5px solid rgba(0, 0, 0, 0.05);
+  z-index: 100;
 }
 
 .publish-btn {
   width: 100%;
   height: 96rpx;
-  border-radius: $radius-2xl;
-  background: linear-gradient(135deg, #6ee7b7 0%, #a78bfa 50%, #fda4af 100%);
-  box-shadow: 0 8rpx 32rpx rgba(167, 139, 250, 0.4);
+  border-radius: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all $transition-base $ease-out;
+  gap: 12rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.06);
+  color: #A1A1A6;
+  transition: all 0.3s ease;
+}
 
+.publish-btn.is-active {
+  background: linear-gradient(135deg, #48D1CC 0%, #2CB5A0 100%);
+  color: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(44, 181, 160, 0.3);
+  
   &:active {
-    transform: translateY(2rpx);
-    box-shadow: 0 4rpx 16rpx rgba(167, 139, 250, 0.3);
-  }
-
-  &.disabled {
-    background: $bg-gray-200;
-    box-shadow: none;
-    opacity: $opacity-disabled;
+    transform: scale(0.98);
+    box-shadow: 0 4rpx 12rpx rgba(44, 181, 160, 0.2);
   }
 }
 
-.btn-content {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-}
-
-.btn-text {
-  font-size: $font-base;
-  font-weight: $font-semibold;
-  color: $bg-white;
-  font-family: $font-family-base;
-}
-
-/* 加载中遮罩 */
-.loading-mask {
+/* ==================== 弹窗遮罩 ==================== */
+.loading-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
 }
 
-.loading-content {
-  background: rgba($bg-white, 0.98);
-  backdrop-filter: $backdrop-blur;
-  border-radius: $radius-lg;
-  padding: $spacing-2xl $spacing-3xl;
+.loading-modal {
+  padding: 60rpx 80rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $spacing-lg;
-  box-shadow: $shadow-lg;
+  gap: 24rpx;
 }
 
-.loading-spinner {
-  width: 60rpx;
-  height: 60rpx;
-  border: 4rpx solid rgba($primary-color, 0.2);
-  border-top-color: $primary-color;
-  border-radius: $radius-full;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+.spin-icon { animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
 
 .loading-text {
-  font-size: $font-sm;
-  color: $text-primary;
-  font-weight: $font-semibold;
-  font-family: $font-family-base;
+  font-size: 28rpx;
+  color: $ios-text-primary;
+  font-weight: 500;
 }
 </style>
