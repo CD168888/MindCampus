@@ -34,3 +34,25 @@ export function getArticleDetail(articleId) {
   });
 }
 
+/**
+ * 点赞/取消点赞文章
+ * @param {Number} articleId 文章ID
+ */
+export function likeArticle(articleId) {
+  return request({
+    url: `/app/article/${articleId}/like`,
+    method: 'post',
+  });
+}
+
+/**
+ * 获取文章点赞状态和数量
+ * @param {Number} articleId 文章ID
+ */
+export function getArticleLikeStatus(articleId) {
+  return request({
+    url: `/app/article/${articleId}/like/status`,
+    method: 'get',
+  });
+}
+

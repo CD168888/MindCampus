@@ -1,12 +1,15 @@
 package com.mc.recommend.service.impl;
 
 import com.mc.common.utils.DateUtils;
+import com.mc.recommend.domain.ArticleLike;
 import com.mc.recommend.domain.RecommendArticle;
+import com.mc.recommend.mapper.ArticleLikeMapper;
 import com.mc.recommend.mapper.RecommendArticleMapper;
 import com.mc.recommend.service.IRecommendArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -19,6 +22,9 @@ import java.util.List;
 public class RecommendArticleServiceImpl implements IRecommendArticleService {
     @Autowired
     private RecommendArticleMapper recommendArticleMapper;
+
+    @Autowired
+    private ArticleLikeMapper articleLikeMapper;
 
     /**
      * 查询心理文章推荐列表
@@ -97,5 +103,34 @@ public class RecommendArticleServiceImpl implements IRecommendArticleService {
     @Override
     public int incrementReadCount(Long articleId) {
         return recommendArticleMapper.incrementReadCount(articleId);
+    }
+
+    @Override
+    public boolean likeArticle(Long articleId, Long userId) {
+        // 检查是否已点赞
+        int count = articleLikeMapper.checkLike(articleId, userId);
+        if (count > 0) {
+            // 已点赞，取消点赞
+            articleLikeMapper.deleteLike(articleId, userId);
+            return false;
+        } else {
+            // 未点赞，添加点赞
+            ArticleLike articleLike = new ArticleLike();
+            articleLike.setArticleId(articleId);
+            articleLike.setUserId(userId);
+            articleLike.setCreateTime(new Date());
+            articleLikeMapper.insertLike(articleLike);
+            return true;
+        }
+    }
+
+    @Override
+    public boolean checkArticleLiked(Long articleId, Long userId) {
+        return articleLikeMapper.checkLike(articleId, userId) > 0;
+    }
+
+    @Override
+    public int getArticleLikeCount(Long articleId) {
+        return articleLikeMapper.selectLikeCount(articleId);
     }
 }

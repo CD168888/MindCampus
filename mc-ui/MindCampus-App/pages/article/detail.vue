@@ -38,7 +38,13 @@
             </view>
             <view class="meta-divider"></view>
             <view class="meta-item">
-              <text class="meta-text">{{ formatDate(article.publishTime) }}</text>
+              <uni-icons type="calendar" size="14" color="#86868B"></uni-icons>
+              <text class="meta-text" style="margin-left: 6rpx;">{{ formatDate(article.createTime) }}</text>
+            </view>
+            <view class="meta-divider"></view>
+            <view class="meta-item like-item" @tap="handleLike">
+              <uni-icons :type="liked ? 'heart-filled' : 'heart'" size="14" :color="liked ? '#FF6B6B' : '#86868B'"></uni-icons>
+              <text class="meta-text" :style="{ color: liked ? '#FF6B6B' : '#86868B', marginLeft: '6rpx' }">{{ likeCount }}</text>
             </view>
             <view class="meta-divider"></view>
             <view class="meta-item">
@@ -101,8 +107,8 @@
 </template>
 
 <script>
-import { getArticleDetail } from '@/api/article'
-import { marked } from 'marked'
+import {getArticleDetail, getArticleLikeStatus, likeArticle} from '@/api/article'
+import {marked} from 'marked'
 
 export default {
   data() {
@@ -111,7 +117,8 @@ export default {
       loading: true,
       articleId: null,
       article: null,
-      isLiked: false,
+      liked: false,
+      likeCount: 0,
       isCollected: false
     }
   },
@@ -139,6 +146,8 @@ export default {
         const res = await getArticleDetail(this.articleId)
         if (res.code === 200) {
           this.article = res.data
+          // 加载点赞状态
+          this.loadLikeStatus()
         } else {
           uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
         }
@@ -148,7 +157,33 @@ export default {
         this.loading = false
       }
     },
-    
+
+    loadLikeStatus() {
+      getArticleLikeStatus(this.articleId)
+        .then((res) => {
+          if (res.code === 200) {
+            this.liked = res.data.liked
+            this.likeCount = res.data.likeCount
+          }
+        })
+        .catch((err) => {
+          console.error('加载点赞状态失败:', err)
+        })
+    },
+
+    handleLike() {
+      likeArticle(this.articleId)
+        .then((res) => {
+          if (res.code === 200) {
+            this.liked = res.data.liked
+            this.likeCount = res.data.likeCount
+          }
+        })
+        .catch((err) => {
+          console.error('点赞操作失败:', err)
+        })
+    },
+
     goBack() {
       uni.navigateBack()
     },
@@ -351,6 +386,10 @@ $theme-cyan: #2CB5A0;
 
 .meta-item { display: flex; align-items: center; }
 
+.like-item {
+  cursor: pointer;
+}
+
 .author-avatar {
   width: 40rpx; height: 40rpx;
   border-radius: 50%;
@@ -366,14 +405,27 @@ $theme-cyan: #2CB5A0;
 .category-pill {
   display: inline-flex;
   align-items: center;
-  gap: 12rpx;
-  background: rgba(44, 181, 160, 0.1);
-  padding: 8rpx 20rpx;
-  border-radius: 30rpx;
+  gap: 10rpx;
+  background: linear-gradient(135deg, rgba(44, 181, 160, 0.15) 0%, rgba(44, 181, 160, 0.08) 100%);
+  padding: 10rpx 24rpx;
+  border-radius: 40rpx;
   flex-shrink: 0;
-  
-  .dot { width: 12rpx; height: 12rpx; border-radius: 50%; background-color: $theme-cyan; }
-  text { font-size: 24rpx; font-weight: 700; color: $theme-cyan; }
+  border: 1rpx solid rgba(44, 181, 160, 0.2);
+  box-shadow: 0 2rpx 8rpx rgba(44, 181, 160, 0.1);
+
+  .dot {
+    width: 10rpx;
+    height: 10rpx;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $theme-cyan 0%, #4FDACE 100%);
+    box-shadow: 0 0 6rpx rgba(44, 181, 160, 0.5);
+  }
+  text {
+    font-size: 22rpx;
+    font-weight: 600;
+    color: $theme-cyan;
+    letter-spacing: 1rpx;
+  }
 }
 
 /* 2. 导读/摘要卡片 */
