@@ -68,7 +68,8 @@
   }, {
     "path": "pages/mine/setting/index",
     "style": {
-      "navigationBarTitleText": "应用设置"
+      "navigationBarTitleText": "应用设置",
+      "navigationStyle": "custom"
     }
   }, {
     "path": "pages/mine/help/index",
