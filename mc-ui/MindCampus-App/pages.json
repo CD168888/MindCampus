@@ -83,7 +83,8 @@
   }, {
     "path": "pages/mine/about/index",
     "style": {
-      "navigationBarTitleText": "关于我们"
+      "navigationBarTitleText": "关于我们",
+      "navigationStyle": "custom"
     }
   }, {
     "path": "pages/mine/likes/index",
