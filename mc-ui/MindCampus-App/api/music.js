@@ -33,3 +33,25 @@ export function getMusicDetail(musicId) {
     method: 'get',
   });
 }
+
+/**
+ * 点赞/取消点赞音乐
+ * @param {Number} musicId 音乐ID
+ */
+export function likeMusic(musicId) {
+  return request({
+    url: `/app/music/${musicId}/like`,
+    method: 'post',
+  });
+}
+
+/**
+ * 获取音乐点赞状态和数量
+ * @param {Number} musicId 音乐ID
+ */
+export function getLikeStatus(musicId) {
+  return request({
+    url: `/app/music/${musicId}/like/status`,
+    method: 'get',
+  });
+}

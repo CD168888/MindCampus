@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mc.recommend.mapper.MusicLikeMapper">
+
+    <select id="checkLike" resultType="int">
+        SELECT COUNT(1) FROM music_like
+        WHERE music_id = #{musicId} AND user_id = #{userId}
+    </select>
+
+    <insert id="insertLike" parameterType="com.mc.recommend.domain.MusicLike" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO music_like (music_id, user_id, create_time)
+        VALUES (#{musicId}, #{userId}, #{createTime})
+    </insert>
+
+    <delete id="deleteLike">
+        DELETE FROM music_like
+        WHERE music_id = #{musicId} AND user_id = #{userId}
+    </delete>
+
+    <select id="selectLikeCount" resultType="int">
+        SELECT COUNT(1) FROM music_like
+        WHERE music_id = #{musicId}
+    </select>
+
+</mapper>

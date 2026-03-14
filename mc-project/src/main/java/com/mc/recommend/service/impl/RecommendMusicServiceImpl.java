@@ -3,12 +3,15 @@ package com.mc.recommend.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.mc.common.utils.DateUtils;
 import com.mc.common.utils.SecurityUtils;
+import com.mc.recommend.domain.MusicLike;
 import com.mc.recommend.domain.RecommendMusic;
+import com.mc.recommend.mapper.MusicLikeMapper;
 import com.mc.recommend.mapper.RecommendMusicMapper;
 import com.mc.recommend.service.IRecommendMusicService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -21,6 +24,9 @@ import java.util.List;
 public class RecommendMusicServiceImpl extends ServiceImpl<RecommendMusicMapper, RecommendMusic> implements IRecommendMusicService {
     @Autowired
     private RecommendMusicMapper recommendMusicMapper;
+
+    @Autowired
+    private MusicLikeMapper musicLikeMapper;
 
     @Override
     public RecommendMusic selectRecommendMusicByMusicId(Long musicId) {
@@ -49,6 +55,35 @@ public class RecommendMusicServiceImpl extends ServiceImpl<RecommendMusicMapper,
     @Override
     public int deleteRecommendMusicByMusicIds(Long[] musicIds) {
         return recommendMusicMapper.deleteRecommendMusicByMusicIds(musicIds);
+    }
+
+    @Override
+    public boolean likeMusic(Long musicId, Long userId) {
+        // 检查是否已点赞
+        int count = musicLikeMapper.checkLike(musicId, userId);
+        if (count > 0) {
+            // 已点赞，取消点赞
+            musicLikeMapper.deleteLike(musicId, userId);
+            return false;
+        } else {
+            // 未点赞，添加点赞
+            MusicLike musicLike = new MusicLike();
+            musicLike.setMusicId(musicId);
+            musicLike.setUserId(userId);
+            musicLike.setCreateTime(new Date());
+            musicLikeMapper.insertLike(musicLike);
+            return true;
+        }
+    }
+
+    @Override
+    public boolean checkMusicLiked(Long musicId, Long userId) {
+        return musicLikeMapper.checkLike(musicId, userId) > 0;
+    }
+
+    @Override
+    public int getMusicLikeCount(Long musicId) {
+        return musicLikeMapper.selectLikeCount(musicId);
     }
 }
 

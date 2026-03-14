@@ -50,5 +50,31 @@ public interface IRecommendMusicService {
      * @return 结果
      */
     int deleteRecommendMusicByMusicIds(Long[] musicIds);
+
+    /**
+     * 点赞/取消点赞音乐
+     *
+     * @param musicId 音乐ID
+     * @param userId 用户ID
+     * @return 结果(true=点赞,false=取消点赞)
+     */
+    boolean likeMusic(Long musicId, Long userId);
+
+    /**
+     * 检查用户是否已点赞
+     *
+     * @param musicId 音乐ID
+     * @param userId 用户ID
+     * @return 是否已点赞
+     */
+    boolean checkMusicLiked(Long musicId, Long userId);
+
+    /**
+     * 获取音乐点赞数
+     *
+     * @param musicId 音乐ID
+     * @return 点赞数
+     */
+    int getMusicLikeCount(Long musicId);
 }
 

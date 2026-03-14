@@ -3,17 +3,17 @@ package com.mc.recommend.controller;
 import com.mc.common.core.controller.BaseController;
 import com.mc.common.core.domain.R;
 import com.mc.common.core.page.TableDataInfo;
+import com.mc.common.utils.SecurityUtils;
 import com.mc.recommend.domain.RecommendMusic;
 import com.mc.recommend.service.IRecommendMusicService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * APP端音乐推荐Controller
@@ -70,6 +70,38 @@ public class AppMusicController extends BaseController {
     public R<RecommendMusic> getMusicDetail(@PathVariable Long musicId) {
         RecommendMusic music = recommendMusicService.selectRecommendMusicByMusicId(musicId);
         return R.ok(music);
+    }
+
+    /**
+     * 点赞/取消点赞音乐
+     */
+    @Operation(summary = "点赞/取消点赞音乐")
+    @PostMapping("/{musicId}/like")
+    public R<Map<String, Object>> likeMusic(@PathVariable Long musicId) {
+        Long userId = SecurityUtils.getUserId();
+        boolean liked = recommendMusicService.likeMusic(musicId, userId);
+        int likeCount = recommendMusicService.getMusicLikeCount(musicId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("liked", liked);
+        result.put("likeCount", likeCount);
+        return R.ok(result);
+    }
+
+    /**
+     * 获取音乐点赞状态和数量
+     */
+    @Operation(summary = "获取音乐点赞状态和数量")
+    @GetMapping("/{musicId}/like/status")
+    public R<Map<String, Object>> getLikeStatus(@PathVariable Long musicId) {
+        Long userId = SecurityUtils.getUserId();
+        boolean liked = recommendMusicService.checkMusicLiked(musicId, userId);
+        int likeCount = recommendMusicService.getMusicLikeCount(musicId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("liked", liked);
+        result.put("likeCount", likeCount);
+        return R.ok(result);
     }
 }
 

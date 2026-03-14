@@ -100,7 +100,7 @@
 </template>
 
 <script>
-import {getMusicDetail} from '@/api/music'
+import {getLikeStatus, getMusicDetail, likeMusic} from '@/api/music'
 import config from '@/config'
 
 export default {
@@ -173,6 +173,9 @@ export default {
             const audioUrl = this.getAudioUrl(res.data.mp3Url)
             this.audioContext.src = audioUrl
           }
+
+          // 加载点赞状态
+          this.loadLikeStatus()
         }
       }).catch(err => {
         console.error('加载详情失败:', err)
@@ -257,6 +260,7 @@ export default {
       this.progressPercent = 0
       if (this.audioContext) this.audioContext.stop()
       this.loadMusicDetail()
+      this.loadLikeStatus()
     },
 
     togglePlayMode() {
@@ -268,8 +272,33 @@ export default {
     },
 
     toggleLike() {
-      this.isLiked = !this.isLiked
-      this.$modal.showToast(this.isLiked ? '已喜欢' : '取消喜欢')
+      if (!this.musicId) return
+
+      likeMusic(this.musicId).then(res => {
+        if (res.code === 200) {
+          this.isLiked = res.data.liked
+          this.likeCount = res.data.likeCount
+          this.$modal.showToast(this.isLiked ? '已喜欢' : '取消喜欢')
+        } else {
+          this.$modal.showToast(res.msg || '操作失败')
+        }
+      }).catch(err => {
+        console.error('点赞失败:', err)
+        this.$modal.showToast('操作失败')
+      })
+    },
+
+    loadLikeStatus() {
+      if (!this.musicId) return
+
+      getLikeStatus(this.musicId).then(res => {
+        if (res.code === 200) {
+          this.isLiked = res.data.liked
+          this.likeCount = res.data.likeCount
+        }
+      }).catch(err => {
+        console.error('获取点赞状态失败:', err)
+      })
     },
 
     downloadMusic() {
