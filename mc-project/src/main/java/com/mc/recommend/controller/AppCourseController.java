@@ -96,5 +96,15 @@ public class AppCourseController extends BaseController {
     result.put("likeCount", likeCount);
     return R.ok(result);
   }
+
+  /**
+   * 获取用户点赞的课程列表
+   */
+  @GetMapping("/like/list")
+  public R<List<RecommendCourse>> getLikedCourses() {
+    Long userId = SecurityUtils.getUserId();
+    List<RecommendCourse> list = recommendCourseService.getLikedCourses(userId);
+    return R.ok(list);
+  }
 }
 

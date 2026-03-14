@@ -57,6 +57,18 @@
       </view>
 
       <view class="glass-card list-card">
+        <view class="list-item" @tap="handleToMyLikes">
+          <view class="item-left">
+            <view class="list-icon-bg bg-cyan">
+              <uni-icons type="heart-filled" size="18" color="#FFFFFF"></uni-icons>
+            </view>
+            <text class="item-text">我的点赞</text>
+          </view>
+          <uni-icons type="right" size="16" color="#C7C7CC"></uni-icons>
+        </view>
+
+        <view class="divider"></view>
+
         <view class="list-item" @tap="handleToEditInfo">
           <view class="item-left">
             <view class="list-icon-bg bg-gray">
@@ -143,6 +155,9 @@ export default {
   methods: {
     handleToInfo() {
       uni.navigateTo({ url: '/pages/mine/info/index' })
+    },
+    handleToMyLikes() {
+      uni.navigateTo({ url: '/pages/mine/likes/index' })
     },
     handleToEditInfo() {
       uni.navigateTo({ url: '/pages/mine/info/edit' })
@@ -382,6 +397,7 @@ $theme-cyan: #2CB5A0;
 .bg-orange { background: #FF9500; }
 .bg-blue-light { background: #5AC8FA; }
 .bg-gray-dark { background: #8E8E93; }
+.bg-cyan { background: #2CB5A0; }
 
 .item-text {
   font-size: 30rpx;

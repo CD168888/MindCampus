@@ -24,4 +24,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         WHERE article_id = #{articleId}
     </select>
 
+    <select id="selectLikedArticles" resultType="com.mc.recommend.domain.RecommendArticle">
+        SELECT a.* FROM recommend_article a
+        INNER JOIN article_like al ON a.article_id = al.article_id
+        WHERE al.user_id = #{userId}
+        ORDER BY al.create_time DESC
+    </select>
+
 </mapper>

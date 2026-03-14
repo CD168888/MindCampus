@@ -133,4 +133,9 @@ public class RecommendArticleServiceImpl implements IRecommendArticleService {
     public int getArticleLikeCount(Long articleId) {
         return articleLikeMapper.selectLikeCount(articleId);
     }
+
+    @Override
+    public List<RecommendArticle> getLikedArticles(Long userId) {
+        return articleLikeMapper.selectLikedArticles(userId);
+    }
 }

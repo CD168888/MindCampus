@@ -103,5 +103,16 @@ public class AppMusicController extends BaseController {
         result.put("likeCount", likeCount);
         return R.ok(result);
     }
+
+    /**
+     * 获取用户点赞的音乐列表
+     */
+    @Operation(summary = "获取用户点赞的音乐列表")
+    @GetMapping("/like/list")
+    public R<List<RecommendMusic>> getLikedMusic() {
+        Long userId = SecurityUtils.getUserId();
+        List<RecommendMusic> list = recommendMusicService.getLikedMusic(userId);
+        return R.ok(list);
+    }
 }
 

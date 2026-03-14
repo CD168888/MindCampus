@@ -80,6 +80,12 @@
       "navigationBarTitleText": "关于我们"
     }
   }, {
+    "path": "pages/mine/likes/index",
+    "style": {
+      "navigationBarTitleText": "我的点赞",
+      "navigationStyle": "custom"
+    }
+  }, {
     "path": "pages/common/webview/index",
     "style": {
       "navigationBarTitleText": "浏览网页"

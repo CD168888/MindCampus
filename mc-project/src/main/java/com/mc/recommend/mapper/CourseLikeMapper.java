@@ -1,8 +1,11 @@
 package com.mc.recommend.mapper;
 
 import com.mc.recommend.domain.CourseLike;
+import com.mc.recommend.domain.RecommendCourse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * 课程点赞 Mapper接口
@@ -32,4 +35,9 @@ public interface CourseLikeMapper {
      * 获取课程点赞数
      */
     int selectLikeCount(@Param("courseId") Long courseId);
+
+    /**
+     * 获取用户点赞的课程列表
+     */
+    List<RecommendCourse> selectLikedCourses(@Param("userId") Long userId);
 }

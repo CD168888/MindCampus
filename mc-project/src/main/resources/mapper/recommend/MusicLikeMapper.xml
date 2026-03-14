@@ -24,4 +24,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         WHERE music_id = #{musicId}
     </select>
 
+    <select id="selectLikedMusic" resultType="com.mc.recommend.domain.RecommendMusic">
+        SELECT m.* FROM recommend_music m
+        INNER JOIN music_like ml ON m.music_id = ml.music_id
+        WHERE ml.user_id = #{userId}
+        ORDER BY ml.create_time DESC
+    </select>
+
 </mapper>

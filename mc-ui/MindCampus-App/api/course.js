@@ -56,3 +56,13 @@ export function getCourseLikeStatus(courseId) {
   });
 }
 
+/**
+ * 获取用户点赞的课程列表
+ */
+export function getLikedCourses() {
+  return request({
+    url: '/app/course/like/list',
+    method: 'get',
+  });
+}
+

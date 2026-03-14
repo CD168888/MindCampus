@@ -1,8 +1,11 @@
 package com.mc.recommend.mapper;
 
 import com.mc.recommend.domain.ArticleLike;
+import com.mc.recommend.domain.RecommendArticle;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * 文章点赞 Mapper接口
@@ -32,4 +35,9 @@ public interface ArticleLikeMapper {
      * 获取文章点赞数
      */
     int selectLikeCount(@Param("articleId") Long articleId);
+
+    /**
+     * 获取用户点赞的文章列表
+     */
+    List<RecommendArticle> selectLikedArticles(@Param("userId") Long userId);
 }

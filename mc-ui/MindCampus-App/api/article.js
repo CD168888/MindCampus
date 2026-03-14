@@ -56,3 +56,13 @@ export function getArticleLikeStatus(articleId) {
   });
 }
 
+/**
+ * 获取用户点赞的文章列表
+ */
+export function getLikedArticles() {
+  return request({
+    url: '/app/article/like/list',
+    method: 'get',
+  });
+}
+

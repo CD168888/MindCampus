@@ -24,4 +24,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         WHERE course_id = #{courseId}
     </select>
 
+    <select id="selectLikedCourses" resultType="com.mc.recommend.domain.RecommendCourse">
+        SELECT c.* FROM recommend_course c
+        INNER JOIN course_like cl ON c.course_id = cl.course_id
+        WHERE cl.user_id = #{userId}
+        ORDER BY cl.create_time DESC
+    </select>
+
 </mapper>

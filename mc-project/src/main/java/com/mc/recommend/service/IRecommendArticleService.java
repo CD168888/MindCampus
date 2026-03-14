@@ -92,4 +92,12 @@ public interface IRecommendArticleService {
      * @return 点赞数
      */
     int getArticleLikeCount(Long articleId);
+
+    /**
+     * 获取用户点赞的文章列表
+     *
+     * @param userId 用户ID
+     * @return 点赞的文章列表
+     */
+    List<RecommendArticle> getLikedArticles(Long userId);
 }

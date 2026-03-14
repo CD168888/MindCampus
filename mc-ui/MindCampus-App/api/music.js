@@ -55,3 +55,13 @@ export function getLikeStatus(musicId) {
     method: 'get',
   });
 }
+
+/**
+ * 获取用户点赞的音乐列表
+ */
+export function getLikedMusic() {
+  return request({
+    url: '/app/music/like/list',
+    method: 'get',
+  });
+}

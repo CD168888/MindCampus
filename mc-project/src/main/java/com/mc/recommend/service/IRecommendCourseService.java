@@ -84,4 +84,12 @@ public interface IRecommendCourseService {
      * @return 点赞数
      */
     int getCourseLikeCount(Long courseId);
+
+    /**
+     * 获取用户点赞的课程列表
+     *
+     * @param userId 用户ID
+     * @return 点赞的课程列表
+     */
+    List<RecommendCourse> getLikedCourses(Long userId);
 }

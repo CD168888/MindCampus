@@ -76,5 +76,13 @@ public interface IRecommendMusicService {
      * @return 点赞数
      */
     int getMusicLikeCount(Long musicId);
+
+    /**
+     * 获取用户点赞的音乐列表
+     *
+     * @param userId 用户ID
+     * @return 点赞的音乐列表
+     */
+    List<RecommendMusic> getLikedMusic(Long userId);
 }
 

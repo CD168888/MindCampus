@@ -85,5 +85,10 @@ public class RecommendMusicServiceImpl extends ServiceImpl<RecommendMusicMapper,
     public int getMusicLikeCount(Long musicId) {
         return musicLikeMapper.selectLikeCount(musicId);
     }
+
+    @Override
+    public List<RecommendMusic> getLikedMusic(Long userId) {
+        return musicLikeMapper.selectLikedMusic(userId);
+    }
 }
 

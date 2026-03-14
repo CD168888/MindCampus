@@ -98,4 +98,14 @@ public class AppArticleController extends BaseController {
     result.put("likeCount", likeCount);
     return R.ok(result);
   }
+
+  /**
+   * 获取用户点赞的文章列表
+   */
+  @GetMapping("/like/list")
+  public R<List<RecommendArticle>> getLikedArticles() {
+    Long userId = SecurityUtils.getUserId();
+    List<RecommendArticle> list = recommendArticleService.getLikedArticles(userId);
+    return R.ok(list);
+  }
 }

@@ -122,4 +122,9 @@ public class RecommendCourseServiceImpl implements IRecommendCourseService {
     public int getCourseLikeCount(Long courseId) {
         return courseLikeMapper.selectLikeCount(courseId);
     }
+
+    @Override
+    public List<RecommendCourse> getLikedCourses(Long userId) {
+        return courseLikeMapper.selectLikedCourses(userId);
+    }
 }
