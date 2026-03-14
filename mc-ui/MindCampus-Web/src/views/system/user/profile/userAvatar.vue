@@ -60,8 +60,8 @@
 
 <script setup>
 import "vue-cropper/dist/index.css"
-import { VueCropper } from "vue-cropper"
-import { uploadAvatar } from "@/api/system/user"
+import {VueCropper} from "vue-cropper"
+import {uploadAvatar} from "@/api/system/user"
 import useUserStore from "@/store/modules/user"
 
 const userStore = useUserStore()
@@ -133,7 +133,8 @@ function uploadImg() {
     formData.append("avatarfile", data, options.filename)
     uploadAvatar(formData).then(response => {
       open.value = false
-      options.img = import.meta.env.VITE_APP_BASE_API + response.imgUrl
+      // OSS返回的是完整URL，直接使用
+      options.img = response.imgUrl
       userStore.avatar = options.img
       proxy.$modal.msgSuccess("修改成功")
       visible.value = false
