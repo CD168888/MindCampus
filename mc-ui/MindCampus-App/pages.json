@@ -47,7 +47,8 @@
   }, {
     "path": "pages/mine/avatar/index",
     "style": {
-      "navigationBarTitleText": "修改头像"
+      "navigationBarTitleText": "修改头像",
+      "navigationStyle": "custom"
     }
   }, {
     "path": "pages/mine/info/index",
