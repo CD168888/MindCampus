@@ -19,7 +19,7 @@
       <view class="search-section">
         <view class="search-box glass-pill">
           <uni-icons type="search" size="20" color="#86868B"></uni-icons>
-          <input class="search-input" v-model="searchKeyword" placeholder="搜索课程、导师" placeholder-class="input-placeholder" @confirm="handleSearch" />
+          <input class="search-input" v-model="searchKeyword" placeholder="搜索课程" placeholder-class="input-placeholder" @confirm="handleSearch" />
         </view>
       </view>
 
@@ -36,24 +36,16 @@
               <view class="duration-badge">
                 <text>{{ formatDuration(item.duration) }}</text>
               </view>
+              <view class="like-badge" :class="{'liked': item.liked}" @tap.stop="handleLike(item)">
+                <uni-icons :type="item.liked ? 'heart-filled' : 'heart'" size="14" :color="item.liked ? '#FFFFFF' : '#FFFFFF'"></uni-icons>
+                <text>{{ item.likeCount || 0 }}</text>
+              </view>
             </view>
 
             <view class="course-info">
               <view class="info-top">
                 <text class="course-title">{{ item.title }}</text>
                 <text class="course-description" v-if="item.description">{{ item.description }}</text>
-              </view>
-              
-              <view class="course-footer">
-                <view class="meta-tags">
-                  <view class="level-tag" v-if="item.level">{{ item.level }}</view>
-                  <view class="chapter-tag" v-if="item.chapters">{{ item.chapters }}章</view>
-                </view>
-                
-                <view class="course-lecturer">
-                  <uni-icons type="person" size="14" color="#86868B"></uni-icons>
-                  <text class="lecturer-text">{{ item.lecturer || '特邀导师' }}</text>
-                </view>
               </view>
             </view>
             
@@ -84,7 +76,7 @@
 </template>
 
 <script>
-import {listCourses} from '@/api/course';
+import {likeCourse, listCourses} from '@/api/course';
 import config from '@/config';
 
 export default {
@@ -179,6 +171,19 @@ export default {
       uni.navigateTo({
         url: `/pages/course/detail?courseId=${item.courseId}`,
       });
+    },
+
+    handleLike(item) {
+      likeCourse(item.courseId)
+        .then((res) => {
+          if (res.code === 200) {
+            item.liked = res.data.liked;
+            item.likeCount = res.data.likeCount;
+          }
+        })
+        .catch((err) => {
+          console.error('点赞操作失败:', err);
+        });
     },
 
     formatDuration(seconds) {
@@ -403,13 +408,38 @@ $theme-cyan: #2CB5A0;
   -webkit-backdrop-filter: blur(8px);
   padding: 4rpx 10rpx;
   border-radius: 8rpx;
-  
+
   text {
     color: #FFFFFF;
     font-size: 20rpx;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* 点赞角标 */
+.like-badge {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 6rpx 12rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+
+  text {
+    color: #FFFFFF;
+    font-size: 20rpx;
+    font-weight: 500;
+  }
+}
+
+.like-badge.liked {
+  background: rgba(255, 107, 107, 0.9);
 }
 
 /* 右侧信息设计 */

@@ -43,27 +43,14 @@
         </view>
 
         <view class="glass-card course-detail-card">
-          
+
           <view class="card-top-section">
-            <text class="course-title">{{ course.title }}</text>
-            
-            <view class="course-meta">
-              <view class="meta-tag tint-cyan">
-                <uni-icons type="person-filled" size="14" color="#2CB5A0"></uni-icons>
-                <text>{{ course.lecturer || '特邀导师' }}</text>
+            <view class="title-row">
+              <text class="course-title">{{ course.title }}</text>
+              <view class="like-button" @tap="handleLike">
+                <uni-icons :type="liked ? 'heart-filled' : 'heart'" size="24" :color="liked ? '#FF6B6B' : '#86868B'"></uni-icons>
+                <text class="like-count">{{ likeCount }}</text>
               </view>
-              
-              <view class="meta-tag tint-gray">
-                <uni-icons type="clock-filled" size="14" color="#86868B"></uni-icons>
-                <text>{{ formatDuration(course.duration) }}</text>
-              </view>
-              
-              <view class="meta-tag tint-gray" v-if="course.chapters">
-                <uni-icons type="list" size="14" color="#86868B"></uni-icons>
-                <text>{{ course.chapters }} 章</text>
-              </view>
-              
-              <view class="level-tag" v-if="course.level">{{ course.level }}</view>
             </view>
           </view>
 
@@ -94,7 +81,7 @@
 </template>
 
 <script>
-import {getCourseDetail} from '@/api/course';
+import {getCourseDetail, getCourseLikeStatus, likeCourse} from '@/api/course';
 import config from '@/config';
 
 export default {
@@ -104,6 +91,8 @@ export default {
       courseId: null,
       course: null,
       loading: false,
+      liked: false,
+      likeCount: 0,
     };
   },
   onLoad(options) {
@@ -130,6 +119,8 @@ export default {
           this.loading = false;
           if (res.code === 200 && res.data) {
             this.course = res.data;
+            // 加载点赞状态
+            this.loadLikeStatus();
           } else {
             this.$modal.showToast(res.msg || '加载失败');
           }
@@ -141,16 +132,31 @@ export default {
         });
     },
 
-    formatDuration(seconds) {
-      if (!seconds) return '0:00';
-      const hours = Math.floor(seconds / 3600);
-      const mins = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
+    loadLikeStatus() {
+      getCourseLikeStatus(this.courseId)
+        .then((res) => {
+          if (res.code === 200) {
+            this.liked = res.data.liked;
+            this.likeCount = res.data.likeCount;
+          }
+        })
+        .catch((err) => {
+          console.error('加载点赞状态失败:', err);
+        });
+    },
 
-      if (hours > 0) {
-        return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-      }
-      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    handleLike() {
+      likeCourse(this.courseId)
+        .then((res) => {
+          if (res.code === 200) {
+            this.liked = res.data.liked;
+            this.likeCount = res.data.likeCount;
+          }
+        })
+        .catch((err) => {
+          console.error('点赞操作失败:', err);
+          this.$modal.showToast('操作失败，请重试');
+        });
     },
 
     getImageUrl(url) {
@@ -268,12 +274,10 @@ $theme-cyan: #2CB5A0;
 .course-content {
   position: relative;
   z-index: 1;
-  /* 修改：减小了顶部间距 padding-top 从 30rpx 调整为 16rpx */
   padding: 16rpx 32rpx calc(60rpx + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  /* 修改：减小了元素间距 gap 从 32rpx 调整为 24rpx */
-  gap: 24rpx; 
+  gap: 24rpx;
 }
 
 /* ==================== 视频播放区域 ==================== */
@@ -332,56 +336,44 @@ $theme-cyan: #2CB5A0;
 
 /* 上半部分：信息区 */
 .card-top-section {
-  padding: 40rpx;
+  padding: 40rpx 40rpx 32rpx;
+}
+
+/* 课程标题区域 */
+.title-row {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
 }
 
 .course-title {
+  flex: 1;
   font-size: 40rpx;
   font-weight: 700;
   color: $ios-text-primary;
   line-height: 1.35;
-  margin-bottom: 24rpx;
   letter-spacing: -0.5rpx;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.course-meta {
+/* 点赞按钮 */
+.like-button {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-}
-
-/* 标签系统 (Tinted Badge) */
-.meta-tag {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 12rpx;
-  font-size: 24rpx;
-  font-weight: 600;
+  justify-content: center;
+  padding: 8rpx;
+  flex-shrink: 0;
 }
 
-.tint-cyan {
-  background: rgba(44, 181, 160, 0.1);
-  color: $theme-cyan;
-}
-
-.tint-gray {
-  background: rgba(0, 0, 0, 0.04);
-  color: $ios-text-secondary;
-}
-
-.level-tag {
-  background: linear-gradient(135deg, #48D1CC 0%, #2CB5A0 100%);
-  color: #FFFFFF;
+.like-count {
   font-size: 22rpx;
-  font-weight: 600;
-  padding: 8rpx 20rpx;
-  border-radius: 12rpx;
-  display: flex;
-  align-items: center;
+  color: #86868B;
+  margin-top: 4rpx;
 }
 
 /* 中间极简分割线 */
@@ -393,7 +385,7 @@ $theme-cyan: #2CB5A0;
 
 /* 下半部分：简介区 */
 .card-bottom-section {
-  padding: 40rpx;
+  padding: 32rpx 40rpx 40rpx;
   display: flex;
   flex-direction: column;
 }

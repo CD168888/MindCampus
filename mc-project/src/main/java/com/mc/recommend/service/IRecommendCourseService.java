@@ -58,4 +58,30 @@ public interface IRecommendCourseService {
      * @return 结果
      */
     public int deleteRecommendCourseByCourseId(Long courseId);
+
+    /**
+     * 点赞/取消点赞课程
+     *
+     * @param courseId 课程ID
+     * @param userId 用户ID
+     * @return 结果(true=点赞,false=取消点赞)
+     */
+    boolean likeCourse(Long courseId, Long userId);
+
+    /**
+     * 检查用户是否已点赞
+     *
+     * @param courseId 课程ID
+     * @param userId 用户ID
+     * @return 是否已点赞
+     */
+    boolean checkCourseLiked(Long courseId, Long userId);
+
+    /**
+     * 获取课程点赞数
+     *
+     * @param courseId 课程ID
+     * @return 点赞数
+     */
+    int getCourseLikeCount(Long courseId);
 }

@@ -1,12 +1,15 @@
 package com.mc.recommend.service.impl;
 
 import com.mc.common.utils.DateUtils;
+import com.mc.recommend.domain.CourseLike;
 import com.mc.recommend.domain.RecommendCourse;
+import com.mc.recommend.mapper.CourseLikeMapper;
 import com.mc.recommend.mapper.RecommendCourseMapper;
 import com.mc.recommend.service.IRecommendCourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -19,6 +22,9 @@ import java.util.List;
 public class RecommendCourseServiceImpl implements IRecommendCourseService {
     @Autowired
     private RecommendCourseMapper recommendCourseMapper;
+
+    @Autowired
+    private CourseLikeMapper courseLikeMapper;
 
     /**
      * 查询心理课程推荐列表
@@ -86,5 +92,34 @@ public class RecommendCourseServiceImpl implements IRecommendCourseService {
     @Override
     public int deleteRecommendCourseByCourseId(Long courseId) {
         return recommendCourseMapper.deleteRecommendCourseByCourseId(courseId);
+    }
+
+    @Override
+    public boolean likeCourse(Long courseId, Long userId) {
+        // 检查是否已点赞
+        int count = courseLikeMapper.checkLike(courseId, userId);
+        if (count > 0) {
+            // 已点赞，取消点赞
+            courseLikeMapper.deleteLike(courseId, userId);
+            return false;
+        } else {
+            // 未点赞，添加点赞
+            CourseLike courseLike = new CourseLike();
+            courseLike.setCourseId(courseId);
+            courseLike.setUserId(userId);
+            courseLike.setCreateTime(new Date());
+            courseLikeMapper.insertLike(courseLike);
+            return true;
+        }
+    }
+
+    @Override
+    public boolean checkCourseLiked(Long courseId, Long userId) {
+        return courseLikeMapper.checkLike(courseId, userId) > 0;
+    }
+
+    @Override
+    public int getCourseLikeCount(Long courseId) {
+        return courseLikeMapper.selectLikeCount(courseId);
     }
 }

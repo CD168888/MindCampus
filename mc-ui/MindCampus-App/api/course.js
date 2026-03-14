@@ -34,3 +34,25 @@ export function getCourseDetail(courseId) {
   });
 }
 
+/**
+ * 点赞/取消点赞课程
+ * @param {Number} courseId 课程ID
+ */
+export function likeCourse(courseId) {
+  return request({
+    url: `/app/course/${courseId}/like`,
+    method: 'post',
+  });
+}
+
+/**
+ * 获取课程点赞状态和数量
+ * @param {Number} courseId 课程ID
+ */
+export function getCourseLikeStatus(courseId) {
+  return request({
+    url: `/app/course/${courseId}/like/status`,
+    method: 'get',
+  });
+}
+

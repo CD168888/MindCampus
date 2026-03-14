@@ -4,14 +4,6 @@
       <el-form-item label="课程标题" prop="title">
         <el-input v-model="queryParams.title" placeholder="请输入课程标题" clearable @keyup.enter="handleQuery" />
       </el-form-item>
-      <el-form-item label="讲师" prop="lecturer">
-        <el-input v-model="queryParams.lecturer" placeholder="请输入讲师" clearable @keyup.enter="handleQuery" />
-      </el-form-item>
-      <el-form-item label="课程难度" prop="level" style="width: 200px">
-        <el-select v-model="queryParams.level" placeholder="请选择课程难度" clearable>
-          <el-option v-for="dict in course_level" :key="dict.value" :label="dict.label" :value="dict.value" />
-        </el-select>
-      </el-form-item>
       <el-form-item label="状态" prop="status" style="width: 200px">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
           <el-option v-for="dict in course_status" :key="dict.value" :label="dict.label" :value="dict.value" />
@@ -47,18 +39,11 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="课程编号" align="center" prop="courseId" width="80" />
       <el-table-column label="课程标题" align="center" prop="title" show-overflow-tooltip />
-      <el-table-column label="讲师" align="center" prop="lecturer" width="120" />
-      <el-table-column label="课程难度" align="center" prop="level" width="120">
-        <template #default="scope">
-          <dict-tag :options="course_level" :value="scope.row.level" />
-        </template>
-      </el-table-column>
       <el-table-column label="时长" align="center" prop="duration" width="100">
         <template #default="scope">
           <span>{{ formatDuration(scope.row.duration) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="章节数" align="center" prop="chapters" width="100" />
       <el-table-column label="封面图" align="center" prop="coverUrl" width="100">
         <template #default="scope">
           <image-preview v-if="scope.row.coverUrl" :src="scope.row.coverUrl" :width="50" :height="50" />
@@ -102,20 +87,9 @@
         <el-form-item label="封面图" prop="coverUrl">
           <image-upload v-model="form.coverUrl" :limit="1" />
         </el-form-item>
-        <el-form-item label="讲师" prop="lecturer">
-          <el-input v-model="form.lecturer" placeholder="请输入讲师" />
-        </el-form-item>
         <el-form-item label="视频时长" prop="duration">
           <el-input v-model="durationFormatted" placeholder="上传视频后自动计算" disabled style="width: 100%;" />
           <span v-if="calculatingDuration" style="margin-left: 10px; color: #409eff; font-size: 12px;">正在计算时长...</span>
-        </el-form-item>
-        <el-form-item label="章节数" prop="chapters">
-          <el-input-number v-model="form.chapters" :min="0" placeholder="请输入章节数" />
-        </el-form-item>
-        <el-form-item label="课程难度" prop="level">
-          <el-select v-model="form.level" placeholder="请选择课程难度">
-            <el-option v-for="dict in course_level" :key="dict.value" :label="dict.label" :value="dict.value" />
-          </el-select>
         </el-form-item>
         <el-form-item label="课程简介" prop="description">
           <el-input v-model="form.description" type="textarea" :rows="4" placeholder="请输入课程简介" />
@@ -142,12 +116,7 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="课程编号">{{ viewForm.courseId }}</el-descriptions-item>
         <el-descriptions-item label="课程标题">{{ viewForm.title }}</el-descriptions-item>
-        <el-descriptions-item label="讲师">{{ viewForm.lecturer || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="课程难度">
-          <dict-tag :options="course_level" :value="viewForm.level" />
-        </el-descriptions-item>
         <el-descriptions-item label="时长">{{ formatDuration(viewForm.duration) }}</el-descriptions-item>
-        <el-descriptions-item label="章节数">{{ viewForm.chapters || 0 }}</el-descriptions-item>
         <el-descriptions-item label="状态">
           <dict-tag :options="course_status" :value="viewForm.status" />
         </el-descriptions-item>
@@ -185,7 +154,7 @@ import {
 } from "@/api/recommend/recommendCourse"
 
 const { proxy } = getCurrentInstance()
-const { course_status, course_level } = proxy.useDict('course_status', 'course_level')
+const { course_status } = proxy.useDict('course_status')
 
 const recommendCourseList = ref([])
 const open = ref(false)
@@ -206,8 +175,6 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     title: null,
-    lecturer: null,
-    level: null,
     status: null,
   },
   rules: {
@@ -341,10 +308,7 @@ function reset() {
     title: null,
     mp4Url: null,
     coverUrl: null,
-    lecturer: null,
     duration: null,
-    chapters: null,
-    level: null,
     description: null,
     status: '0',
     remark: null

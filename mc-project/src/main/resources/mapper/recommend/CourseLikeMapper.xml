@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mc.recommend.mapper.CourseLikeMapper">
+
+    <select id="checkLike" resultType="int">
+        SELECT COUNT(1) FROM course_like
+        WHERE course_id = #{courseId} AND user_id = #{userId}
+    </select>
+
+    <insert id="insertLike" parameterType="com.mc.recommend.domain.CourseLike" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO course_like (course_id, user_id, create_time)
+        VALUES (#{courseId}, #{userId}, #{createTime})
+    </insert>
+
+    <delete id="deleteLike">
+        DELETE FROM course_like
+        WHERE course_id = #{courseId} AND user_id = #{userId}
+    </delete>
+
+    <select id="selectLikeCount" resultType="int">
+        SELECT COUNT(1) FROM course_like
+        WHERE course_id = #{courseId}
+    </select>
+
+</mapper>

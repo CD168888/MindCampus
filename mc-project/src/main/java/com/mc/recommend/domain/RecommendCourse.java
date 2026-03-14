@@ -39,21 +39,9 @@ public class RecommendCourse extends BaseEntity {
     @Excel(name = "封面图链接")
     private String coverUrl;
 
-    /** 讲师 */
-    @Excel(name = "讲师")
-    private String lecturer;
-
     /** 视频时长（秒） */
     @Excel(name = "视频时长（秒）")
     private Integer duration;
-
-    /** 章节数 */
-    @Excel(name = "章节数")
-    private Integer chapters;
-
-    /** 课程难度（初级/中级/高级） */
-    @Excel(name = "课程难度")
-    private String level;
 
     /** 课程简介 */
     @Excel(name = "课程简介")
@@ -63,7 +51,7 @@ public class RecommendCourse extends BaseEntity {
     @Excel(name = "状态", readConverterExp = "0=正常,1=下架")
     private String status;
 
-    /** 搜索关键词（用于模糊搜索 title 或 lecturer，非数据库字段） */
+    /** 搜索关键词（用于模糊搜索 title，非数据库字段） */
     @TableField(exist = false)
     private String keyword;
 }
