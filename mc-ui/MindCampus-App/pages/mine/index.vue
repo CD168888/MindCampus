@@ -142,25 +142,50 @@ export default {
   },
   methods: {
     handleToInfo() {
-      uni.navigateTo({ url: '/pages/mine/info/index' })
+      if (this.$tab) {
+        this.$tab.navigateTo('/pages/mine/info/index')
+      } else {
+        uni.navigateTo({ url: '/pages/mine/info/index' })
+      }
     },
     handleToMyLikes() {
-      uni.navigateTo({ url: '/pages/mine/likes/index' })
+      if (this.$tab) {
+        this.$tab.navigateTo('/pages/mine/likes/index')
+      } else {
+        uni.navigateTo({ url: '/pages/mine/likes/index' })
+      }
     },
     handleToSetting() {
-      uni.navigateTo({ url: '/pages/mine/setting/index' })
+      if (this.$tab) {
+        this.$tab.navigateTo('/pages/mine/setting/index')
+      } else {
+        uni.navigateTo({ url: '/pages/mine/setting/index' })
+      }
     },
     handleToLogin() {
       uni.reLaunch({ url: '/pages/login' })
     },
     handleToAvatar() {
-      uni.navigateTo({ url: '/pages/mine/avatar/index' })
+      if (this.$tab) {
+        this.$tab.navigateTo('/pages/mine/avatar/index')
+      } else {
+        uni.navigateTo({ url: '/pages/mine/avatar/index' })
+      }
     },
     handleHelp() {
-      uni.navigateTo({ url: '/pages/mine/help/index' })
+      // 使用 $tab 或 uni 进行跳转
+      if (this.$tab) {
+        this.$tab.navigateTo('/pages/mine/help/index')
+      } else {
+        uni.navigateTo({ url: '/pages/mine/help/index' })
+      }
     },
     handleAbout() {
-      uni.navigateTo({ url: '/pages/mine/about/index' })
+      if (this.$tab) {
+        this.$tab.navigateTo('/pages/mine/about/index')
+      } else {
+        uni.navigateTo({ url: '/pages/mine/about/index' })
+      }
     },
     handleJiaoLiuQun() {
       uni.showToast({ title: 'QQ群：①133713780(满)、②146013835(满)', icon: 'none', duration: 3000 })
