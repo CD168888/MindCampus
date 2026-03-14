@@ -45,7 +45,7 @@
 
     <el-table v-loading="loading" :data="postList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="帖子ID" align="center" prop="postId" width="80" />
+      <el-table-column label="帖子编号" align="center" prop="postId" width="80" />
       <el-table-column label="用户头像" align="center" width="80">
         <template #default="scope">
           <el-avatar :size="40" :src="getAvatarUrl(scope.row)" icon="UserFilled" />
@@ -128,7 +128,7 @@
     <!-- 查看帖子详情和评论对话框 -->
     <el-dialog title="帖子详情" v-model="viewOpen" width="800px" append-to-body>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="帖子ID">{{ postDetail.postId }}</el-descriptions-item>
+        <el-descriptions-item label="帖子编号">{{ postDetail.postId }}</el-descriptions-item>
         <el-descriptions-item label="学生姓名">{{ postDetail.studentName }}</el-descriptions-item>
         <el-descriptions-item label="是否匿名" :span="2">
           <dict-tag :options="post_is_anonymous" :value="postDetail.isAnonymous" />

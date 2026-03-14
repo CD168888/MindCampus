@@ -43,7 +43,7 @@
 
     <el-table v-loading="loading" :data="recommendArticleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="文章ID" align="center" prop="articleId" width="80" />
+      <el-table-column label="文章编号" align="center" prop="articleId" width="80" />
       <el-table-column label="文章标题" align="center" prop="title" show-overflow-tooltip />
       <el-table-column label="作者" align="center" prop="author" width="120" />
       <el-table-column label="文章分类" align="center" prop="category" width="120" />
@@ -111,7 +111,7 @@
     <!-- 查看详情对话框 -->
     <el-dialog title="文章详情" v-model="viewOpen" width="1000px" append-to-body>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="文章ID">{{ viewForm.articleId }}</el-descriptions-item>
+        <el-descriptions-item label="文章编号">{{ viewForm.articleId }}</el-descriptions-item>
         <el-descriptions-item label="文章标题">{{ viewForm.title }}</el-descriptions-item>
         <el-descriptions-item label="作者">{{ viewForm.author || '-' }}</el-descriptions-item>
         <el-descriptions-item label="文章分类">{{ viewForm.category || '-' }}</el-descriptions-item>

@@ -37,7 +37,7 @@
 
     <el-table v-loading="loading" :data="bannerList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="轮播图ID" align="center" prop="bannerId" width="100" />
+      <el-table-column label="轮播图编号" align="center" prop="bannerId" width="100" />
       <el-table-column label="轮播标题" align="center" prop="title" show-overflow-tooltip />
       <el-table-column label="轮播图" align="center" prop="imageUrl" width="120">
         <template #default="scope">
@@ -142,7 +142,7 @@
     <!-- 查看详情对话框 -->
     <el-dialog title="轮播图详情" v-model="viewOpen" width="800px" append-to-body>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="轮播图ID">{{ viewForm.bannerId }}</el-descriptions-item>
+        <el-descriptions-item label="轮播图编号">{{ viewForm.bannerId }}</el-descriptions-item>
         <el-descriptions-item label="轮播标题">{{ viewForm.title }}</el-descriptions-item>
         <el-descriptions-item label="显示顺序">{{ viewForm.sortOrder || 0 }}</el-descriptions-item>
         <el-descriptions-item label="状态">

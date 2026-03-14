@@ -1,8 +1,8 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="用户id" prop="userId">
-        <el-input v-model="queryParams.userId" placeholder="请输入用户id" clearable @keyup.enter="handleQuery" />
+      <el-form-item label="用户编号" prop="userId">
+        <el-input v-model="queryParams.userId" placeholder="请输入用户编号" clearable @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="学号" prop="studentNo">
         <el-input v-model="queryParams.studentNo" placeholder="请输入学号" clearable @keyup.enter="handleQuery" />
@@ -50,8 +50,8 @@
 
     <el-table v-loading="loading" :data="infoList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="学生ID" align="center" prop="studentId" />
-      <el-table-column label="用户id" align="center" prop="userId" />
+      <el-table-column label="学生编号" align="center" prop="studentId" />
+      <el-table-column label="用户编号" align="center" prop="userId" />
       <el-table-column label="学号" align="center" prop="studentNo" />
       <el-table-column label="姓名" align="center" prop="name" />
       <el-table-column label="性别" align="center" prop="gender">
@@ -84,8 +84,8 @@
     <!-- 添加或修改学生信息对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="infoRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="用户ID" prop="userId">
-          <el-input v-model="form.userId" placeholder="用户ID" :disabled="true" />
+        <el-form-item label="用户编号" prop="userId">
+          <el-input v-model="form.userId" placeholder="用户编号" :disabled="true" />
         </el-form-item>
         <el-form-item label="用户昵称" prop="userNickName">
           <el-select v-model="form.userId" placeholder="请选择用户昵称" :disabled="isEditMode" clearable
@@ -166,7 +166,7 @@ const data = reactive({
   },
   rules: {
     userId: [
-      { required: true, message: "用户id不能为空", trigger: "blur" }
+      { required: true, message: "用户编号不能为空", trigger: "blur" }
     ],
     studentNo: [
       { required: true, message: "学号不能为空", trigger: "blur" }

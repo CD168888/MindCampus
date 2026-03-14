@@ -51,7 +51,7 @@
 
     <el-table v-loading="loading" :data="evaluationResultList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="测评结果ID" align="center" prop="resultId" />
+      <el-table-column label="结果编号" align="center" prop="resultId" />
       <el-table-column label="学生名称" align="center" prop="studentName" />
       <el-table-column label="问卷标题" align="center" prop="questionnaireTitle" />
 
@@ -178,11 +178,17 @@
   </template>
 
 <script setup name="EvaluationResult">
-import { addEvaluationResult, delEvaluationResult, getEvaluationResult, listEvaluationResult, updateEvaluationResult } from "@/api/evaluation/evaluationResult"
+import {
+  addEvaluationResult,
+  delEvaluationResult,
+  getEvaluationResult,
+  listEvaluationResult,
+  updateEvaluationResult
+} from "@/api/evaluation/evaluationResult"
 import {listInfo} from "@/api/student/info"
 import {listQuestionnaire} from "@/api/questionnaire/questionnaireinfo"
 import * as echarts from "echarts"
-import { nextTick } from "vue"
+import {nextTick} from "vue"
 
 const { proxy } = getCurrentInstance()
 const { completion_status, read_status, risk_level, ai_status } = proxy.useDict('completion_status', 'read_status', 'risk_level', 'ai_status')

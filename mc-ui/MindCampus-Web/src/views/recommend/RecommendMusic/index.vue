@@ -43,7 +43,7 @@
 
     <el-table v-loading="loading" :data="recommendMusicList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="音乐ID" align="center" prop="musicId" width="80" />
+      <el-table-column label="音乐编号" align="center" prop="musicId" width="80" />
       <el-table-column label="音乐标题" align="center" prop="title" show-overflow-tooltip />
       <el-table-column label="演唱者" align="center" prop="artist" width="120" />
       <el-table-column label="音乐风格" align="center" prop="genre" width="120" />
@@ -128,7 +128,7 @@
     <!-- 查看详情对话框 -->
     <el-dialog title="音乐详情" v-model="viewOpen" width="800px" append-to-body>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="音乐ID">{{ viewForm.musicId }}</el-descriptions-item>
+        <el-descriptions-item label="音乐编号">{{ viewForm.musicId }}</el-descriptions-item>
         <el-descriptions-item label="音乐标题">{{ viewForm.title }}</el-descriptions-item>
         <el-descriptions-item label="演唱者/作者">{{ viewForm.artist || '-' }}</el-descriptions-item>
         <el-descriptions-item label="音乐风格">{{ viewForm.genre || '-' }}</el-descriptions-item>

@@ -43,7 +43,7 @@
     <el-table v-loading="loading" :data="questionnaireAnswerList" @selection-change="handleSelectionChange"
       :span-method="objectSpanMethod" border>
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="测评结果ID" align="center" prop="resultId" width="120" />
+      <el-table-column label="测评结果编号" align="center" prop="resultId" width="120" />
       <el-table-column label="学生姓名" align="center" prop="studentName" width="120">
         <template #default="scope">
           <span>{{ scope.row.studentName || '-' }}</span>
@@ -54,7 +54,7 @@
           <span>{{ scope.row.questionnaireTitle || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="答题记录ID" align="center" prop="answerId" width="100" />
+      <el-table-column label="答题记录编号" align="center" prop="answerId" width="120" />
       <el-table-column label="题目类型" align="center" prop="type" width="100">
         <template #default="scope">
           <el-tag v-if="scope.row.type === 'choice'" type="success">选择题</el-tag>
@@ -82,8 +82,8 @@
     <!-- 添加或修改心理测评答题记录对话框 -->
     <el-dialog :title="title" v-model="open" width="800px" append-to-body>
       <el-form ref="questionnaireAnswerRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="测评结果ID" prop="resultId">
-          <el-input v-model="form.resultId" placeholder="请输入测评结果ID" :disabled="form.answerId != null" />
+        <el-form-item label="测评结果编号" prop="resultId">
+          <el-input v-model="form.resultId" placeholder="请输入测评结果编号" :disabled="form.answerId != null" />
         </el-form-item>
         <el-form-item label="问卷ID" prop="questionnaireId">
           <el-input v-model="form.questionnaireId" placeholder="请输入问卷ID" :disabled="form.answerId != null" />
@@ -122,8 +122,8 @@
     <!-- 查看详情对话框 -->
     <el-dialog title="答题记录详情" v-model="viewOpen" width="800px" append-to-body>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="答题记录ID">{{ viewForm.answerId }}</el-descriptions-item>
-        <el-descriptions-item label="测评结果ID">{{ viewForm.resultId }}</el-descriptions-item>
+        <el-descriptions-item label="答题记录编号">{{ viewForm.answerId }}</el-descriptions-item>
+        <el-descriptions-item label="测评结果编号">{{ viewForm.resultId }}</el-descriptions-item>
         <el-descriptions-item label="学生姓名">{{ viewForm.studentName }}</el-descriptions-item>
         <el-descriptions-item label="问卷标题">{{ viewForm.questionnaireTitle }}</el-descriptions-item>
         <el-descriptions-item label="题目类型">
@@ -188,7 +188,7 @@ const data = reactive({
   },
   rules: {
     resultId: [
-      { required: true, message: "测评结果ID不能为空", trigger: "blur" }
+      { required: true, message: "测评结果编号不能为空", trigger: "blur" }
     ],
     questionnaireId: [
       { required: true, message: "问卷ID不能为空", trigger: "blur" }
@@ -265,7 +265,7 @@ function handleSpanArr() {
 
 // 表格合并单元格方法
 function objectSpanMethod({ row, column, rowIndex, columnIndex }) {
-  // 需要合并的列：测评结果ID(1)、学生姓名(2)、问卷标题(3)
+  // 需要合并的列：测评结果编号(1)、学生姓名(2)、问卷标题(3)
   if (columnIndex === 1 || columnIndex === 2 || columnIndex === 3) {
     const _row = spanArr.value[rowIndex]
     const _col = _row > 0 ? 1 : 0

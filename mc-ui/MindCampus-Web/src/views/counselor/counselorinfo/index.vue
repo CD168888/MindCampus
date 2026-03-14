@@ -46,8 +46,8 @@
 
     <el-table v-loading="loading" :data="counselorinfoList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="辅导员ID" align="center" prop="counselorId" />
-      <el-table-column label="用户id" align="center" prop="userId" />
+      <el-table-column label="辅导员编号" align="center" prop="counselorId" />
+      <el-table-column label="用户编号" align="center" prop="userId" />
       <el-table-column label="姓名" align="center" prop="name" />
       <el-table-column label="联系电话" align="center" prop="phone" />
       <el-table-column label="邮箱" align="center" prop="email" />
@@ -73,8 +73,8 @@
     <!-- 添加或修改辅导员管理对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="counselorinfoRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="用户ID" prop="userId">
-          <el-input v-model="form.userId" placeholder="用户ID" :disabled="true" />
+        <el-form-item label="用户编号" prop="userId">
+          <el-input v-model="form.userId" placeholder="用户编号" :disabled="true" />
         </el-form-item>
         <el-form-item label="用户昵称" prop="userNickName">
           <el-select v-model="form.userId" placeholder="请选择用户昵称" :disabled="isEditMode" clearable
@@ -149,7 +149,7 @@ const data = reactive({
   },
   rules: {
     userId: [
-      { required: true, message: "用户id不能为空", trigger: "blur" }
+      { required: true, message: "用户编号不能为空", trigger: "blur" }
     ],
     name: [
       { required: true, message: "姓名不能为空", trigger: "blur" }

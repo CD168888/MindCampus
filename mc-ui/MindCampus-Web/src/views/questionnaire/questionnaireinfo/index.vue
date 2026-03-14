@@ -49,7 +49,7 @@
 
     <el-table v-loading="loading" :data="questionnaireList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="问卷ID" align="center" prop="questionnaireId" width="80" />
+      <el-table-column label="问卷编号" align="center" prop="questionnaireId" width="80" />
       <el-table-column label="问卷标题" align="center" prop="title" show-overflow-tooltip />
       <el-table-column label="问卷描述" align="center" prop="description" show-overflow-tooltip />
       <el-table-column label="状态" align="center" prop="status" width="100">

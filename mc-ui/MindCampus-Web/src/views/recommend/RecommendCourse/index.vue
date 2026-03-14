@@ -45,7 +45,7 @@
 
     <el-table v-loading="loading" :data="recommendCourseList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="课程ID" align="center" prop="courseId" width="80" />
+      <el-table-column label="课程编号" align="center" prop="courseId" width="80" />
       <el-table-column label="课程标题" align="center" prop="title" show-overflow-tooltip />
       <el-table-column label="讲师" align="center" prop="lecturer" width="120" />
       <el-table-column label="课程难度" align="center" prop="level" width="120">
@@ -140,7 +140,7 @@
     <!-- 查看详情对话框 -->
     <el-dialog title="课程详情" v-model="viewOpen" width="800px" append-to-body>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="课程ID">{{ viewForm.courseId }}</el-descriptions-item>
+        <el-descriptions-item label="课程编号">{{ viewForm.courseId }}</el-descriptions-item>
         <el-descriptions-item label="课程标题">{{ viewForm.title }}</el-descriptions-item>
         <el-descriptions-item label="讲师">{{ viewForm.lecturer || '-' }}</el-descriptions-item>
         <el-descriptions-item label="课程难度">
