@@ -44,29 +44,29 @@
           </view>
 
           <view class="post-content">
-            <text class="post-text">{{ item.content || item.title }}</text>
+            <view v-if="item.title" class="post-title">{{ item.title }}</view>
+            <text class="post-text" :class="{'has-title': !!item.title}">{{ getContentPreview(item.content) }}</text>
           </view>
 
-          <view v-if="item.images && item.images.length > 0" class="post-images">
-            
-            <view v-if="item.images.length === 1" class="images-layout-1">
-              <image class="post-image single-img" :src="getImageUrl(item.images[0])" mode="aspectFill"
-                @tap.stop="previewImage(item.images, 0)">
+          <view v-if="getImageList(item).length > 0" class="post-images">
+            <view v-if="getImageList(item).length === 1" class="images-layout-1">
+              <image class="post-image single-img" :src="getImageUrl(getImageList(item)[0])" mode="aspectFill"
+                @tap.stop="previewImage(getImageList(item), 0)">
               </image>
             </view>
 
-            <view v-else-if="item.images.length === 2" class="images-layout-2">
-              <image v-for="(img, index) in item.images" :key="index" class="post-image" :src="getImageUrl(img)"
-                mode="aspectFill" @tap.stop="previewImage(item.images, index)">
+            <view v-else-if="getImageList(item).length === 2" class="images-layout-2">
+              <image v-for="(img, index) in getImageList(item)" :key="index" class="post-image" :src="getImageUrl(img)"
+                mode="aspectFill" @tap.stop="previewImage(getImageList(item), index)">
               </image>
             </view>
 
-            <view v-else class="images-layout-grid" :class="{'grid-3': item.images.length >= 3}">
-              <image v-for="(img, index) in item.images.slice(0, 9)" :key="index" class="post-image"
-                :src="getImageUrl(img)" mode="aspectFill" @tap.stop="previewImage(item.images, index)">
+            <view v-else class="images-layout-grid" :class="{'grid-3': getImageList(item).length >= 3}">
+              <image v-for="(img, idx) in getImageList(item).slice(0, 9)" :key="idx" class="post-image"
+                :src="getImageUrl(img)" mode="aspectFill" @tap.stop="previewImage(getImageList(item), idx)">
               </image>
-              <view v-if="item.images.length > 9 && index === 8" class="more-images-overlay">
-                <text>+{{ item.images.length - 9 }}</text>
+              <view v-if="getImageList(item).length > 9" class="more-images-overlay">
+                <text>+{{ getImageList(item).length - 9 }}</text>
               </view>
             </view>
           </view>
@@ -284,7 +284,7 @@ export default {
     },
 
     formatCount(count) {
-      if (!count || count === 0) return '分享'
+      if (!count || count === 0) return ''
       if (count >= 10000) return (count / 10000).toFixed(1) + 'w'
       if (count >= 1000) return (count / 1000).toFixed(1) + 'k'
       return count.toString()
@@ -299,6 +299,30 @@ export default {
       if (url.startsWith('http')) return url
       const baseUrl = config.baseUrl || 'http://localhost:8080'
       return url.startsWith('/') ? baseUrl + url : baseUrl + '/' + url
+    },
+
+    /**
+     * 获取内容预览，截取前80字并添加省略号
+     */
+    getContentPreview(content) {
+      if (!content) return ''
+      if (content.length > 80) {
+        return content.substring(0, 80) + '...'
+      }
+      return content
+    },
+
+    /**
+     * 将 images 统一转为数组，兼容后端返回的逗号分隔字符串
+     * 单图时后端返回 "url"，多图时返回 "url1,url2"，必须转为数组才能正确展示
+     */
+    getImageList(item) {
+      if (!item || !item.images) return []
+      if (Array.isArray(item.images)) return item.images
+      if (typeof item.images === 'string') {
+        return item.images.split(',').map(s => s.trim()).filter(s => s)
+      }
+      return []
     }
   }
 }
@@ -486,16 +510,30 @@ $theme-cyan-light: #48D1CC;
   margin-bottom: 24rpx;
 }
 
+.post-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1D1D1F;
+  line-height: 1.5;
+  margin-bottom: 12rpx;
+}
+
 .post-text {
-  font-size: 32rpx;
+  font-size: 30rpx;
   color: #3A3A3C;
   line-height: 1.6;
   text-align: justify;
   display: -webkit-box;
-  -webkit-line-clamp: 5;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-all;
+}
+
+.post-text.has-title {
+  -webkit-line-clamp: 2;
+  color: #636366;
+  font-size: 28rpx;
 }
 
 /* --- 图片网格 (Apple Grid Style) --- */
@@ -512,10 +550,15 @@ $theme-cyan-light: #48D1CC;
 }
 
 .images-layout-1 {
+  display: block;
+  width: 100%;
+  height: 400rpx;
+  overflow: hidden;
+  border-radius: 24rpx;
+  background: rgba(0,0,0,0.03);
   .single-img {
-    max-height: 400rpx;
-    border-radius: 24rpx;
-    object-fit: cover;
+    width: 100%;
+    height: 100%;
   }
 }
 

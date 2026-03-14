@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mc.common.exception.ServiceException;
 import com.mc.common.utils.DateUtils;
 import com.mc.community.domain.CommunityPost;
+import com.mc.community.domain.CommunityPostLike;
 import com.mc.community.mapper.CommunityCommentMapper;
+import com.mc.community.mapper.CommunityPostLikeMapper;
 import com.mc.community.mapper.CommunityPostMapper;
 import com.mc.community.service.ICommunityPostService;
 import com.mc.student.domain.Student;
@@ -25,6 +27,9 @@ import java.util.List;
 public class CommunityPostServiceImpl implements ICommunityPostService {
     @Autowired
     private CommunityPostMapper communityPostMapper;
+
+    @Autowired
+    private CommunityPostLikeMapper communityPostLikeMapper;
 
     @Autowired
     private CommunityCommentMapper communityCommentMapper;
@@ -169,8 +174,7 @@ public class CommunityPostServiceImpl implements ICommunityPostService {
 
     /**
      * 点赞帖子
-     * 注意：这里简化实现，直接增加点赞数
-     * 实际项目中应该维护一个点赞记录表，避免重复点赞
+     * 检查用户是否已点赞，防止重复点赞
      *
      * @param postId 帖子ID
      * @param userId 用户ID
@@ -178,9 +182,22 @@ public class CommunityPostServiceImpl implements ICommunityPostService {
      */
     @Override
     public boolean likePost(Long postId, Long userId) {
-        // TODO: 实际项目中应该先检查用户是否已点赞，并记录到点赞表
+        // 检查用户是否已点赞
+        CommunityPostLike existingLike = communityPostLikeMapper.selectLikeByPostAndUser(postId, userId);
+        if (existingLike != null) {
+            // 用户已点赞，不能重复点赞
+            throw new ServiceException("您已经点赞过该帖子");
+        }
+
         CommunityPost post = communityPostMapper.selectCommunityPostByPostId(postId);
         if (post != null) {
+            // 插入点赞记录
+            CommunityPostLike like = new CommunityPostLike();
+            like.setPostId(postId);
+            like.setUserId(userId);
+            communityPostLikeMapper.insertLike(like);
+
+            // 更新点赞数
             post.setLikeCount(post.getLikeCount() + 1);
             return communityPostMapper.updateCommunityPost(post) > 0;
         }
@@ -196,9 +213,19 @@ public class CommunityPostServiceImpl implements ICommunityPostService {
      */
     @Override
     public boolean unlikePost(Long postId, Long userId) {
-        // TODO: 实际项目中应该从点赞表中删除记录
+        // 检查用户是否已点赞
+        CommunityPostLike existingLike = communityPostLikeMapper.selectLikeByPostAndUser(postId, userId);
+        if (existingLike == null) {
+            // 用户未点赞，无法取消
+            throw new ServiceException("您还没有点赞该帖子");
+        }
+
         CommunityPost post = communityPostMapper.selectCommunityPostByPostId(postId);
         if (post != null && post.getLikeCount() > 0) {
+            // 删除点赞记录
+            communityPostLikeMapper.deleteLike(postId, userId);
+
+            // 更新点赞数
             post.setLikeCount(post.getLikeCount() - 1);
             return communityPostMapper.updateCommunityPost(post) > 0;
         }

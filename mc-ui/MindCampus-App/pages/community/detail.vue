@@ -125,10 +125,10 @@
                     <view class="reply-header">
                       <text class="reply-name">{{ reply.userName || '匿名用户' }}</text>
                       <text v-if="reply.replyToUserName" class="reply-to-text">回复</text>
-                      <text v-if="reply.replyToUserName" class="reply-name">{{ reply.replyToUserName }}</text>
+                      <text v-if="reply.replyToUserName" class="reply-name reply-name-to">@{{ reply.replyToUserName }}</text>
                     </view>
                     <text class="reply-content-text">{{ reply.content }}</text>
-                    
+
                     <view class="reply-footer">
                       <text class="reply-time">{{ formatTime(reply.createTime) }}</text>
                       <view class="comment-interactions">
@@ -187,7 +187,13 @@
 
 <script>
 import {
-  createComment, getPostDetail, likeComment, likePost, listComments, unlikeComment, unlikePost
+  createComment,
+  getPostDetail,
+  likeComment,
+  likePost,
+  listComments,
+  unlikeComment,
+  unlikePost
 } from '@/api/community/post'
 import config from '@/config'
 
@@ -520,15 +526,21 @@ $theme-cyan: #2CB5A0;
 
 /* 二级评论 */
 .reply-container {
-  margin-top: 24rpx; background: rgba(44, 181, 160, 0.04);
-  border-left: 4rpx solid rgba(44, 181, 160, 0.2);
-  border-radius: 0 16rpx 16rpx 0; padding: 20rpx 24rpx;
-  display: flex; flex-direction: column; gap: 24rpx;
+  margin-top: 20rpx;
+  margin-left: 12rpx;
+  padding-left: 24rpx;
+  border-left: 3rpx solid rgba(44, 181, 160, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
 }
-.reply-header { margin-bottom: 6rpx; font-size: 26rpx;}
-.reply-name { font-weight: 600; color: $ios-text-primary; }
-.reply-to-text { margin: 0 8rpx; color: $ios-text-secondary; }
-.reply-content-text { font-size: 28rpx; color: #3A3A3C; line-height: 1.5; margin-bottom: 12rpx; }
+.reply-item { padding: 16rpx 0; }
+.reply-item:not(:last-child) { border-bottom: 1rpx solid rgba(0,0,0,0.04); padding-bottom: 20rpx; }
+.reply-header { margin-bottom: 8rpx; font-size: 26rpx; display: flex; align-items: center; flex-wrap: wrap; gap: 6rpx; }
+.reply-name { font-weight: 600; color: #1D1D1F; font-size: 26rpx; }
+.reply-name-to { color: #2CB5A0; font-weight: 600; }
+.reply-to-text { color: #86868B; font-size: 24rpx; margin: 0 4rpx; }
+.reply-content-text { font-size: 28rpx; color: #3A3A3C; line-height: 1.5; margin-bottom: 12rpx; word-break: break-all; }
 .reply-footer { display: flex; justify-content: space-between; align-items: center; }
 .reply-time { font-size: 22rpx; color: #A1A1A6; }
 
