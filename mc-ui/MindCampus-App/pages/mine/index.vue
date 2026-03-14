@@ -69,18 +69,6 @@
 
         <view class="divider"></view>
 
-        <view class="list-item" @tap="handleToEditInfo">
-          <view class="item-left">
-            <view class="list-icon-bg bg-gray">
-              <uni-icons type="person-filled" size="18" color="#1D1D1F"></uni-icons>
-            </view>
-            <text class="item-text">编辑资料</text>
-          </view>
-          <uni-icons type="right" size="16" color="#C7C7CC"></uni-icons>
-        </view>
-        
-        <view class="divider"></view>
-        
         <view class="list-item" @tap="handleHelp">
           <view class="item-left">
             <view class="list-icon-bg bg-orange">
@@ -158,9 +146,6 @@ export default {
     },
     handleToMyLikes() {
       uni.navigateTo({ url: '/pages/mine/likes/index' })
-    },
-    handleToEditInfo() {
-      uni.navigateTo({ url: '/pages/mine/info/edit' })
     },
     handleToSetting() {
       uni.navigateTo({ url: '/pages/mine/setting/index' })
