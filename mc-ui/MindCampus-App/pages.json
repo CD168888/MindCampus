@@ -77,7 +77,8 @@
   }, {
     "path": "pages/mine/help/index",
     "style": {
-      "navigationBarTitleText": "常见问题"
+      "navigationBarTitleText": "常见问题",
+      "navigationStyle": "custom"
     }
   }, {
     "path": "pages/mine/about/index",
