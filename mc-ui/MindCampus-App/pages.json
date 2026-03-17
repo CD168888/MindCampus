@@ -2,12 +2,14 @@
   "pages": [{
     "path": "pages/login",
     "style": {
-      "navigationBarTitleText": "登录"
+      "navigationBarTitleText": "登录",
+      "navigationStyle": "custom"
     }
   }, {
     "path": "pages/register",
     "style": {
-      "navigationBarTitleText": "注册"
+      "navigationBarTitleText": "注册",
+      "navigationStyle": "custom"
     }
   }, {
     "path": "pages/index",
