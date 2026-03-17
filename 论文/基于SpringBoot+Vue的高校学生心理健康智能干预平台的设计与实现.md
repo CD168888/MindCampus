@@ -331,38 +331,116 @@ Spring AI Alibaba是Spring生态系统中专注于智能应用开发的框架，
 **** 我的收藏
 @endmindmap
 ```
-
-（1）管理端的功能需求如下：
-
-①学生信息管理功能：包含学生档案管理与辅导员信息管理两大模块，档案管理中允许对学生的档案信息进行增删改查，包括学号、姓名、年级，专业、班级、联系方式等基本信息。辅导员信息管理涉及对辅导员信息进行绑定、修改、查询与删除，包括辅导员姓名、职称、擅长领域、联系方式等。
-
-②心理评估管理功能：主要由三部分构成，分别是问卷管理、题库管理以及评估结果管理。在问卷管理方面，它能够对问卷的各项信息进行编辑操作，这些信息包括问卷标题、问卷说明、测评类型、题目数量、总分等内容。题库管理具备对题目信息进行添加、删除、修改和查询的能力，支持选择题和简答题两种题型。评估结果管理则着重于对学生评估结果数据的查看、智能分析、风险等级标注等操作，以实现对学生心理状态的有效管理。
-
-③心理干预管理功能：心理干预管理功能用于实现对学生心理危机预警和干预流程的管理，支持风险配置、预警通知、干预记录等数据的录入、修改及维护操作。
-
-④内容推荐管理功能：在内容推荐管理功能中包含文章管理、课程管理，音乐管理、轮播图管理等模块，文章管理中能对心理知识文章信息进行增删改查，课程管理可以对在线课程信息进行增删改查，音乐管理用于管理放松音乐资源。
-
-⑤系统管理功能：系统管理功能中包含用户管理、角色管理、菜单管理等部门管理等模块，用户管理功能用于实现系统内用户信息数据的添加、删除、修改及查询操作，支持对用户信息的全面管理。
-
-（2）辅导员端的功能需求如下：
-
-①学生档案查看：辅导员可以查看所负责学生的基本信息和心理评估记录，了解学生的心理健康状况。
-
-②干预记录管理：辅导员可以记录对学生进行心理咨询的详细过程，形成完整的干预档案。
-
-（3）用户端的功能需求如下：
-
+高校学生心理健康智能干预平台分为三个系统端，学生拥有用户端的功能，辅导员拥有辅导员端的功能，管理员拥有管理端的功能，系统功能结构图如图3-1所示，本系统的功能需求如下所示：
+1.管理端的功能需求如下：
+（1）人员信息管理功能：包含学生档案管理与辅导员信息管理两大模块，档案管理中允许对学生的档案信息进行增删改查，包括学号、姓名、年级，专业、班级、联系方式等基本信息。辅导员信息管理涉及对辅导员信息进行绑定、修改、查询与删除，包括辅导员姓名、联系方式等。
+（2）测评管理功能：主要由三部分构成，分别是题库管理、问卷管理、答题管理以及结果管理。题库管理具备对题目信息进行添加、删除、修改和查询的能力，支持选择题和简答题两种题型。在问卷管理方面，它能够对问卷的各项信息进行编辑操作，这些信息包括问卷标题、问卷说明、测评类型、题目数量、总分等内容。在答题管理方面，它能够对学生的答题信息的各项信息进行编辑操作，这些信息包括学生名字、问卷标题、题目类型、题目内容、用户答案等内容。评估结果管理则着重于对学生评估结果数据的查看、智能分析、风险等级标注等操作，以实现对学生心理状态的有效管理。
+（3）推荐管理功能：在内容推荐管理功能中包含文章管理、课程管理，音乐管理、轮播图管理等模块，文章管理中能对心理知识文章信息进行增删改查，课程管理可以对在线课程信息进行增删改查，音乐管理用于管理放松音乐资源及其轮播图管理对用户推荐相关宣传图。
+（4）干预管理功能：干预管理功能用于实现对学生心理危机预警和干预流程的管理，支持风险配置、预警通知、干预记录等数据的录入、修改及维护操作。
+（5）系统管理功能：系统管理功能中包含用户管理、角色管理、菜单管理等部门管理等模块，用户管理功能用于实现系统内用户信息数据的添加、删除、修改及查询操作，支持对用户信息的全面管理。
+2.辅导员端的功能需求如下：
+（1）学生档案查看：辅导员可以查看所负责学生的基本信息和心理评估记录，了解学生的心理健康状况。
+（2）干预记录管理：辅导员可以记录对学生进行心理咨询的详细过程，形成完整的干预档案。
+（3）学生端的功能需求如下：
 ①智能智能聊天：学生可以与智能进行无限制的心理对话，获得全天候的心理陪伴和初步疏导。
-
 ②心理测评：学生可以完成系统中的心理测评问卷，获取个性化的评估报告。
-
-③内容浏览：学生可以浏览心理知识文章、在线课程、放松音乐等内容，获取心理健康知识。
-
+③内容推荐：学生可以浏览心理知识文章、在线课程、放松音乐等内容，获取心理健康知识。
 ④社区互动：学生可以在社区中发帖、评论，与其他学生交流心理健康话题。
+⑤个人中心：学生可以查看修改自己的一些个人信息，查看我的音乐、课程和文章的点赞记录。
 
-⑤个人中心：学生可以查看自己的评估历史、收藏内容等。
 
 系统的功能角色分成管理员、辅导员和学生三大类别。学生拥有首页查看、智能聊天、心理测评、内容浏览、社区互动、个人中心等功能。管理员拥有后台管理系统的全部功能包括学生档案管理、辅导员信息管理、问卷管理、题库管理、评估结果管理、干预管理、内容推荐管理、用户管理、角色管理、部门管理等。
+
+### 3.3 系统用例
+
+#### 3.3.1 用例描述
+
+系统用例是对系统功能的抽象描述，展示了系统与不同角色之间的交互。本系统主要包含以下用例：
+
+1. **管理员用例**：
+   - 学生信息管理：管理员可以添加、编辑、删除和查询学生信息。
+   - 辅导员信息管理：管理员可以添加、编辑、删除和查询辅导员信息。
+   - 问卷管理：管理员可以创建、编辑、发布和管理心理测评问卷。
+   - 题库管理：管理员可以添加、编辑、删除和管理测评题目。
+   - 评估结果管理：管理员可以查看学生的测评结果，触发智能分析生成评估报告。
+   - 风险配置管理：管理员可以配置不同风险等级对应的分数区间。
+   - 干预通知管理：管理员可以查看和处理干预通知。
+   - 干预流程记录：管理员可以记录和管理心理干预流程。
+   - 内容推荐管理：管理员可以管理文章、课程、音乐和轮播图。
+   - 系统管理：管理员可以管理用户、角色、菜单和部门。
+
+2. **辅导员用例**：
+   - 学生档案查看：辅导员可以查看所负责学生的基本信息和心理评估记录。
+   - 干预记录管理：辅导员可以记录和管理对学生的心理干预过程。
+
+3. **学生用例**：
+   - 智能聊天：学生可以与AI进行心理对话，获得心理陪伴和疏导。
+   - 心理测评：学生可以完成心理测评问卷，获取评估报告。
+   - 内容浏览：学生可以浏览文章、课程和音乐。
+   - 社区互动：学生可以在社区中发帖、评论和点赞。
+   - 个人中心：学生可以查看和管理个人信息、测评历史和收藏。
+
+#### 3.3.2 用例图
+
+系统用例图展示了系统与不同角色之间的交互关系，如图3-2所示。
+
+```plantuml
+@startuml 系统用例图
+skinparam defaultFontName Microsoft YaHei
+skinparam roundcorner 5
+
+actor 管理员
+actor 辅导员
+actor 学生
+
+package "管理端" {
+  usecase "学生信息管理"
+  usecase "辅导员信息管理"
+  usecase "问卷管理"
+  usecase "题库管理"
+  usecase "评估结果管理"
+  usecase "风险配置管理"
+  usecase "干预通知管理"
+  usecase "干预流程记录"
+  usecase "内容推荐管理"
+  usecase "系统管理"
+}
+
+package "辅导员端" {
+  usecase "学生档案查看"
+  usecase "干预记录管理"
+}
+
+package "学生端" {
+  usecase "智能聊天"
+  usecase "心理测评"
+  usecase "内容浏览"
+  usecase "社区互动"
+  usecase "个人中心"
+}
+
+管理员 --> 学生信息管理
+管理员 --> 辅导员信息管理
+管理员 --> 问卷管理
+管理员 --> 题库管理
+管理员 --> 评估结果管理
+管理员 --> 风险配置管理
+管理员 --> 干预通知管理
+管理员 --> 干预流程记录
+管理员 --> 内容推荐管理
+管理员 --> 系统管理
+
+辅导员 --> 学生档案查看
+辅导员 --> 干预记录管理
+
+学生 --> 智能聊天
+学生 --> 心理测评
+学生 --> 内容浏览
+学生 --> 社区互动
+学生 --> 个人中心
+
+@enduml
+```
 
 #### 3.2.2 非功能需求
 
@@ -430,7 +508,43 @@ stop
 @enduml
 ```
 
-#### 4.2.2 问卷管理功能设计
+#### 4.2.2 心理测评功能设计
+
+心理测评功能是系统的核心功能之一，允许学生在线完成心理测评问卷，系统自动计算得分并生成评估报告。该功能包括问卷列表展示、在线答题、评估报告生成等模块。
+
+学生通过移动端进入心理测评模块，首先看到待填问卷和已完成问卷的列表，系统会显示问卷的基本信息、截止时间和完成状态。学生选择问卷后进入答题页面，系统会逐题展示题目，支持选择题和简答题两种类型。答题过程中，系统实时保存答案并显示答题进度。
+
+答题完成后，学生提交答案，系统自动计算得分并生成评估报告。评估报告包含总得分、风险等级、智能分析和建议等内容。系统会根据得分自动标注风险等级，便于及时发现需要关注的学生。
+
+心理测评功能流程如图4-2.1所示。
+
+```plantuml
+@startuml 心理测评功能流程图
+skinparam defaultFontName Microsoft YaHei
+skinparam roundcorner 5
+skinparam ArrowColor black
+skinparam ActivityBorderColor black
+skinparam ActivityDiamondBorderColor black
+
+start
+
+:进入心理测评页面;
+:查看问卷列表（待填/已完成）;
+:选择待填问卷;
+:进入答题页面;
+:逐题回答问题;
+:实时保存答案;
+:完成所有题目;
+:提交答案;
+:系统计算得分;
+:生成评估报告;
+:显示测评结果;
+
+stop
+@enduml
+```
+
+#### 4.2.3 问卷管理功能设计
 
 问卷管理功能允许管理员创建、编辑和管理心理测评问卷。管理员可以设置问卷的基本信息，包括标题、描述、类型、开始时间和结束时间等。系统支持多种问卷类型，如常规测评、临时测评、专项测评等。
 
@@ -768,7 +882,7 @@ stop
 
 #### 4.3.1 概念结构设计
 
-本系统核心实体共有12个：
+概念结构设计是数据库设计的重要环节，通过实体-关系模型（E-R模型）来描述系统中的数据实体及其相互关系。本系统核心实体共有13个：
 
 （1）用户实体，承担着记录系统内用户相关信息的职责。它所包含的属性十分全面，首先用户id，部门id、账户名称、用户昵称、用户类型、用户邮箱、用户手机号、用户性别，再是头像链接地址、用户密码、账户状态标识、删除标志、最后登录IP地址、最后登录时间、创建者信息、修改者信息以及更新时间等。如图4-10所示。
 
@@ -823,25 +937,24 @@ CREATE TABLE `student_info` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学生信息表';
 ```
 
-（3）辅导员实体，主要承担着记录心理辅导员信息的任务，这些信息用于学生预约咨询和干预工作。辅导员实体涵盖的属性包括辅导员姓名、性别、职称、擅长领域、联系电话、所属部门、状态、创建时间、更新时间等。如图4-11所示。
+（3）辅导员实体，主要承担着记录心理辅导员信息的任务，这些信息用于学生预约咨询和干预工作。辅导员实体涵盖的属性包括辅导员姓名、联系电话、邮箱、办公室地址、状态、创建时间、更新时间等。如图4-11所示。
 
 图4-11 辅导员实体属性图
 
 ```sql
 CREATE TABLE `counselor_info` (
   `counselor_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '辅导员ID',
-  `user_id` bigint(20) DEFAULT NULL COMMENT '用户ID',
+  `user_id` bigint(20) DEFAULT NULL COMMENT '用户id',
   `name` varchar(50) DEFAULT NULL COMMENT '姓名',
-  `gender` char(1) DEFAULT NULL COMMENT '性别',
-  `title` varchar(50) DEFAULT NULL COMMENT '职称',
-  `expertise` varchar(200) DEFAULT NULL COMMENT '擅长领域',
   `phone` varchar(20) DEFAULT NULL COMMENT '联系电话',
-  `dept_id` bigint(20) DEFAULT NULL COMMENT '部门ID',
+  `email` varchar(100) DEFAULT NULL COMMENT '邮箱',
+  `office` varchar(100) DEFAULT NULL COMMENT '办公室地址',
   `status` char(1) DEFAULT '0' COMMENT '状态',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`counselor_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='辅导员信息表';
 ```
@@ -855,13 +968,13 @@ CREATE TABLE `ai_chat_session` (
   `session_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '会话ID',
   `user_id` bigint(20) DEFAULT NULL COMMENT '用户ID',
   `session_name` varchar(255) DEFAULT NULL COMMENT '会话名称',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(200) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`session_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='智能会话表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 聊天会话表';
 ```
 
 （5）智能消息实体，负责记录学生与智能的每次对话内容。包括消息ID、所属会话ID、用户ID、消息类型（用户/智能）、消息内容、创建时间等属性。如图4-13所示。
@@ -875,12 +988,13 @@ CREATE TABLE `ai_chat_message` (
   `user_id` bigint(20) DEFAULT NULL COMMENT '用户ID',
   `message_type` tinyint(1) DEFAULT NULL COMMENT '消息类型',
   `content` text COMMENT '消息内容',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`message_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='智能消息表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 聊天消息表';
 ```
 
 （6）问卷实体，用于存储心理测评问卷的基本信息，涵盖问卷标题、问卷说明、状态、类型、总分、开始时间、结束时间、创建时间、更新时间等属性。如图4-14所示。
@@ -893,17 +1007,17 @@ CREATE TABLE `questionnaire` (
   `title` varchar(200) DEFAULT NULL COMMENT '问卷标题',
   `description` varchar(500) DEFAULT NULL COMMENT '问卷说明',
   `status` char(1) DEFAULT '0' COMMENT '问卷状态',
-  `type` char(1) DEFAULT NULL COMMENT '问卷类型',
-  `total_score` int(10) DEFAULT NULL COMMENT '问卷总分',
+  `type` char(1) DEFAULT '0' COMMENT '问卷类型',
+  `total_score` int(10) DEFAULT '0' COMMENT '问卷总分',
   `start_time` datetime DEFAULT NULL COMMENT '问卷开始时间',
   `end_time` datetime DEFAULT NULL COMMENT '问卷结束时间',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(200) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`questionnaire_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='心理问卷表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='心理测评问卷表';
 ```
 
 （7）题目实体，负责储存心理测评题目的具体内容，具体涵盖所属问卷ID、题目类型、题干内容、选项（JSON格式）、标准答案、分值、排序、创建时间、更新时间等各类详细信息。如图4-15所示。
@@ -918,14 +1032,15 @@ CREATE TABLE `question` (
   `content` varchar(500) NOT NULL COMMENT '题干内容',
   `options` json DEFAULT NULL COMMENT '选项',
   `standard_answer` varchar(200) DEFAULT NULL COMMENT '标准答案',
-  `score` int(10) DEFAULT NULL COMMENT '分值',
-  `order_num` int(10) DEFAULT NULL COMMENT '题目顺序',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `score` int(10) DEFAULT '0' COMMENT '分值',
+  `order_num` int(10) DEFAULT '0' COMMENT '题目顺序',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`question_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='题目表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='心理测评题目表';
 ```
 
 （8）评估结果实体，用于存储学生完成心理测评的结果信息，包含学生ID、问卷ID、总得分、风险等级、智能分析结果（JSON格式）、智能分析状态、已读状态、完成状态、创建时间、更新时间等属性。如图4-16所示。
@@ -939,16 +1054,17 @@ CREATE TABLE `evaluation_result` (
   `questionnaire_id` bigint(20) DEFAULT NULL COMMENT '问卷ID',
   `total_score` int(10) DEFAULT NULL COMMENT '总得分',
   `risk_level` varchar(20) DEFAULT NULL COMMENT '风险等级',
-  `ai_analysis` json DEFAULT NULL COMMENT '智能分析结果',
-  `ai_status` char(1) DEFAULT '0' COMMENT '智能分析状态',
+  `ai_analysis` json DEFAULT NULL COMMENT 'AI 分析结果',
+  `ai_status` char(1) DEFAULT '0' COMMENT 'AI分析状态',
   `read_status` char(1) DEFAULT '0' COMMENT '已读标识',
   `completion_status` char(1) DEFAULT '0' COMMENT '完成标识',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`result_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='评估结果表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='心理测评结果表';
 ```
 
 （9）风险配置实体，则用于存储心理风险等级的配置信息。有助于根据不同的评估得分触发相应的预警机制。其包含风险等级、最低分数、最高分数、通知模板、状态、创建时间、更新时间等属性。如图4-17所示。
@@ -963,12 +1079,14 @@ CREATE TABLE `intervention_risk_config` (
   `max_score` int(10) DEFAULT NULL COMMENT '最高分数',
   `notification_template` text COMMENT '通知模板',
   `status` char(1) DEFAULT '0' COMMENT '状态',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  PRIMARY KEY (`config_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='风险配置表';
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`config_id`),
+  UNIQUE KEY `uk_risk_level` (`risk_level`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='风险等级配置表';
 ```
 
 （10）干预通知实体，主要用于储存心理干预通知信息，保证相关人员能够及时知晓需要干预的学生情况。其中先是通知ID、关联评估结果ID、学生ID、负责人ID，部门ID、通知类型、通知内容、发送时间、阅读状态、处理状态、创建时间、更新时间等。如图4-18所示。
@@ -980,17 +1098,18 @@ CREATE TABLE `intervention_notification` (
   `notification_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '通知ID',
   `result_id` bigint(20) DEFAULT NULL COMMENT '评测结果ID',
   `student_id` bigint(20) DEFAULT NULL COMMENT '学生ID',
-  `user_id` bigint(20) DEFAULT NULL COMMENT '负责人ID',
+  `user_id` bigint(20) DEFAULT NULL COMMENT '用户ID',
   `dept_id` bigint(20) DEFAULT NULL COMMENT '部门ID',
   `notification_type` varchar(50) DEFAULT NULL COMMENT '通知类型',
   `notification_content` text COMMENT '通知内容',
   `send_time` datetime DEFAULT NULL COMMENT '发送时间',
   `read_status` char(1) DEFAULT '0' COMMENT '阅读状态',
   `process_status` char(1) DEFAULT '0' COMMENT '处理状态',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`notification_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='干预通知表';
 ```
@@ -1003,12 +1122,12 @@ CREATE TABLE `intervention_notification` (
 CREATE TABLE `recommend_article` (
   `article_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '文章ID',
   `title` varchar(100) NOT NULL COMMENT '文章标题',
-  `content` text NOT NULL COMMENT '文章内容（Markdown格式）',
+  `content` text NOT NULL COMMENT '文章内容',
   `summary` varchar(500) DEFAULT NULL COMMENT '文章摘要',
   `author` varchar(64) DEFAULT NULL COMMENT '作者',
   `read_count` int(10) DEFAULT '0' COMMENT '阅读量',
   `category` varchar(50) DEFAULT NULL COMMENT '文章分类',
-  `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1下架）',
+  `status` char(1) DEFAULT '0' COMMENT '状态',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
@@ -1018,7 +1137,7 @@ CREATE TABLE `recommend_article` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='心理文章推荐表';
 ```
 
-（12）心理课程推荐实体，用于存储推荐给学生的心理课程信息，涵盖课程标题、视频链接、封面图、讲师、时长、章节数、难度、状态、创建时间、更新时间等信息。如图4-20所示。
+（12）心理课程推荐实体，用于存储推荐给学生的心理课程信息，涵盖课程标题、视频链接、封面图、时长、课程简介、状态、创建时间、更新时间等信息。如图4-20所示。
 
 图4-20 心理课程推荐实体属性图
 
@@ -1028,12 +1147,9 @@ CREATE TABLE `recommend_course` (
   `title` varchar(100) NOT NULL COMMENT '课程标题',
   `mp4_url` varchar(255) NOT NULL COMMENT '视频文件链接',
   `cover_url` varchar(255) DEFAULT NULL COMMENT '封面图链接',
-  `lecturer` varchar(64) DEFAULT NULL COMMENT '讲师',
-  `duration` int(10) DEFAULT NULL COMMENT '视频时长（秒）',
-  `chapters` int(10) DEFAULT NULL COMMENT '章节数',
-  `level` varchar(20) DEFAULT NULL COMMENT '课程难度（0初级/1中级/2高级）',
+  `duration` int(10) DEFAULT NULL COMMENT '视频时长',
   `description` varchar(500) DEFAULT NULL COMMENT '课程简介',
-  `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1下架）',
+  `status` char(1) DEFAULT '0' COMMENT '状态',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
@@ -1055,9 +1171,9 @@ CREATE TABLE `recommend_music` (
   `cover_url` varchar(255) DEFAULT NULL COMMENT '封面图链接',
   `artist` varchar(64) DEFAULT NULL COMMENT '演唱者/作者',
   `genre` varchar(50) DEFAULT NULL COMMENT '音乐风格',
-  `duration` int(10) DEFAULT NULL COMMENT '时长（秒）',
+  `duration` int(10) DEFAULT NULL COMMENT '时长',
   `description` varchar(500) DEFAULT NULL COMMENT '音乐简介',
-  `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1下架）',
+  `status` char(1) DEFAULT '0' COMMENT '状态',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
@@ -1080,21 +1196,23 @@ CREATE TABLE `recommend_music` (
 | user\_id     | bigint   | 20     | 非空、primary key | 用户ID   |
 | dept\_id     | bigint   | 20     | 空              | 部门ID   |
 | user\_name   | varchar  | 30     | 非空             | 用户账号   |
-| nick\_name   | varchar  | 30     | 空              | 用户昵称   |
+| nick\_name   | varchar  | 30     | 非空             | 用户昵称   |
 | user\_type   | varchar  | 2      | 空              | 用户类型   |
 | email        | varchar  | 50     | 空              | 用户邮箱   |
 | phonenumber  | varchar  | 11     | 空              | 手机号码   |
 | sex          | char     | 1      | 空              | 用户性别   |
 | avatar       | varchar  | 100    | 空              | 头像地址   |
 | password     | varchar  | 100    | 空              | 密码     |
-| status       | char     | 1      | 空              | 帐号状态   |
+| status       | char     | 1      | 空              | 账号状态   |
 | del\_flag    | char     | 1      | 空              | 删除标志   |
 | login\_ip    | varchar  | 128    | 空              | 最后登录IP |
 | login\_date  | datetime | <br /> | 空              | 最后登录时间 |
+| pwd\_update\_date | datetime | <br /> | 空              | 密码最后更新时间 |
 | create\_by   | varchar  | 64     | 空              | 创建者    |
 | create\_time | datetime | <br /> | 空              | 创建时间   |
 | update\_by   | varchar  | 64     | 空              | 更新者    |
 | update\_time | datetime | <br /> | 空              | 更新时间   |
+| remark       | varchar  | 500    | 空              | 备注     |
 
 （2）学生信息表（student\_info）：记录当前系统的学生信息，其数据结构如表4-2所示。
 
@@ -1125,18 +1243,17 @@ CREATE TABLE `recommend_music` (
 | 字段            | 类型       | 长度     | 约束             | 描述    |
 | ------------- | -------- | ------ | -------------- | ----- |
 | counselor\_id | bigint   | 20     | primary key、非空 | 辅导员ID |
-| user\_id      | bigint   | 20     | 空              | 用户ID  |
+| user\_id      | bigint   | 20     | 空              | 用户id  |
 | name          | varchar  | 50     | 空              | 姓名    |
-| gender        | char     | 1      | 空              | 性别    |
-| title         | varchar  | 50     | 空              | 职称    |
-| expertise     | varchar  | 200    | 空              | 擅长领域  |
 | phone         | varchar  | 20     | 空              | 联系电话  |
-| dept\_id      | bigint   | 20     | 空              | 部门ID  |
+| email         | varchar  | 100    | 空              | 邮箱    |
+| office        | varchar  | 100    | 空              | 办公室地址  |
 | status        | char     | 1      | 空              | 状态    |
 | create\_by    | varchar  | 64     | 空              | 创建者   |
 | create\_time  | datetime | <br /> | 空              | 创建时间  |
 | update\_by    | varchar  | 64     | 空              | 更新者   |
 | update\_time  | datetime | <br /> | 空              | 更新时间  |
+| remark        | varchar  | 200    | 空              | 备注    |
 
 （4）智能会话表（ai\_chat\_session）：存储所有学生的智能聊天会话信息，其数据结构如表4-4所示。
 
@@ -1168,6 +1285,7 @@ CREATE TABLE `recommend_music` (
 | create\_time  | datetime | <br /> | 空              | 创建时间 |
 | update\_by    | varchar  | 64     | 空              | 更新者  |
 | update\_time  | datetime | <br /> | 空              | 更新时间 |
+| remark        | varchar  | 200    | 空              | 备注   |
 
 （6）心理问卷表（questionnaire）：存储所有心理测评问卷信息，其数据结构如表4-6所示。
 
@@ -1199,7 +1317,7 @@ CREATE TABLE `recommend_music` (
 | questionnaire\_id | bigint   | 20     | 非空             | 问卷ID |
 | type              | varchar  | 20     | 非空             | 题目类型 |
 | content           | varchar  | 500    | 非空             | 题干内容 |
-| options           | json     | <br /> | 空              | 选项   |
+| options           | json     | <br /> | 空              | 选项 |
 | standard\_answer  | varchar  | 200    | 空              | 标准答案 |
 | score             | int      | 10     | 空              | 分值   |
 | order\_num        | int      | 10     | 空              | 题目顺序 |
@@ -1207,6 +1325,7 @@ CREATE TABLE `recommend_music` (
 | create\_time      | datetime | <br /> | 空              | 创建时间 |
 | update\_by        | varchar  | 64     | 空              | 更新者  |
 | update\_time      | datetime | <br /> | 空              | 更新时间 |
+| remark            | varchar  | 200    | 空              | 备注   |
 
 （8）评估结果表（evaluation\_result）：存储所有学生的评估结果信息，其数据结构如表4-8所示。
 
@@ -1219,14 +1338,15 @@ CREATE TABLE `recommend_music` (
 | questionnaire\_id  | bigint   | 20     | 空              | 问卷ID   |
 | total\_score       | int      | 10     | 空              | 总得分    |
 | risk\_level        | varchar  | 20     | 空              | 风险等级   |
-| ai\_analysis       | json     | <br /> | 空              | 智能分析结果 |
-| ai\_status         | char     | 1      | 空              | 智能分析状态 |
+| ai\_analysis       | json     | <br /> | 空              | AI 分析结果 |
+| ai\_status         | char     | 1      | 空              | AI分析状态 |
 | read\_status       | char     | 1      | 空              | 已读标识   |
 | completion\_status | char     | 1      | 空              | 完成标识   |
 | create\_by         | varchar  | 64     | 空              | 创建者    |
 | create\_time       | datetime | <br /> | 空              | 创建时间   |
 | update\_by         | varchar  | 64     | 空              | 更新者    |
 | update\_time       | datetime | <br /> | 空              | 更新时间   |
+| remark             | varchar  | 200    | 空              | 备注     |
 
 （9）干预通知表（intervention\_notification）：存储所有干预通知信息，其数据结构如表4-9所示。
 
@@ -1237,7 +1357,7 @@ CREATE TABLE `recommend_music` (
 | notification\_id      | bigint   | 20     | primary key、非空 | 通知ID   |
 | result\_id            | bigint   | 20     | 空              | 评测结果ID |
 | student\_id           | bigint   | 20     | 空              | 学生ID   |
-| user\_id              | bigint   | 20     | 空              | 负责人ID  |
+| user\_id              | bigint   | 20     | 空              | 用户ID  |
 | dept\_id              | bigint   | 20     | 空              | 部门ID   |
 | notification\_type    | varchar  | 50     | 空              | 通知类型   |
 | notification\_content | text     | <br /> | 空              | 通知内容   |
@@ -1248,6 +1368,7 @@ CREATE TABLE `recommend_music` (
 | create\_time          | datetime | <br /> | 空              | 创建时间   |
 | update\_by            | varchar  | 64     | 空              | 更新者    |
 | update\_time          | datetime | <br /> | 空              | 更新时间   |
+| remark                | varchar  | 200    | 空              | 备注     |
 
 （10）风险配置表（intervention\_risk\_config）：存储系统的风险等级配置信息，其数据结构如表4-10所示。
 
@@ -1260,11 +1381,12 @@ CREATE TABLE `recommend_music` (
 | min\_score             | int      | 10     | 空              | 最低分数 |
 | max\_score             | int      | 10     | 空              | 最高分数 |
 | notification\_template | text     | <br /> | 空              | 通知模板 |
-| status                 | char     | 1      | 空              | 状态   |
+| status                 | char     | 1      | 空              | 状态 |
 | create\_by             | varchar  | 64     | 空              | 创建者  |
 | create\_time           | datetime | <br /> | 空              | 创建时间 |
 | update\_by             | varchar  | 64     | 空              | 更新者  |
 | update\_time           | datetime | <br /> | 空              | 更新时间 |
+| remark                 | varchar  | 200    | 空              | 备注   |
 
 （11）心理文章推荐表（recommend\_article）：存储系统推荐的心理知识文章信息，其数据结构如表4-11所示。
 
@@ -1274,16 +1396,17 @@ CREATE TABLE `recommend_music` (
 | ------------ | -------- | ------ | -------------- | ---------------- |
 | article\_id  | bigint   | 20     | primary key、非空 | 文章ID             |
 | title        | varchar  | 100    | 非空             | 文章标题             |
-| content      | text     | <br /> | 非空             | 文章内容（Markdown格式） |
+| content      | text     | <br /> | 非空             | 文章内容 |
 | summary      | varchar  | 500    | 空              | 文章摘要             |
 | author       | varchar  | 64     | 空              | 作者               |
 | read\_count  | int      | 10     | 空              | 阅读量              |
 | category     | varchar  | 50     | 空              | 文章分类             |
-| status       | char     | 1      | 空              | 状态（0正常 1下架）      |
+| status       | char     | 1      | 空              | 状态     |
 | create\_by   | varchar  | 64     | 空              | 创建者              |
 | create\_time | datetime | <br /> | 空              | 创建时间             |
 | update\_by   | varchar  | 64     | 空              | 更新者              |
 | update\_time | datetime | <br /> | 空              | 更新时间             |
+| remark       | varchar  | 200    | 空              | 备注               |
 
 （12）心理课程推荐表（recommend\_course）：存储系统推荐的心理课程信息，其数据结构如表4-12所示。
 
@@ -1295,16 +1418,14 @@ CREATE TABLE `recommend_music` (
 | title        | varchar  | 100    | 非空             | 课程标题              |
 | mp4\_url     | varchar  | 255    | 非空             | 视频文件链接            |
 | cover\_url   | varchar  | 255    | 空              | 封面图链接             |
-| lecturer     | varchar  | 64     | 空              | 讲师                |
-| duration     | int      | 10     | 空              | 视频时长（秒）           |
-| chapters     | int      | 10     | 空              | 章节数               |
-| level        | varchar  | 20     | 空              | 课程难度（0初级/1中级/2高级） |
+| duration     | int      | 10     | 空              | 视频时长           |
 | description  | varchar  | 500    | 空              | 课程简介              |
-| status       | char     | 1      | 空              | 状态（0正常 1下架）       |
+| status       | char     | 1      | 空              | 状态       |
 | create\_by   | varchar  | 64     | 空              | 创建者               |
 | create\_time | datetime | <br /> | 空              | 创建时间              |
 | update\_by   | varchar  | 64     | 空              | 更新者               |
 | update\_time | datetime | <br /> | 空              | 更新时间              |
+| remark       | varchar  | 200    | 空              | 备注                |
 
 （13）心理音乐推荐表（recommend\_music）：存储系统推荐的放松音乐资源信息，其数据结构如表4-13所示。
 
@@ -1318,13 +1439,14 @@ CREATE TABLE `recommend_music` (
 | cover\_url   | varchar  | 255    | 空              | 封面图链接       |
 | artist       | varchar  | 64     | 空              | 演唱者/作者      |
 | genre        | varchar  | 50     | 空              | 音乐风格        |
-| duration     | int      | 10     | 空              | 时长（秒）       |
+| duration     | int      | 10     | 空              | 时长       |
 | description  | varchar  | 500    | 空              | 音乐简介        |
-| status       | char     | 1      | 空              | 状态（0正常 1下架） |
+| status       | char     | 1      | 空              | 状态   |
 | create\_by   | varchar  | 64     | 空              | 创建者         |
 | create\_time | datetime | <br /> | 空              | 创建时间        |
 | update\_by   | varchar  | 64     | 空              | 更新者         |
 | update\_time | datetime | <br /> | 空              | 更新时间        |
+| remark       | varchar  | 200    | 空              | 备注          |
 
 ***
 
@@ -1444,11 +1566,13 @@ public R<Question> getInfo(@PathVariable("questionId") Long questionId) {
 
 #### 5.1.4 评估结果管理功能实现
 
-评估结果管理功能的实现主要包括评估结果的查看、分析和管理。评估结果管理组件负责查看学生的答题情况和得分，支持智能分析生成评估报告。
+评估结果管理功能采用分层架构设计，包含评估结果数据管理与智能分析两大核心组件。评估结果数据管理组件实现对学生测评结果的全生命周期管理，提供标准化的查询和详情查看操作接口；智能分析组件实现对学生测评结果的深度分析，生成专业的心理健康评估报告。
 
-评估结果查看功能：管理员可以通过评估结果列表查看所有学生的测评结果，包括总得分、风险等级、测评时间等信息。点击详情可以查看学生的答题详情、得分情况，并触发智能分析生成评估报告。
+评估结果查询功能：通过将用户输入的查询条件，如学生姓名、问卷名称、风险等级等，通过Axios的GET请求SpringBoot的服务端接口，然后在接口中处理数据，最后通过MyBatis-Plus的分页插件构造分页器，将分页的数据信息传递回前端。
 
-智能分析功能：系统会根据学生的答题情况和得分，自动生成智能分析报告，包括学生的心理健康状况分析、风险等级评估、建议措施等。
+评估结果详情功能：首先通过获取表格中这一项的结果ID信息，然后去请求服务端的数据信息，获取当前评估结果的详细信息，包括答题详情、得分情况等。
+
+智能分析功能：管理员可以点击智能分析按钮，触发AI分析功能。系统会调用大模型服务，根据学生的答题情况和得分，生成智能分析报告，包括学生的心理健康状况分析、风险等级评估、建议措施等。
 
 评估结果管理实现的关键代码为：
 
@@ -1473,9 +1597,17 @@ public R<Integer> aiAnalysis(@PathVariable Long resultId) {
 
 #### 5.1.5 心理干预管理功能实现
 
-心理干预管理功能的实现分为三个小模块：风险配置、干预通知、流程记录，他们的实现功能都是通过对数据信息进行增删改查操作，用户点击不同的按钮实现不同的功能。
+心理干预管理功能采用模块化设计，包含风险配置、干预通知、流程记录三大核心模块。该功能实现了对学生心理健康风险的及时识别和干预，确保需要帮助的学生能够得到及时的关注和支持。
 
-风险配置模块：管理员可以配置不同风险等级对应的分数区间。当学生的评估得分落在某个区间时，系统会自动识别对应的风险等级。风险配置实现的关键代码如下：
+风险配置模块：采用分层架构设计，实现对不同风险等级对应分数区间的管理。
+
+增加风险配置功能：首先前端通过实现一个弹窗来收集管理员输入的风险配置信息，包括风险等级、分数最小值、分数最大值、描述等，然后将收集到的数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
+
+修改风险配置功能：首先通过获取表格中这一项的配置ID信息，然后去请求服务端的数据信息，获取当前风险配置的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据配置ID修改数据库中的数据信息。
+
+删除风险配置功能：首先前端通过获取这一项的配置ID数据，然后请求服务端，服务端通过获取到ID之后，删除该风险配置的信息。
+
+风险配置实现的关键代码如下：
 
 ```java
 @PostMapping
@@ -1494,21 +1626,55 @@ public R<Integer> remove(@PathVariable Long[] configIds) {
 }
 ```
 
-干预通知模块：当学生完成心理测评后，系统会根据风险配置自动生成干预通知，推送给对应的辅导员或管理员。干预通知包括通知类型、通知内容、发送时间、阅读状态、处理状态等信息。
+干预通知模块：实现对干预通知的全生命周期管理。
 
-流程记录模块：记录对学生进行心理干预的全过程，包括干预方式、干预内容、干预效果评估等。
+查看干预通知功能：通过Axios的GET请求SpringBoot的服务端接口，获取干预通知列表，包括通知类型、通知内容、发送时间、阅读状态、处理状态等信息。管理员可以查看通知详情，标记通知为已读，处理通知等。
+
+处理干预通知功能：管理员可以点击处理按钮，对干预通知进行处理，包括设置处理状态、添加处理意见等。处理完成后，系统会更新通知的处理状态。
+
+流程记录模块：实现对心理干预流程的全生命周期管理。
+
+增加流程记录功能：首先前端通过实现一个表单来收集管理员输入的流程记录信息，包括学生ID、干预方式、干预内容、干预时间等，然后将收集到的数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
+
+查看流程记录功能：通过Axios的GET请求SpringBoot的服务端接口，获取流程记录列表，包括干预方式、干预内容、干预效果评估等信息。管理员可以查看记录详情，添加效果评估等。
+
+修改流程记录功能：首先通过获取表格中这一项的记录ID信息，然后去请求服务端的数据信息，获取当前流程记录的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据记录ID修改数据库中的数据信息。
 
 #### 5.1.6 内容推荐管理功能实现
 
-内容推荐管理功能的实现分为四个小模块：文章管理、课程管理、音乐管理和轮播图管理，他们的实现功能都是通过对数据信息进行增删改查操作，用户点击不同的按钮实现不同的功能。
+内容推荐管理功能采用模块化设计，包含文章管理、课程管理、音乐管理和轮播图管理四大核心模块。该功能实现了对心理健康相关内容的统一管理，为学生提供丰富的心理健康资源。
 
-文章管理模块：管理员可以发布心理健康知识文章，学生可以浏览和收藏。文章支持富文本内容，可以包含图片、视频等多媒体元素。
+文章管理模块：采用分层架构设计，实现对心理健康知识文章的全生命周期管理。
 
-课程管理模块：管理员可以管理在线课程信息，包括课程名称、课程简介、授课教师、课程链接等。学生可以浏览课程列表，观看课程视频。
+增加文章功能：首先前端通过实现一个表单来收集管理员输入的文章信息，包括标题、内容、分类、标签等，然后将收集到的数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
 
-音乐管理模块：管理员可以管理放松音乐资源，学生可以在线播放音乐。音乐支持分类标签，如放松、助眠、减压等。
+修改文章功能：首先通过获取表格中这一项的文章ID信息，然后去请求服务端的数据信息，获取当前文章的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据文章ID修改数据库中的数据信息。
 
-轮播图管理模块：管理员可以管理首页轮播图，轮播图会展示给学生，推送重要的活动或内容。
+删除文章功能：首先前端通过获取这一项的文章ID数据，然后请求服务端，服务端通过获取到ID之后，删除该文章的信息。
+
+课程管理模块：实现对在线课程信息的管理。
+
+增加课程功能：首先前端通过实现一个表单来收集管理员输入的课程信息，包括课程名称、简介、授课教师、课程链接等，然后将收集到的数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
+
+修改课程功能：首先通过获取表格中这一项的课程ID信息，然后去请求服务端的数据信息，获取当前课程的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据课程ID修改数据库中的数据信息。
+
+删除课程功能：首先前端通过获取这一项的课程ID数据，然后请求服务端，服务端通过获取到ID之后，删除该课程的信息。
+
+音乐管理模块：实现对放松音乐资源的管理。
+
+增加音乐功能：首先前端通过实现一个表单来收集管理员输入的音乐信息，包括音乐名称、分类、标签、音频文件等，然后将收集到的数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
+
+修改音乐功能：首先通过获取表格中这一项的音乐ID信息，然后去请求服务端的数据信息，获取当前音乐的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据音乐ID修改数据库中的数据信息。
+
+删除音乐功能：首先前端通过获取这一项的音乐ID数据，然后请求服务端，服务端通过获取到ID之后，删除该音乐的信息。
+
+轮播图管理模块：实现对首页轮播图的管理。
+
+增加轮播图功能：首先前端通过实现一个表单来收集管理员输入的轮播图信息，包括图片、链接、顺序、开始时间、结束时间等，然后将收集到的数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
+
+修改轮播图功能：首先通过获取表格中这一项的轮播图ID信息，然后去请求服务端的数据信息，获取当前轮播图的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据轮播图ID修改数据库中的数据信息。
+
+删除轮播图功能：首先前端通过获取这一项的轮播图ID数据，然后请求服务端，服务端通过获取到ID之后，删除该轮播图的信息。
 
 内容推荐管理实现的关键代码为：
 
