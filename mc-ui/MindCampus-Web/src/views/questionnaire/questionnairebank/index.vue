@@ -37,7 +37,7 @@
 
     <el-table v-loading="loading" :data="questionnairebankList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="题库题目ID" align="center" prop="bankId" />
+      <el-table-column label="题目编号" align="center" prop="bankId" />
       <el-table-column label="题目类型" align="center" prop="type">
         <template #default="scope">
           <dict-tag :options="question_type" :value="scope.row.type" />
