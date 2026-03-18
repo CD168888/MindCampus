@@ -72,8 +72,19 @@
       
       <view class="attachment-preview" v-if="selectedFiles.length > 0">
         <scroll-view scroll-x class="attachment-scroll">
-          <view v-for="(file, index) in selectedFiles" :key="index" class="preview-item">
-            <uni-icons :type="getFileIcon(file.name)" size="16" color="#86868B"></uni-icons>
+          <view v-for="(file, index) in selectedFiles" :key="index" class="preview-item" :class="{ 'upload-error': file.uploadError }">
+            <view class="file-icon-wrapper">
+              <uni-icons :type="getFileIcon(file.name)" size="16" :color="file.uploadError ? '#FF3B30' : '#86868B'"></uni-icons>
+              <view v-if="file.uploading" class="upload-loading">
+                <uni-icons type="spinner-cycle" size="12" color="#2CB5A0" class="spin-icon"></uni-icons>
+              </view>
+              <view v-else-if="file.uploaded" class="upload-success">
+                <uni-icons type="checkmarkempty" size="10" color="#FFF"></uni-icons>
+              </view>
+              <view v-else-if="file.uploadError" class="upload-error-icon">
+                <uni-icons type="closeempty" size="10" color="#FFF"></uni-icons>
+              </view>
+            </view>
             <text class="preview-name">{{ getFileName(file.name) }}</text>
             <view class="remove-btn" @click="removeFile(index)">
               <uni-icons type="closeempty" size="12" color="#FFF"></uni-icons>
@@ -158,6 +169,8 @@
 import { getSessions, getMessages, deleteSession, updateSessionTitle, streamChat, cancelStream, createSession } from '@/api/ai.js';
 import { adjustHeight, formatTime, generateUUID, goBack, onInputBlur, onInputFocus, scrollToBottom } from './ai.js';
 import UaMarkdown from '@/components/ua2-markdown/ua-markdown.vue';
+import config from '@/config';
+import { getToken } from '@/utils/auth';
 
 export default {
   components: { UaMarkdown },
@@ -243,9 +256,49 @@ export default {
       uni.chooseFile({
         count: 5 - this.selectedFiles.length,
         extension: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'],
-        success: (res) => {
-          const files = res.tempFiles.map(item => ({ name: item.name || `file_${Date.now()}`, size: item.size, path: item.path, file: item }));
+        success: async (res) => {
+          const files = res.tempFiles.map(item => ({ 
+            name: item.name || `file_${Date.now()}`, 
+            size: item.size, 
+            path: item.path, 
+            file: item,
+            uploading: true,
+            uploaded: false,
+            url: null
+          }));
           this.selectedFiles = [...this.selectedFiles, ...files];
+          
+          // 立即上传每个文件
+          for (let i = 0; i < files.length; i++) {
+            const fileIndex = this.selectedFiles.findIndex(f => f.path === files[i].path);
+            if (fileIndex === -1) continue;
+            
+            try {
+              const uploadResult = await this.uploadFile(files[i]);
+              if (uploadResult && uploadResult.url) {
+                this.$set(this.selectedFiles, fileIndex, {
+                  ...this.selectedFiles[fileIndex],
+                  uploading: false,
+                  uploaded: true,
+                  url: uploadResult.url
+                });
+              } else {
+                this.$set(this.selectedFiles, fileIndex, {
+                  ...this.selectedFiles[fileIndex],
+                  uploading: false,
+                  uploaded: false,
+                  uploadError: true
+                });
+              }
+            } catch (error) {
+              this.$set(this.selectedFiles, fileIndex, {
+                ...this.selectedFiles[fileIndex],
+                uploading: false,
+                uploaded: false,
+                uploadError: true
+              });
+            }
+          }
         },
         fail: (err) => {
           if (err.errMsg !== 'chooseFile:fail cancel') { uni.showToast({ title: '选择文件失败', icon: 'none' }); }
@@ -343,9 +396,24 @@ export default {
       const messageText = this.userInput.trim();
       const attachments = [...this.selectedFiles];
       if (!messageText && attachments.length === 0) return;
+      
+      // 检查是否有未上传完成的文件
+      const hasUploading = attachments.some(f => f.uploading);
+      if (hasUploading) {
+        uni.showToast({ title: '请等待文件上传完成', icon: 'none' }); return;
+      }
+      
+      // 检查是否有上传失败的文件
+      const hasError = attachments.some(f => f.uploadError);
+      if (hasError) {
+        uni.showToast({ title: '部分文件上传失败，请移除后重试', icon: 'none' }); return;
+      }
 
       this.currentMessages.push({ role: 'user', content: messageText, attachments: attachments, timestamp: Date.now() });
       this.currentMessages.push({ role: 'assistant', content: '', timestamp: Date.now() });
+
+      // 收集已上传的URL
+      const uploadedFileUrls = attachments.filter(f => f.uploaded && f.url).map(f => f.url);
 
       this.userInput = ''; this.selectedFiles = []; this.textareaHeight = 20; this.inputAreaHeight = 60; this.fullResponse = '';
       await this.$nextTick(); await this.scrollToBottom();
@@ -363,8 +431,11 @@ export default {
             this.isStreaming = false; uni.showToast({ title: '创建会话失败', icon: 'none' }); return;
           }
         }
+        
         const sseConnection = streamChat({
-          message: messageText, sessionId: this.sessionId,
+          message: messageText, 
+          sessionId: this.sessionId,
+          fileUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : undefined,
           onSessionId: (newSessionId) => { that.sessionId = parseInt(newSessionId); },
           onMessage: async (chunk, fullContent) => {
             that.fullResponse = fullContent;
@@ -389,6 +460,34 @@ export default {
         uni.showToast({ title: '发送消息失败', icon: 'none' }); this.isStreaming = false; this.closeEventSource();
       }
     },
+    // 上传单个文件
+     uploadFile(file) {
+       return new Promise((resolve, reject) => {
+         uni.uploadFile({
+           url: config.baseUrl + '/common/upload',
+           filePath: file.path,
+           name: 'file',
+           header: {
+             'Authorization': 'Bearer ' + getToken()
+           },
+           success: (res) => {
+             try {
+               const data = JSON.parse(res.data);
+               if (data.code === 200) {
+                 resolve({ url: data.url, fileName: data.fileName });
+               } else {
+                 reject(new Error(data.msg || '上传失败'));
+               }
+             } catch (e) {
+               reject(e);
+             }
+           },
+           fail: (err) => {
+             reject(err);
+           }
+         });
+       });
+     },
     async handleDeleteChat(chatId) {
       uni.showModal({
         title: '确认删除', content: '确定要删除这个对话吗？', confirmColor: '#FF3B30',
@@ -686,9 +785,60 @@ $theme-cyan-light: #48D1CC;
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.8);
-    border-radius: 40rpx; /* 圆润的附件胶囊 */
+    border-radius: 40rpx;
     padding: 14rpx 24rpx; margin-right: 16rpx;
     position: relative; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06);
+    
+    &.upload-error {
+      border-color: rgba(255, 59, 48, 0.5);
+      background: rgba(255, 245, 245, 0.9);
+    }
+  }
+  .file-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .upload-loading {
+    position: absolute;
+    top: -6rpx;
+    right: -10rpx;
+    width: 24rpx;
+    height: 24rpx;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+    .spin-icon { animation: spin 1s linear infinite; }
+  }
+  .upload-success {
+    position: absolute;
+    top: -6rpx;
+    right: -10rpx;
+    width: 20rpx;
+    height: 20rpx;
+    border-radius: 50%;
+    background: #34C759;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2rpx 6rpx rgba(52, 199, 89, 0.4);
+  }
+  .upload-error-icon {
+    position: absolute;
+    top: -6rpx;
+    right: -10rpx;
+    width: 20rpx;
+    height: 20rpx;
+    border-radius: 50%;
+    background: #FF3B30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2rpx 6rpx rgba(255, 59, 48, 0.4);
   }
   .preview-name { font-size: 24rpx; color: $ios-text-primary; max-width: 140rpx; overflow: hidden; text-overflow: ellipsis; }
   .remove-btn {

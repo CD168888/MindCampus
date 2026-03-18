@@ -36,14 +36,16 @@ public class AiChatController {
     private IAiChatMessageService chatMessageService;
 
     /**
-     * 流式对话接口（2.0版本 - 需要登录，支持消息持久化）
+     * 流式对话接口（3.0版本 - 需要登录，支持消息持久化）
      * @param message 用户输入的消息
+     * @param fileUrls 附件URL列表
      * @param sessionId 会话ID
      * @return Flux<ServerSentEvent<String>> 流式响应数据
      */
     @GetMapping(value = "/chatStream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> generate(
             @RequestParam(value = "message", required = true) String message,
+            @RequestParam(value = "fileUrls", required = false) List<String> fileUrls,
             @RequestParam(value = "sessionId", required = false) Long sessionId,
             HttpServletResponse response) {
 
@@ -66,7 +68,7 @@ public class AiChatController {
         response.setHeader("X-Accel-Buffering", "no");
 
         // 委托给 Service 层处理流式响应
-        return chatStreamService.generateStreamResponse(message, validSessionId, userId);
+        return chatStreamService.generateStreamResponse(message, fileUrls, validSessionId, userId);
     }
 
     /**

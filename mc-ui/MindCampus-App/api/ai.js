@@ -81,18 +81,25 @@ export function cancelStream(sessionId) {
  * @param {Object} options - 配置选项
  * @param {string} options.message - 用户消息
  * @param {number} options.sessionId - 会话ID(可选,后端会自动创建)
+ * @param {Array<string>} options.fileUrls - 附件URL列表(可选)
  * @param {Function} options.onMessage - 接收消息回调 (chunk, fullContent)
  * @param {Function} options.onError - 错误回调
  * @param {Function} options.onComplete - 完成回调
  * @returns {Object} 返回包含 abortController 和 close 方法的对象
  */
 export function streamChat(options) {
-    const {message, sessionId, onMessage, onError, onComplete} = options
+    const {message, sessionId, fileUrls, onMessage, onError, onComplete} = options
 
     // 构建URL
     let url = `${baseUrl}/ai/chatStream?message=${encodeURIComponent(message)}`
     if (sessionId) {
         url += `&sessionId=${sessionId}`
+    }
+    // 添加附件URL参数
+    if (fileUrls && fileUrls.length > 0) {
+        fileUrls.forEach(fileUrl => {
+            url += `&fileUrls=${encodeURIComponent(fileUrl)}`
+        })
     }
 
     const token = getToken()

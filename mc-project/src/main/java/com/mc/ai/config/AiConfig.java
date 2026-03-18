@@ -6,11 +6,13 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -35,6 +37,12 @@ public class AiConfig {
 
     @Value("${spring.ai.memory.redis.timeout}")
     private int redisTimeout;
+
+    @Value("${spring.ai.dashscope.chat.options.model}")
+    private String modelName;
+
+    @Value("${spring.ai.model.name}")
+    private String multiModalModelName;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -62,9 +70,23 @@ public class AiConfig {
 //    }
 
 
+    // 基础文本模型
+    @Bean
+    @Primary // 设置为默认，防止其他地方注入报错
+    public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory) {
+        return configureClient(builder.clone(), chatMemory, modelName);
+    }
+
+    // 多模态模型
+    @Bean
+    public ChatClient multiModalChatClient(ChatClient.Builder builder, ChatMemory chatMemory) {
+        // 注意：多模态模型通常需要特定的 Options 配置
+        return configureClient(builder.clone(), chatMemory, multiModalModelName);
+    }
+
 
     /**
-     * 配置 ChatClient 实例
+     * 公共配置方法
      * 该方法会自动发现并注册 Spring 容器中所有的 Supplier 和 Function 类型的 Bean 作为 AI 工具。
      * 这样做的好处是无需手动维护工具列表，新增的工具 Bean 会自动被注册到 ChatClient 中。
      *
@@ -72,8 +94,7 @@ public class AiConfig {
      * @param chatMemory Redis 聊天记忆仓库，用于持久化对话历史
      * @return 配置完成的 ChatClient 实例，包含所有自动发现的工具和对话记忆功能
      */
-    @Bean
-    public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory) {
+    private ChatClient configureClient(ChatClient.Builder builder, ChatMemory chatMemory, String modelName){
         // 获取 Spring 容器中所有 Supplier 和 Function Bean
         Map<String, Supplier> supplierBeans = applicationContext.getBeansOfType(Supplier.class);
         Map<String, Function> functionBeans = applicationContext.getBeansOfType(Function.class);
@@ -83,6 +104,7 @@ public class AiConfig {
         allToolNames.addAll(functionBeans.keySet());
 
         return builder
+                .defaultOptions(ChatOptions.builder().model(modelName).build())
                 .defaultSystem(AiPrompts.GENERAL_ASSISTANT)
                 .defaultAdvisors(
                         MessageChatMemoryAdvisor.builder(chatMemory)

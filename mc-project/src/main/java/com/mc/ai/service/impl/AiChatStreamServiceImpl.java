@@ -5,12 +5,17 @@ import com.mc.ai.domain.AiChatSession;
 import com.mc.ai.service.IAiChatMessageService;
 import com.mc.ai.service.IAiChatSessionService;
 import com.mc.ai.service.IAiChatStreamService;
+import com.mc.common.utils.StringUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -26,6 +31,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AiChatStreamServiceImpl implements IAiChatStreamService {
 
     private final ChatClient dashScopeChatClient;
+
+    private final ChatClient multiModalChatClient;
     
     @Resource
     private IAiChatSessionService chatSessionService;
@@ -39,8 +46,11 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
     // 存储每个会话是否已保存AI消息的标识（防止重复保存）
     private final ConcurrentHashMap<String, AtomicBoolean> messageSavedFlags = new ConcurrentHashMap<>();
 
-    public AiChatStreamServiceImpl(ChatClient chatClient) {
+    public AiChatStreamServiceImpl(
+            ChatClient chatClient,
+            @Qualifier("multiModalChatClient") ChatClient multiModalChatClient) {
         this.dashScopeChatClient = chatClient;
+        this.multiModalChatClient = multiModalChatClient;
     }
 
     /**
@@ -70,12 +80,16 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
     /**
      * 生成流式对话响应
      * @param message 用户消息
+     * @param fileUrls 附件URL列表
      * @param sessionId 会话ID
      * @param userId 用户ID
      * @return Flux<ServerSentEvent<String>> 流式响应
      */
-    public Flux<ServerSentEvent<String>> generateStreamResponse(String message, Long sessionId, Long userId) {
-        log.info("开始生成流式响应 - 用户ID: {}, 会话ID: {}, 消息: {}", userId, sessionId, message);
+    public Flux<ServerSentEvent<String>> generateStreamResponse(String message, List<String> fileUrls, Long sessionId, Long userId) {
+        boolean hasFiles = fileUrls != null && !fileUrls.isEmpty() && StringUtils.hasText(fileUrls.get(0));
+        ChatClient clientToUse = hasFiles ? multiModalChatClient : dashScopeChatClient;
+
+        log.info("使用模型: {}, 是否包含附件: {}", hasFiles ? "多模态" : "基础文本", hasFiles);
 
         // 保存用户消息
         chatMessageService.saveMessage(sessionId, userId, 1, message);
@@ -95,8 +109,23 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
         StringBuilder aiResponse = new StringBuilder();
 
         // 生成流式对话
-        return dashScopeChatClient.prompt()
-                .user(message)
+        return clientToUse.prompt()
+                .user(u -> {
+                    u.text(message);
+                    if (hasFiles) {
+                        // 循环添加所有附件
+                        for (String url : fileUrls) {
+                            if (StringUtils.hasText(url)) {
+                                try {
+                                    // 关键点：多次调用 media 会被聚合为一个多模态消息列表发送给 LLM
+                                    u.media(getMimeType(url), new UrlResource(url));
+                                } catch (Exception e) {
+                                    log.error("加载附件失败: {}", url, e);
+                                }
+                            }
+                        }
+                    }
+                })
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, sessionId))
                 .stream()
                 .content()
@@ -114,6 +143,23 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
                 .doOnCancel(() -> handleStreamCancel(sessionId, userId, aiResponse.toString(), chatId))
                 .doOnError(error -> handleStreamError(sessionId, userId, chatId, error))
                 .onErrorResume(error -> handleStreamErrorResponse(userId, sessionId, error));
+    }
+
+    /**
+     * 辅助方法：根据 URL 后缀判断 MimeType
+     */
+    private MimeType getMimeType(String fileUrl) {
+        String url = fileUrl.toLowerCase();
+        if (url.endsWith(".png")) {
+            return MimeTypeUtils.IMAGE_PNG;
+        } else if (url.endsWith(".jpg") || url.endsWith(".jpeg")) {
+            return MimeTypeUtils.IMAGE_JPEG;
+        } else if (url.endsWith(".gif")) {
+            return MimeTypeUtils.IMAGE_GIF;
+        } else {
+            // 如果无法识别，默认尝试作为图片解析，或者使用通用的八位字节流
+            return MimeTypeUtils.APPLICATION_OCTET_STREAM;
+        }
     }
 
     /**

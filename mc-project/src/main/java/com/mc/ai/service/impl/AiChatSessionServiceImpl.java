@@ -15,7 +15,7 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class IAiChatSessionServiceImpl extends ServiceImpl<AiChatSessionMapper, AiChatSession> implements IAiChatSessionService {
+public class AiChatSessionServiceImpl extends ServiceImpl<AiChatSessionMapper, AiChatSession> implements IAiChatSessionService {
     /**
      * 创建新会话
      */

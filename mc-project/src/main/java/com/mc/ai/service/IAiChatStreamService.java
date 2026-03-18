@@ -3,6 +3,8 @@ package com.mc.ai.service;
 import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 
+import java.util.List;
+
 /**
  * AI 聊天流式服务接口
  * 封装所有异步逻辑和流式 SSE 响应处理
@@ -20,11 +22,12 @@ public interface IAiChatStreamService {
     /**
      * 生成流式对话响应
      * @param message 用户消息
+     * @param fileUrls 文件URL列表
      * @param sessionId 会话ID
      * @param userId 用户ID
      * @return Flux<ServerSentEvent<String>> 流式响应
      */
-    Flux<ServerSentEvent<String>> generateStreamResponse(String message, Long sessionId, Long userId);
+    Flux<ServerSentEvent<String>> generateStreamResponse(String message, List<String> fileUrls, Long sessionId, Long userId);
 
     /**
      * 中断流式输出
