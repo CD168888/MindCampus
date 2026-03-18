@@ -414,6 +414,8 @@ export default {
 
       // 收集已上传的URL
       const uploadedFileUrls = attachments.filter(f => f.uploaded && f.url).map(f => f.url);
+      // 收集文件对象（用于H5端直接传递File对象）
+      const filesToSend = attachments.filter(f => f.file).map(f => ({ path: f.path, name: f.name, file: f.file }));
 
       this.userInput = ''; this.selectedFiles = []; this.textareaHeight = 20; this.inputAreaHeight = 60; this.fullResponse = '';
       await this.$nextTick(); await this.scrollToBottom();
@@ -435,6 +437,7 @@ export default {
         const sseConnection = streamChat({
           message: messageText, 
           sessionId: this.sessionId,
+          files: filesToSend.length > 0 ? filesToSend : undefined,
           fileUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : undefined,
           onSessionId: (newSessionId) => { that.sessionId = parseInt(newSessionId); },
           onMessage: async (chunk, fullContent) => {
