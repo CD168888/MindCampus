@@ -1,6 +1,7 @@
 package com.mc.ai.service;
 
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -22,12 +23,13 @@ public interface IAiChatStreamService {
     /**
      * 生成流式对话响应
      * @param message 用户消息
+     * @param files 附件列表
      * @param fileUrls 文件URL列表
      * @param sessionId 会话ID
      * @param userId 用户ID
      * @return Flux<ServerSentEvent<String>> 流式响应
      */
-    Flux<ServerSentEvent<String>> generateStreamResponse(String message, List<String> fileUrls, Long sessionId, Long userId);
+    Flux<ServerSentEvent<String>> generateStreamResponse(String message, List<MultipartFile> files, List<String> fileUrls, Long sessionId, Long userId);
 
     /**
      * 中断流式输出

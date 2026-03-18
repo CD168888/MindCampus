@@ -43,12 +43,13 @@ public class AiChatMessageServiceImpl extends ServiceImpl<AiChatMessageMapper, A
     /**
      * 保存消息（同时保存到数据库和Redis）
      */
-    public AiChatMessage saveMessage(Long sessionId, Long userId, Integer messageType, String content) {
+    public AiChatMessage saveMessage(Long sessionId, Long userId, Integer messageType, String content, String fileUrls) {
         AiChatMessage message = new AiChatMessage();
         message.setSessionId(sessionId);
         message.setUserId(userId);
         message.setMessageType(messageType);
         message.setContent(content);
+        message.setFileUrls(fileUrls);
 
         save(message);
 

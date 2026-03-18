@@ -13,8 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,15 +39,17 @@ public class AiChatController {
     private IAiChatMessageService chatMessageService;
 
     /**
-     * 流式对话接口（3.0版本 - 需要登录，支持消息持久化）
+     * 流式对话接口（3.1版本 - 需要登录，支持消息持久化，支持多模态）
      * @param message 用户输入的消息
+     * @param files 附件列表
      * @param fileUrls 附件URL列表
      * @param sessionId 会话ID
      * @return Flux<ServerSentEvent<String>> 流式响应数据
      */
-    @GetMapping(value = "/chatStream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(value = "/chatStream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> generate(
             @RequestParam(value = "message", required = true) String message,
+            @RequestPart(value = "files", required = false) MultipartFile[] files,
             @RequestParam(value = "fileUrls", required = false) List<String> fileUrls,
             @RequestParam(value = "sessionId", required = false) Long sessionId,
             HttpServletResponse response) {
@@ -67,8 +72,10 @@ public class AiChatController {
         response.setHeader("Cache-Control", "no-cache, no-transform");
         response.setHeader("X-Accel-Buffering", "no");
 
+        List<MultipartFile> fileList = (files != null) ? Arrays.asList(files) : Collections.emptyList();
+
         // 委托给 Service 层处理流式响应
-        return chatStreamService.generateStreamResponse(message, fileUrls, validSessionId, userId);
+        return chatStreamService.generateStreamResponse(message, fileList, fileUrls, sessionId, userId);
     }
 
     /**

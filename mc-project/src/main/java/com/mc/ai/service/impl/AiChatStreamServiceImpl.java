@@ -5,19 +5,21 @@ import com.mc.ai.domain.AiChatSession;
 import com.mc.ai.service.IAiChatMessageService;
 import com.mc.ai.service.IAiChatSessionService;
 import com.mc.ai.service.IAiChatStreamService;
-import com.mc.common.utils.StringUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -80,19 +82,38 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
     /**
      * 生成流式对话响应
      * @param message 用户消息
+     * @param files 附件列表
      * @param fileUrls 附件URL列表
      * @param sessionId 会话ID
      * @param userId 用户ID
      * @return Flux<ServerSentEvent<String>> 流式响应
      */
-    public Flux<ServerSentEvent<String>> generateStreamResponse(String message, List<String> fileUrls, Long sessionId, Long userId) {
-        boolean hasFiles = fileUrls != null && !fileUrls.isEmpty() && StringUtils.hasText(fileUrls.get(0));
+    public Flux<ServerSentEvent<String>> generateStreamResponse(String message, List<MultipartFile> files, List<String> fileUrls, Long sessionId, Long userId) {
+        boolean hasFiles = files != null && !files.isEmpty();
         ChatClient clientToUse = hasFiles ? multiModalChatClient : dashScopeChatClient;
 
         log.info("使用模型: {}, 是否包含附件: {}", hasFiles ? "多模态" : "基础文本", hasFiles);
 
-        // 保存用户消息
-        chatMessageService.saveMessage(sessionId, userId, 1, message);
+        // --- AI 准备“内存快餐”（解决卡顿的关键！） ---
+        List<ByteArrayResource> memoryResources = new ArrayList<>();
+        if (hasFiles) {
+            for (MultipartFile file : files) {
+                try {
+                    memoryResources.add(new ByteArrayResource(file.getBytes()) {
+                        @Override
+                        public String getFilename() { return file.getOriginalFilename(); }
+                    });
+                } catch (IOException e) {
+                    log.error("读取文件字节失败", e);
+                }
+            }
+        }
+
+        // --- 持久化记录：直接存前端传来的 fileUrls ---
+        String urlsString = (fileUrls != null) ? String.join(",", fileUrls) : "";
+
+        // 保存用户消息，同时记录附件URL
+        chatMessageService.saveMessage(sessionId, userId, 1, message, urlsString);
 
         // 创建会话标识
         String chatId = String.valueOf(sessionId);
@@ -113,16 +134,9 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
                 .user(u -> {
                     u.text(message);
                     if (hasFiles) {
-                        // 循环添加所有附件
-                        for (String url : fileUrls) {
-                            if (StringUtils.hasText(url)) {
-                                try {
-                                    // 关键点：多次调用 media 会被聚合为一个多模态消息列表发送给 LLM
-                                    u.media(getMimeType(url), new UrlResource(url));
-                                } catch (Exception e) {
-                                    log.error("加载附件失败: {}", url, e);
-                                }
-                            }
+                        for (int i = 0; i < memoryResources.size(); i++) {
+                            String fileName = files.get(i).getOriginalFilename();
+                            u.media(getMimeType(fileName), memoryResources.get(i));
                         }
                     }
                 })
@@ -139,8 +153,8 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
                 .concatWith(Flux.just(ServerSentEvent.<String>builder()
                         .data("\u0003")
                         .build()))
-                .doOnComplete(() -> handleStreamComplete(sessionId, userId, message, aiResponse.toString(), chatId))
-                .doOnCancel(() -> handleStreamCancel(sessionId, userId, aiResponse.toString(), chatId))
+                .doOnComplete(() -> handleStreamComplete(sessionId, userId, message, aiResponse.toString(), chatId, urlsString))
+                .doOnCancel(() -> handleStreamCancel(sessionId, userId, aiResponse.toString(), chatId, urlsString))
                 .doOnError(error -> handleStreamError(sessionId, userId, chatId, error))
                 .onErrorResume(error -> handleStreamErrorResponse(userId, sessionId, error));
     }
@@ -165,13 +179,13 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
     /**
      * 处理流式响应完成
      */
-    private void handleStreamComplete(Long sessionId, Long userId, String userMessage, String aiResponse, String chatId) {
+    private void handleStreamComplete(Long sessionId, Long userId, String userMessage, String aiResponse, String chatId, String urlsString) {
         // 使用CAS确保只保存一次AI消息（防止与doOnCancel重复）
         AtomicBoolean messageSaved = messageSavedFlags.get(chatId);
         if (messageSaved != null && messageSaved.compareAndSet(false, true)) {
             // 保存AI回复消息
             if (aiResponse.length() > 0) {
-                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse);
+                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse, urlsString);
                 log.info("流式对话完成，已保存AI消息 [sessionId: {}, 长度: {}]", sessionId, aiResponse.length());
             }
 
@@ -192,13 +206,13 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
     /**
      * 处理流式响应取消
      */
-    private void handleStreamCancel(Long sessionId, Long userId, String aiResponse, String chatId) {
+    private void handleStreamCancel(Long sessionId, Long userId, String aiResponse, String chatId, String urlsString) {
         // 使用CAS确保只保存一次AI消息（防止与doOnComplete重复）
         AtomicBoolean messageSaved = messageSavedFlags.get(chatId);
         if (messageSaved != null && messageSaved.compareAndSet(false, true)) {
             // 即使取消也保存部分回复
             if (aiResponse.length() > 0) {
-                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse);
+                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse, urlsString);
                 log.info("流式对话被取消，已保存部分AI消息 [sessionId: {}, 长度: {}]", sessionId, aiResponse.length());
             }
         } else {

@@ -43,4 +43,8 @@ public class AiChatMessage extends BaseEntityPlus {
     /** 消息内容 */
     @Excel(name = "消息内容")
     private String content;
+
+    /** 附件URL列表 */
+    @Excel(name = "附件URL列表")
+    private String fileUrls;
 }

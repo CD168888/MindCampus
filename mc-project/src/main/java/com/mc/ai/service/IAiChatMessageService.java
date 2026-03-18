@@ -15,9 +15,10 @@ public interface IAiChatMessageService extends IService<AiChatMessage> {
      * @param userId 用户ID
      * @param messageType 消息类型
      * @param content 消息内容
+     * @param fileUrl 文件URL
      * @return 保存的消息对象
      */
-    AiChatMessage saveMessage(Long sessionId, Long userId, Integer messageType, String content);
+    AiChatMessage saveMessage(Long sessionId, Long userId, Integer messageType, String content, String fileUrl);
     
     /**
      * 从Redis获取消息列表
