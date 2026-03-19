@@ -4,7 +4,6 @@
 
     <view class="glass-header-fixed" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="navbar-content">
-        <!-- 修改：点击左上角按钮跳转到首页 -->
         <view class="navbar-left" @tap="goToIndex">
           <view class="nav-icon-glass">
             <uni-icons type="left" size="22" color="#1D1D1F"></uni-icons>
@@ -20,8 +19,8 @@
     </view>
 
     <scroll-view class="chat-area" scroll-y :scroll-top="scrollTop" :scroll-with-animation="true"
-      @scrolltoupper="loadMoreMessages" upper-threshold="100" ref="chatScrollView">
-      
+                 @scrolltoupper="loadMoreMessages" upper-threshold="100" ref="chatScrollView">
+
       <view class="header-spacer" :style="{ height: (statusBarHeight + 44) + 'px' }"></view>
 
       <view class="loading-more" v-if="isLoadingMore">
@@ -31,22 +30,35 @@
 
       <view class="messages-wrapper">
         <view v-for="(msg, index) in currentMessages" :key="index"
-          :class="['message-item', msg.role === 'user' ? 'user-message' : 'ai-message']">
-          
+              :class="['message-item', msg.role === 'user' ? 'user-message' : 'ai-message']">
+
           <view class="message-time-center" v-if="index === 0 || shouldShowTime(msg.timestamp, currentMessages[index-1].timestamp)">
             <text>{{ formatTime(msg.timestamp) }}</text>
           </view>
 
           <view class="message-container">
             <image class="avatar" :src="msg.role === 'user' ? userAvatar : aiAvatar" mode="aspectFill" />
-            
+
             <view class="message-content-box">
               <text class="sender-name">{{ msg.role === 'user' ? '我' : 'AI 助手' }}</text>
-              
-              <view class="message-bubble">
+
+              <view class="message-images" v-if="msg.attachments && msg.attachments.length > 0 && hasImages(msg.attachments)">
+                <template v-for="(file, fileIndex) in msg.attachments">
+                  <image
+                      v-if="isImageExt(file.name || file.url)"
+                      :key="'img-'+fileIndex"
+                      :src="file.url || file.path"
+                      class="msg-image"
+                      mode="aspectFill"
+                      @click="previewChatImage(file.url || file.path, msg.attachments)"
+                  />
+                </template>
+              </view>
+
+              <view class="message-bubble" v-if="msg.content || (msg.role === 'assistant' && msg.content === '')">
                 <ua-markdown v-if="msg.role === 'assistant' && msg.content" :source="msg.content" :showLine="false" />
                 <text v-else-if="msg.role === 'user' && msg.content" class="user-text">{{ msg.content }}</text>
-                
+
                 <view v-else-if="msg.role === 'assistant' && msg.content === ''" class="typing-indicator">
                   <view class="dot"></view>
                   <view class="dot"></view>
@@ -54,12 +66,15 @@
                 </view>
               </view>
 
-              <view class="attachments" v-if="msg.attachments && msg.attachments.length > 0">
-                <view v-for="(file, fileIndex) in msg.attachments" :key="fileIndex" class="attachment-pill">
-                  <uni-icons :type="getFileIcon(file.name)" size="16" color="#2CB5A0"></uni-icons>
-                  <text class="attachment-name">{{ getFileName(file.name) }}</text>
-                </view>
+              <view class="attachments" v-if="msg.attachments && msg.attachments.length > 0 && hasFiles(msg.attachments)">
+                <template v-for="(file, fileIndex) in msg.attachments">
+                  <view v-if="!isImageExt(file.name || file.url)" :key="'file-'+fileIndex" class="attachment-pill">
+                    <uni-icons :type="getFileIcon(file.name || file.url)" size="16" color="#2CB5A0"></uni-icons>
+                    <text class="attachment-name">{{ getFileName(file.name || file.url) }}</text>
+                  </view>
+                </template>
               </view>
+
             </view>
           </view>
         </view>
@@ -69,25 +84,43 @@
     </scroll-view>
 
     <view class="capsule-wrapper" :style="{ paddingBottom: `${safeAreaBottom + 12}px` }">
-      
+
       <view class="attachment-preview" v-if="selectedFiles.length > 0">
         <scroll-view scroll-x class="attachment-scroll">
-          <view v-for="(file, index) in selectedFiles" :key="index" class="preview-item" :class="{ 'upload-error': file.uploadError }">
-            <view class="file-icon-wrapper">
-              <uni-icons :type="getFileIcon(file.name)" size="16" :color="file.uploadError ? '#FF3B30' : '#86868B'"></uni-icons>
-              <view v-if="file.uploading" class="upload-loading">
-                <uni-icons type="spinner-cycle" size="12" color="#2CB5A0" class="spin-icon"></uni-icons>
+          <view v-for="(file, index) in selectedFiles" :key="index"
+                class="preview-item"
+                :class="{ 'upload-error': file.uploadError, 'is-image-preview': isImageExt(file.name) }">
+
+            <template v-if="isImageExt(file.name)">
+              <view class="img-wrapper" :class="{'is-gray-mask': file.uploading}">
+                <image :src="file.path || file.url" class="preview-img" mode="aspectFill"></image>
+                <view v-if="file.uploading" class="img-upload-mask">
+                  <uni-icons type="spinner-cycle" size="24" color="#FFFFFF" class="spin-icon"></uni-icons>
+                </view>
+                <view v-else-if="file.uploadError" class="img-error-mask">
+                  <uni-icons type="closeempty" size="24" color="#FFFFFF"></uni-icons>
+                </view>
               </view>
-              <view v-else-if="file.uploaded" class="upload-success">
-                <uni-icons type="checkmarkempty" size="10" color="#FFF"></uni-icons>
+            </template>
+
+            <template v-else>
+              <view class="file-icon-wrapper">
+                <uni-icons :type="getFileIcon(file.name)" size="16" :color="file.uploadError ? '#FF3B30' : '#86868B'"></uni-icons>
+                <view v-if="file.uploading" class="upload-loading">
+                  <uni-icons type="spinner-cycle" size="12" color="#2CB5A0" class="spin-icon"></uni-icons>
+                </view>
+                <view v-else-if="file.uploaded" class="upload-success">
+                  <uni-icons type="checkmarkempty" size="10" color="#FFF"></uni-icons>
+                </view>
+                <view v-else-if="file.uploadError" class="upload-error-icon">
+                  <uni-icons type="closeempty" size="10" color="#FFF"></uni-icons>
+                </view>
               </view>
-              <view v-else-if="file.uploadError" class="upload-error-icon">
-                <uni-icons type="closeempty" size="10" color="#FFF"></uni-icons>
-              </view>
-            </view>
-            <text class="preview-name">{{ getFileName(file.name) }}</text>
-            <view class="remove-btn" @click="removeFile(index)">
-              <uni-icons type="closeempty" size="12" color="#FFF"></uni-icons>
+              <text class="preview-name">{{ getFileName(file.name) }}</text>
+            </template>
+
+            <view class="remove-btn" @click.stop="removeFile(index)">
+              <uni-icons type="closeempty" size="14" color="#FFF"></uni-icons>
             </view>
           </view>
         </scroll-view>
@@ -100,9 +133,9 @@
 
         <view class="input-wrapper">
           <textarea class="ios-textarea" v-model="userInput" placeholder="分享你的想法..." :disable-default-padding="true"
-            :cursor-spacing="20" confirm-type="send" :maxlength="-1" @confirm="sendMessage" :auto-height="true"
-            :style="{ height: `${textareaHeight}px` }" @input="handleAdjustHeight" @focus="handleInputFocus"
-            @blur="handleInputBlur" :show-confirm-bar="false" :hold-keyboard="true" :adjust-position="false"></textarea>
+                    :cursor-spacing="20" confirm-type="send" :maxlength="-1" @confirm="sendMessage" :auto-height="true"
+                    :style="{ height: `${textareaHeight}px` }" @input="handleAdjustHeight" @focus="handleInputFocus"
+                    @blur="handleInputBlur" :show-confirm-bar="false" :hold-keyboard="true" :adjust-position="false"></textarea>
         </view>
 
         <view v-if="!isStreaming" class="send-btn" :class="{ 'btn-active': canSend }" @click="sendMessage">
@@ -165,7 +198,6 @@
 </template>
 
 <script>
-// 这里保持你的原生业务逻辑完全不变
 import { getSessions, getMessages, deleteSession, updateSessionTitle, streamChat, cancelStream, createSession } from '@/api/ai.js';
 import { adjustHeight, formatTime, generateUUID, goBack, onInputBlur, onInputFocus, scrollToBottom } from './ai.js';
 import UaMarkdown from '@/components/ua2-markdown/ua-markdown.vue';
@@ -176,7 +208,7 @@ export default {
   components: { UaMarkdown },
   data() {
     return {
-      statusBarHeight: 0, 
+      statusBarHeight: 0,
       sessionId: null,
       userInput: '',
       currentMessages: [],
@@ -191,7 +223,7 @@ export default {
       isLoadingHistory: false,
       editingChatId: null,
       editingTitle: '',
-      textareaHeight: 20, // 初始高度稍微缩小，适配胶囊
+      textareaHeight: 20,
       keyboardHeight: 0,
       inputAreaHeight: 60,
       safeAreaBottom: 34,
@@ -201,7 +233,15 @@ export default {
     }
   },
   computed: {
-    canSend() { return this.userInput.trim().length > 0 || this.selectedFiles.length > 0; }
+    // 🌟 核心：只有当所有文件都上传完成且无错误时，才能激活发送按钮
+    canSend() {
+      const hasInput = this.userInput.trim().length > 0;
+      const hasFiles = this.selectedFiles.length > 0;
+      // 检查是否有任何文件仍在上传，或者上传失败
+      const isUploadingOrError = this.selectedFiles.some(f => f.uploading || f.uploadError);
+
+      return (hasInput || hasFiles) && !isUploadingOrError;
+    }
   },
   onLoad() {
     const systemInfo = uni.getSystemInfoSync();
@@ -221,11 +261,8 @@ export default {
     this.closeEventSource();
   },
   methods: {
-    // 跳转到首页的核心方法
     goToIndex() {
-      uni.reLaunch({
-        url: '/pages/index'
-      })
+      uni.reLaunch({ url: '/pages/index' })
     },
     shouldShowTime(current, previous) {
       if (!previous) return true;
@@ -249,6 +286,34 @@ export default {
       this.isLoadingMore = true;
       setTimeout(() => { this.isLoadingMore = false; }, 1000);
     },
+
+    // 判断是否包含图片/文件附件
+    hasImages(attachments) {
+      return attachments.some(file => this.isImageExt(file.name || file.url));
+    },
+    hasFiles(attachments) {
+      return attachments.some(file => !this.isImageExt(file.name || file.url));
+    },
+
+    // 智能扩展名识别 (识别URL或文件名)
+    isImageExt(nameOrUrl) {
+      if (!nameOrUrl) return false;
+      const cleanName = nameOrUrl.split('?')[0].toLowerCase();
+      const ext = cleanName.split('.').pop();
+      return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'heic'].includes(ext);
+    },
+
+    // 点击预览大图
+    previewChatImage(currentUrl, attachments) {
+      const urls = attachments
+          .filter(f => this.isImageExt(f.name || f.url))
+          .map(f => f.url || f.path);
+      uni.previewImage({
+        current: currentUrl,
+        urls: urls
+      });
+    },
+
     handleUpload() {
       if (this.selectedFiles.length >= 5) {
         uni.showToast({ title: '最多只能上传5个文件', icon: 'none' }); return;
@@ -257,22 +322,22 @@ export default {
         count: 5 - this.selectedFiles.length,
         extension: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'],
         success: async (res) => {
-          const files = res.tempFiles.map(item => ({ 
-            name: item.name || `file_${Date.now()}`, 
-            size: item.size, 
-            path: item.path, 
+          const files = res.tempFiles.map(item => ({
+            name: item.name || `image_${Date.now()}.png`,
+            size: item.size,
+            path: item.path,
             file: item,
             uploading: true,
             uploaded: false,
-            url: null
+            url: null,
+            uploadError: false
           }));
           this.selectedFiles = [...this.selectedFiles, ...files];
-          
-          // 立即上传每个文件
+
           for (let i = 0; i < files.length; i++) {
             const fileIndex = this.selectedFiles.findIndex(f => f.path === files[i].path);
             if (fileIndex === -1) continue;
-            
+
             try {
               const uploadResult = await this.uploadFile(files[i]);
               if (uploadResult && uploadResult.url) {
@@ -280,7 +345,8 @@ export default {
                   ...this.selectedFiles[fileIndex],
                   uploading: false,
                   uploaded: true,
-                  url: uploadResult.url
+                  url: uploadResult.url,
+                  uploadError: false
                 });
               } else {
                 this.$set(this.selectedFiles, fileIndex, {
@@ -315,12 +381,6 @@ export default {
     getFileName(fileName) {
       if (!fileName) return '未命名文件';
       return fileName.length > 15 ? fileName.substring(0, 12) + '...' + fileName.split('.').pop() : fileName;
-    },
-    formatFileSize(size) {
-      if (!size) return '';
-      if (size < 1024) return size + 'B';
-      else if (size < 1024 * 1024) return (size / 1024).toFixed(1) + 'KB';
-      else return (size / (1024 * 1024)).toFixed(1) + 'MB';
     },
     formatTime(timestamp) { return formatTime(timestamp); },
     toggleHistoryDrawer() {
@@ -364,18 +424,31 @@ export default {
         } else { uni.showToast({ title: response.msg || '获取历史记录失败', icon: 'none' }); }
       } catch (error) { uni.showToast({ title: '获取历史记录失败', icon: 'none' }); } finally { this.isLoadingHistory = false; }
     },
+
     async loadChatHistory(chatId) {
       try {
         const response = await getMessages(chatId);
         if (response.code === 200) {
           this.sessionId = chatId;
           const messages = response.data || [];
-          this.currentMessages = messages.map(msg => ({
-            role: msg.messageType === 1 ? 'user' : 'assistant',
-            content: msg.content,
-            timestamp: msg.createTime ? new Date(msg.createTime).getTime() : Date.now(),
-            attachments: []
-          }));
+
+          this.currentMessages = messages.map(msg => {
+            let attachments = [];
+            if (msg.fileUrls) {
+              attachments = msg.fileUrls.split(',').filter(u => u.trim()).map(url => {
+                const cleanUrl = url.trim();
+                const name = cleanUrl.split('/').pop() || 'file';
+                return { url: cleanUrl, name: name, uploaded: true };
+              });
+            }
+            return {
+              role: msg.messageType === 1 ? 'user' : 'assistant',
+              content: msg.content,
+              timestamp: msg.createTime ? new Date(msg.createTime).getTime() : Date.now(),
+              attachments: attachments
+            };
+          });
+
           this.toggleHistoryDrawer();
           this.$nextTick(() => { this.scrollToBottom(); });
         } else { uni.showToast({ title: response.msg || '加载对话失败', icon: 'none' }); }
@@ -392,29 +465,16 @@ export default {
       uni.showToast({ title: '已创建新对话', icon: 'success', duration: 1500 });
     },
     async sendMessage() {
+      // computed canSend 已经保证了如果有处于 uploading 或 uploadError 的文件，这里会直接 Return
       if (!this.canSend || this.isStreaming) return;
       const messageText = this.userInput.trim();
       const attachments = [...this.selectedFiles];
       if (!messageText && attachments.length === 0) return;
-      
-      // 检查是否有未上传完成的文件
-      const hasUploading = attachments.some(f => f.uploading);
-      if (hasUploading) {
-        uni.showToast({ title: '请等待文件上传完成', icon: 'none' }); return;
-      }
-      
-      // 检查是否有上传失败的文件
-      const hasError = attachments.some(f => f.uploadError);
-      if (hasError) {
-        uni.showToast({ title: '部分文件上传失败，请移除后重试', icon: 'none' }); return;
-      }
 
       this.currentMessages.push({ role: 'user', content: messageText, attachments: attachments, timestamp: Date.now() });
       this.currentMessages.push({ role: 'assistant', content: '', timestamp: Date.now() });
 
-      // 收集已上传的URL
       const uploadedFileUrls = attachments.filter(f => f.uploaded && f.url).map(f => f.url);
-      // 收集文件对象（用于H5端直接传递File对象）
       const filesToSend = attachments.filter(f => f.file).map(f => ({ path: f.path, name: f.name, file: f.file }));
 
       this.userInput = ''; this.selectedFiles = []; this.textareaHeight = 20; this.inputAreaHeight = 60; this.fullResponse = '';
@@ -424,7 +484,7 @@ export default {
         this.isStreaming = true; let lastScrollTime = 0; const that = this;
         if (!this.sessionId) {
           try {
-            const createResponse = await createSession(messageText.substring(0, 50));
+            const createResponse = await createSession(messageText.substring(0, 50) || '分享图片/文件');
             if (createResponse.code === 200 && createResponse.data) { this.sessionId = createResponse.data.sessionId; }
             else { throw new Error(createResponse.msg || '创建会话失败'); }
           } catch (createError) {
@@ -433,9 +493,9 @@ export default {
             this.isStreaming = false; uni.showToast({ title: '创建会话失败', icon: 'none' }); return;
           }
         }
-        
+
         const sseConnection = streamChat({
-          message: messageText, 
+          message: messageText,
           sessionId: this.sessionId,
           files: filesToSend.length > 0 ? filesToSend : undefined,
           fileUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : undefined,
@@ -463,34 +523,33 @@ export default {
         uni.showToast({ title: '发送消息失败', icon: 'none' }); this.isStreaming = false; this.closeEventSource();
       }
     },
-    // 上传单个文件
-     uploadFile(file) {
-       return new Promise((resolve, reject) => {
-         uni.uploadFile({
-           url: config.baseUrl + '/common/upload',
-           filePath: file.path,
-           name: 'file',
-           header: {
-             'Authorization': 'Bearer ' + getToken()
-           },
-           success: (res) => {
-             try {
-               const data = JSON.parse(res.data);
-               if (data.code === 200) {
-                 resolve({ url: data.url, fileName: data.fileName });
-               } else {
-                 reject(new Error(data.msg || '上传失败'));
-               }
-             } catch (e) {
-               reject(e);
-             }
-           },
-           fail: (err) => {
-             reject(err);
-           }
-         });
-       });
-     },
+    uploadFile(file) {
+      return new Promise((resolve, reject) => {
+        uni.uploadFile({
+          url: config.baseUrl + '/common/upload',
+          filePath: file.path,
+          name: 'file',
+          header: {
+            'Authorization': 'Bearer ' + getToken()
+          },
+          success: (res) => {
+            try {
+              const data = JSON.parse(res.data);
+              if (data.code === 200) {
+                resolve({ url: data.url, fileName: data.fileName });
+              } else {
+                reject(new Error(data.msg || '上传失败'));
+              }
+            } catch (e) {
+              reject(e);
+            }
+          },
+          fail: (err) => {
+            reject(err);
+          }
+        });
+      });
+    },
     async handleDeleteChat(chatId) {
       uni.showModal({
         title: '确认删除', content: '确定要删除这个对话吗？', confirmColor: '#FF3B30',
@@ -523,8 +582,7 @@ export default {
           this.editingChatId = null; this.editingTitle = '';
         }
       });
-    },
-    goBack() { uni.navigateBack(); }
+    }
   }
 }
 </script>
@@ -553,11 +611,11 @@ $theme-cyan-light: #48D1CC;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
   z-index: 0;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(224, 242, 241, 0.8) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(255, 243, 224, 0.8) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(232, 234, 246, 0.8) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(240, 238, 245, 0.8) 0px, transparent 50%);
+  background-image:
+      radial-gradient(at 0% 0%, rgba(224, 242, 241, 0.8) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(255, 243, 224, 0.8) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(232, 234, 246, 0.8) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(240, 238, 245, 0.8) 0px, transparent 50%);
   pointer-events: none;
 }
 
@@ -620,7 +678,6 @@ $theme-cyan-light: #48D1CC;
   display: flex; flex-direction: column; gap: 40rpx;
 }
 
-/* 时间戳 */
 .message-time-center {
   text-align: center;
   margin-bottom: 24rpx;
@@ -655,8 +712,30 @@ $theme-cyan-light: #48D1CC;
 .sender-name {
   font-size: 24rpx;
   color: $ios-text-secondary;
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
   margin-left: 8rpx;
+}
+
+/* 🌟 图片展示区样式 */
+.message-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 8rpx;
+}
+.user-message .message-images {
+  justify-content: flex-end;
+}
+.msg-image {
+  max-width: 400rpx;
+  max-height: 400rpx;
+  border-radius: 24rpx;
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.05);
+  background: rgba(0,0,0,0.02);
+  object-fit: cover;
+  transition: transform 0.2s ease;
+  &:active { transform: scale(0.98); opacity: 0.9; }
 }
 
 /* 气泡通用基础 */
@@ -665,74 +744,38 @@ $theme-cyan-light: #48D1CC;
   padding: 24rpx 32rpx;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
   overflow: hidden;
+  display: inline-block;
 }
 
-/* ==================== User 气泡 (治愈青渐变) ==================== */
 .user-message .message-container { flex-direction: row-reverse; }
 .user-message .message-content-box { align-items: flex-end; }
 .user-message .sender-name { margin-right: 8rpx; margin-left: 0; }
 .user-message .message-bubble {
   background: linear-gradient(135deg, $theme-cyan-light 0%, $theme-cyan 100%);
-  border-top-right-radius: 8rpx; 
+  border-top-right-radius: 8rpx;
   box-shadow: 0 8rpx 20rpx rgba(44, 181, 160, 0.25);
 }
-.user-text {
-  font-size: 30rpx;
-  color: #FFFFFF;
-  line-height: 1.6;
-}
+.user-text { font-size: 30rpx; color: #FFFFFF; line-height: 1.6; word-break: break-all; }
 
-/* ==================== AI 气泡 (Glass Card) ==================== */
 .ai-message .message-bubble {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.9);
-  border-top-left-radius: 8rpx; 
+  border-top-left-radius: 8rpx;
 }
 
-/* 定制 ua-markdown 的样式以匹配 iOS 质感 */
 :deep(.ua__markdown) {
-  font-size: 30rpx;
-  line-height: 1.6;
-  color: $ios-text-primary;
-  
+  font-size: 30rpx; line-height: 1.6; color: $ios-text-primary;
   p { margin-bottom: 20rpx; &:last-child { margin-bottom: 0; } }
   strong { font-weight: 600; color: #000; }
-  
-  pre {
-    background: rgba(245, 245, 247, 0.8);
-    border-radius: 16rpx;
-    padding: 20rpx;
-    margin: 20rpx 0;
-    overflow-x: auto;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    code { font-family: Consolas, monospace; font-size: 26rpx; }
-  }
-  
-  code {
-    background: rgba(0, 0, 0, 0.04);
-    padding: 4rpx 8rpx;
-    border-radius: 8rpx;
-    font-size: 26rpx;
-    color: #FF3B30;
-  }
-  
+  pre { background: rgba(245, 245, 247, 0.8); border-radius: 16rpx; padding: 20rpx; margin: 20rpx 0; overflow-x: auto; border: 1px solid rgba(0, 0, 0, 0.05); code { font-family: Consolas, monospace; font-size: 26rpx; } }
+  code { background: rgba(0, 0, 0, 0.04); padding: 4rpx 8rpx; border-radius: 8rpx; font-size: 26rpx; color: #FF3B30; }
   ul, ol { padding-left: 32rpx; margin: 16rpx 0; }
   li { margin-bottom: 8rpx; }
-  
-  blockquote {
-    border-left: 6rpx solid $theme-cyan;
-    padding-left: 20rpx;
-    margin: 20rpx 0;
-    color: $ios-text-secondary;
-    background: rgba(44, 181, 160, 0.05);
-    padding: 16rpx 20rpx;
-    border-radius: 0 16rpx 16rpx 0;
-  }
+  blockquote { border-left: 6rpx solid $theme-cyan; padding-left: 20rpx; margin: 20rpx 0; color: $ios-text-secondary; background: rgba(44, 181, 160, 0.05); padding: 16rpx 20rpx; border-radius: 0 16rpx 16rpx 0; }
 }
 
-/* 正在输入的呼吸点 */
 .typing-indicator {
   display: flex; align-items: center; height: 30rpx; gap: 8rpx;
   .dot {
@@ -748,158 +791,99 @@ $theme-cyan-light: #48D1CC;
   40% { transform: scale(1); opacity: 1; }
 }
 
-/* 附件小药丸 */
-.attachments {
-  margin-top: 16rpx; display: flex; flex-direction: column; gap: 12rpx;
-}
+.attachments { margin-top: 16rpx; display: flex; flex-direction: column; gap: 12rpx; }
 .attachment-pill {
   display: inline-flex; align-items: center; gap: 12rpx;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  padding: 12rpx 24rpx; border-radius: 30rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
-  .attachment-name {
-    font-size: 24rpx; color: $ios-text-primary; font-weight: 500;
-  }
+  background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 12rpx 24rpx; border-radius: 30rpx; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
+  .attachment-name { font-size: 24rpx; color: $ios-text-primary; font-weight: 500; }
 }
 
-/* ==================== 2. 悬浮胶囊输入舱 (Floating Capsule Dock) ==================== */
-/* 外部包装器，不阻挡底层事件 */
+/* ==================== 底部输入胶囊与图片预览区 ==================== */
 .capsule-wrapper {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  z-index: 100;
-  padding: 0 32rpx; /* 屏幕两侧留白，形成悬浮感 */
-  pointer-events: none; /* 让空白区域的点击穿透到下面的聊天记录 */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 100; padding: 0 32rpx; pointer-events: none;
+  display: flex; flex-direction: column; justify-content: flex-end;
 }
 
-/* 附件预览 (悬浮在胶囊上方) */
+/* 🌟 全新附件预览区 */
 .attachment-preview {
-  pointer-events: auto; /* 恢复点击事件 */
-  margin-bottom: 24rpx;
-  padding: 0 12rpx;
-  
-  .attachment-scroll { white-space: nowrap; padding: 4rpx 0; }
+  pointer-events: auto;
+  margin-bottom: 24rpx; padding: 0 12rpx;
+
+  .attachment-scroll {
+    white-space: nowrap;
+    padding: 12rpx 0; /* 上下留出空间，防止外溢的删除按钮被裁掉 */
+  }
+
   .preview-item {
     display: inline-flex; align-items: center; gap: 8rpx;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.8);
-    border-radius: 40rpx;
-    padding: 14rpx 24rpx; margin-right: 16rpx;
+    background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.8); border-radius: 40rpx;
+    padding: 14rpx 24rpx; margin-right: 24rpx;
     position: relative; box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.06);
-    
-    &.upload-error {
-      border-color: rgba(255, 59, 48, 0.5);
-      background: rgba(255, 245, 245, 0.9);
+
+    &.upload-error { border-color: rgba(255, 59, 48, 0.5); background: rgba(255, 245, 245, 0.9); }
+
+    /* 🌟 图片专属方块预览 */
+    &.is-image-preview {
+      padding: 0; width: 140rpx; height: 140rpx; border-radius: 24rpx;
+      justify-content: center; background: transparent; border: none; box-shadow: none;
+
+      .img-wrapper {
+        width: 100%; height: 100%; border-radius: 24rpx; overflow: hidden; position: relative;
+        border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.08);
+        transition: filter 0.3s;
+
+        /* 🌟 上传时的灰色蒙感效果 */
+        &.is-gray-mask { filter: grayscale(100%) brightness(0.8); }
+      }
+
+      .preview-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .img-upload-mask { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
+      .img-error-mask { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(255, 59, 48, 0.6); display: flex; align-items: center; justify-content: center; }
     }
   }
-  .file-icon-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .upload-loading {
-    position: absolute;
-    top: -6rpx;
-    right: -10rpx;
-    width: 24rpx;
-    height: 24rpx;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.95);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
-    .spin-icon { animation: spin 1s linear infinite; }
-  }
-  .upload-success {
-    position: absolute;
-    top: -6rpx;
-    right: -10rpx;
-    width: 20rpx;
-    height: 20rpx;
-    border-radius: 50%;
-    background: #34C759;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2rpx 6rpx rgba(52, 199, 89, 0.4);
-  }
-  .upload-error-icon {
-    position: absolute;
-    top: -6rpx;
-    right: -10rpx;
-    width: 20rpx;
-    height: 20rpx;
-    border-radius: 50%;
-    background: #FF3B30;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2rpx 6rpx rgba(255, 59, 48, 0.4);
-  }
+
+  /* 普通文件预览样式 */
+  .file-icon-wrapper { position: relative; display: flex; align-items: center; justify-content: center; }
+  .upload-loading { position: absolute; top: -6rpx; right: -10rpx; width: 24rpx; height: 24rpx; border-radius: 50%; background: rgba(255, 255, 255, 0.95); display: flex; align-items: center; justify-content: center; box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1); .spin-icon { animation: spin 1s linear infinite; } }
+  .upload-success { position: absolute; top: -6rpx; right: -10rpx; width: 20rpx; height: 20rpx; border-radius: 50%; background: #34C759; display: flex; align-items: center; justify-content: center; box-shadow: 0 2rpx 6rpx rgba(52, 199, 89, 0.4); }
+  .upload-error-icon { position: absolute; top: -6rpx; right: -10rpx; width: 20rpx; height: 20rpx; border-radius: 50%; background: #FF3B30; display: flex; align-items: center; justify-content: center; box-shadow: 0 2rpx 6rpx rgba(255, 59, 48, 0.4); }
+
   .preview-name { font-size: 24rpx; color: $ios-text-primary; max-width: 140rpx; overflow: hidden; text-overflow: ellipsis; }
+
+  /* 🌟 更明显、带有粗白边的悬浮删除按钮 */
   .remove-btn {
-    position: absolute; top: -8rpx; right: -8rpx;
-    width: 32rpx; height: 32rpx; border-radius: 50%; background: #FF3B30;
+    position: absolute; top: -14rpx; right: -14rpx; z-index: 10;
+    width: 44rpx; height: 44rpx; border-radius: 50%;
+    background: #FF3B30; border: 4rpx solid #FFFFFF;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4rpx 10rpx rgba(255,59,48,0.3);
-    &:active { transform: scale(0.9); }
+    box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+    &:active { transform: scale(0.85); }
   }
 }
 
 /* 核心输入胶囊 */
 .capsule-dock {
-  pointer-events: auto; /* 恢复点击事件 */
-  background: rgba(250, 250, 252, 0.85); /* 极浅透明灰底 */
-  backdrop-filter: saturate(200%) blur(30px);
-  -webkit-backdrop-filter: saturate(200%) blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.08); /* 深邃悬浮阴影 */
-  border-radius: 60rpx; /* 大圆角呈现完美胶囊感 */
-  padding: 12rpx 16rpx 12rpx 24rpx;
-  display: flex; 
-  align-items: flex-end; /* 底部对齐，让 textarea 向上生长 */
+  pointer-events: auto;
+  background: rgba(250, 250, 252, 0.85); backdrop-filter: saturate(200%) blur(30px);
+  -webkit-backdrop-filter: saturate(200%) blur(30px); border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.08); border-radius: 60rpx;
+  padding: 12rpx 16rpx 12rpx 24rpx; display: flex; align-items: flex-end;
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.action-icon-btn {
-  width: 68rpx; height: 68rpx; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; margin-bottom: 2rpx;
-  background: transparent;
-  &:active { background: rgba(0,0,0,0.05); }
-}
-
-.input-wrapper {
-  flex: 1;
-  padding: 14rpx 16rpx;
-  margin: 0 8rpx;
-}
-
-.ios-textarea {
-  width: 100%; 
-  font-size: 30rpx; 
-  line-height: 1.4;
-  color: $ios-text-primary; 
-  min-height: 42rpx; 
-  max-height: 180rpx;
-}
+.action-icon-btn { width: 68rpx; height: 68rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-bottom: 2rpx; background: transparent; &:active { background: rgba(0,0,0,0.05); } }
+.input-wrapper { flex: 1; padding: 14rpx 16rpx; margin: 0 8rpx; }
+.ios-textarea { width: 100%; font-size: 30rpx; line-height: 1.4; color: $ios-text-primary; min-height: 42rpx; max-height: 180rpx; }
 
 .send-btn {
   width: 68rpx; height: 68rpx; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; margin-bottom: 2rpx;
   background: rgba(0, 0, 0, 0.04); transition: all 0.3s ease;
-  &.btn-active {
-    background: $theme-cyan;
-    box-shadow: 0 6rpx 16rpx rgba(44, 181, 160, 0.3);
-    &:active { transform: scale(0.9); }
-  }
+  &.btn-active { background: $theme-cyan; box-shadow: 0 6rpx 16rpx rgba(44, 181, 160, 0.3); &:active { transform: scale(0.9); } }
 }
 
 .stop-btn {
@@ -910,76 +894,18 @@ $theme-cyan-light: #48D1CC;
   .stop-square { width: 22rpx; height: 22rpx; background: #FFF; border-radius: 6rpx; }
 }
 
-/* ==================== 侧边抽屉 (Spatial Drawer) ==================== */
-.drawer-mask {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 998;
-  opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-  &.mask-show { opacity: 1; pointer-events: auto; }
-}
-
-.glass-drawer {
-  position: fixed; top: 0; right: -80%; bottom: 0; width: 80%;
-  background: rgba(245, 245, 247, 0.85);
-  backdrop-filter: saturate(200%) blur(30px);
-  -webkit-backdrop-filter: saturate(200%) blur(30px);
-  z-index: 999;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.1);
-  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-  display: flex; flex-direction: column;
-  &.drawer-open { transform: translateX(-100%); }
-}
-
-.drawer-header {
-  padding: calc(20rpx + env(safe-area-inset-top)) 32rpx 20rpx;
-  display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
-  .drawer-title { font-size: 34rpx; font-weight: 700; color: $ios-text-primary; }
-}
-
+/* ==================== 侧边抽屉 ==================== */
+.drawer-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); z-index: 998; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; &.mask-show { opacity: 1; pointer-events: auto; } }
+.glass-drawer { position: fixed; top: 0; right: -80%; bottom: 0; width: 80%; background: rgba(245, 245, 247, 0.85); backdrop-filter: saturate(200%) blur(30px); z-index: 999; box-shadow: -8px 0 32px rgba(0, 0, 0, 0.1); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; &.drawer-open { transform: translateX(-100%); } }
+.drawer-header { padding: calc(20rpx + env(safe-area-inset-top)) 32rpx 20rpx; display: flex; align-items: center; justify-content: space-between; border-bottom: 0.5px solid rgba(0, 0, 0, 0.05); .drawer-title { font-size: 34rpx; font-weight: 700; color: $ios-text-primary; } }
 .drawer-content { flex: 1; padding: 32rpx; overflow-y: auto; }
-
-.new-chat-btn {
-  background: $theme-cyan; border-radius: 24rpx; padding: 24rpx;
-  display: flex; align-items: center; justify-content: center; gap: 12rpx;
-  box-shadow: 0 8rpx 20rpx rgba(44, 181, 160, 0.25);
-  margin-bottom: 40rpx; transition: transform 0.2s;
-  text { font-size: 30rpx; font-weight: 600; color: #FFF; }
-  &:active { transform: scale(0.96); }
-}
-
+.new-chat-btn { background: $theme-cyan; border-radius: 24rpx; padding: 24rpx; display: flex; align-items: center; justify-content: center; gap: 12rpx; box-shadow: 0 8rpx 20rpx rgba(44, 181, 160, 0.25); margin-bottom: 40rpx; transition: transform 0.2s; text { font-size: 30rpx; font-weight: 600; color: #FFF; } &:active { transform: scale(0.96); } }
 .history-list { height: calc(100% - 120rpx); }
-
-.history-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 28rpx 24rpx; background: rgba(255,255,255,0.6);
-  border-radius: 24rpx; margin-bottom: 20rpx; border: 1px solid rgba(255,255,255,0.5);
-  &:active { background: rgba(255,255,255,0.9); }
-}
-
-.history-item-content {
-  display: flex; align-items: center; gap: 16rpx; flex: 1; overflow: hidden;
-}
-
-.history-icon {
-  width: 48rpx; height: 48rpx; border-radius: 16rpx;
-  background: rgba(44, 181, 160, 0.15);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-
-.history-title {
-  font-size: 28rpx; font-weight: 500; color: $ios-text-primary;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
+.history-item { display: flex; align-items: center; justify-content: space-between; padding: 28rpx 24rpx; background: rgba(255,255,255,0.6); border-radius: 24rpx; margin-bottom: 20rpx; border: 1px solid rgba(255,255,255,0.5); &:active { background: rgba(255,255,255,0.9); } }
+.history-item-content { display: flex; align-items: center; gap: 16rpx; flex: 1; overflow: hidden; }
+.history-icon { width: 48rpx; height: 48rpx; border-radius: 16rpx; background: rgba(44, 181, 160, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.history-title { font-size: 28rpx; font-weight: 500; color: $ios-text-primary; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .history-actions { display: flex; align-items: center; gap: 16rpx; }
 .action-mini { padding: 8rpx; }
-
-.loading-state, .empty-state {
-  display: flex; flex-direction: column; align-items: center; padding: 100rpx 0; gap: 16rpx;
-  text { font-size: 28rpx; color: $ios-text-secondary; }
-}
+.loading-state, .empty-state { display: flex; flex-direction: column; align-items: center; padding: 100rpx 0; gap: 16rpx; text { font-size: 28rpx; color: $ios-text-secondary; } }
 </style>

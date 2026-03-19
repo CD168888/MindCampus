@@ -9,20 +9,20 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.content.Media;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * AI 聊天流式服务
@@ -94,19 +94,22 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
 
         log.info("使用模型: {}, 是否包含附件: {}", hasFiles ? "多模态" : "基础文本", hasFiles);
 
-        // --- AI 准备“内存快餐”（解决卡顿的关键！） ---
-        List<ByteArrayResource> memoryResources = new ArrayList<>();
-        if (hasFiles) {
-            for (MultipartFile file : files) {
-                try {
-                    memoryResources.add(new ByteArrayResource(file.getBytes()) {
-                        @Override
-                        public String getFilename() { return file.getOriginalFilename(); }
-                    });
-                } catch (IOException e) {
-                    log.error("读取文件字节失败", e);
-                }
-            }
+        // 如果有附件，使用多模态模型
+        List<Media> memoryResources = hasFiles ? convertMultipartFilesToMedia(files) : null;
+
+        // 根据是否有附件，分别构建 UserMessage
+        UserMessage userMessage;
+        if (hasFiles && memoryResources != null && !memoryResources.isEmpty()) {
+            // 多模态情况：同时传入文字和媒体文件
+            userMessage = UserMessage.builder()
+                    .text(message)
+                    .media(memoryResources)
+                    .build();
+        } else {
+            // 纯文本情况：只传入文字，绝对不要调用 .media() 方法
+            userMessage = UserMessage.builder()
+                    .text(message)
+                    .build();
         }
 
         // --- 持久化记录：直接存前端传来的 fileUrls ---
@@ -131,15 +134,7 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
 
         // 生成流式对话
         return clientToUse.prompt()
-                .user(u -> {
-                    u.text(message);
-                    if (hasFiles) {
-                        for (int i = 0; i < memoryResources.size(); i++) {
-                            String fileName = files.get(i).getOriginalFilename();
-                            u.media(getMimeType(fileName), memoryResources.get(i));
-                        }
-                    }
-                })
+                .messages(userMessage)
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, sessionId))
                 .stream()
                 .content()
@@ -153,39 +148,49 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
                 .concatWith(Flux.just(ServerSentEvent.<String>builder()
                         .data("\u0003")
                         .build()))
-                .doOnComplete(() -> handleStreamComplete(sessionId, userId, message, aiResponse.toString(), chatId, urlsString))
-                .doOnCancel(() -> handleStreamCancel(sessionId, userId, aiResponse.toString(), chatId, urlsString))
+                .doOnComplete(() -> handleStreamComplete(sessionId, userId, message, aiResponse.toString(), chatId))
+                .doOnCancel(() -> handleStreamCancel(sessionId, userId, aiResponse.toString(), chatId))
                 .doOnError(error -> handleStreamError(sessionId, userId, chatId, error))
                 .onErrorResume(error -> handleStreamErrorResponse(userId, sessionId, error));
     }
 
     /**
-     * 辅助方法：根据 URL 后缀判断 MimeType
+     * 将 MultipartFile 数组转换为 Media 列表
      */
-    private MimeType getMimeType(String fileUrl) {
-        String url = fileUrl.toLowerCase();
-        if (url.endsWith(".png")) {
-            return MimeTypeUtils.IMAGE_PNG;
-        } else if (url.endsWith(".jpg") || url.endsWith(".jpeg")) {
-            return MimeTypeUtils.IMAGE_JPEG;
-        } else if (url.endsWith(".gif")) {
-            return MimeTypeUtils.IMAGE_GIF;
-        } else {
-            // 如果无法识别，默认尝试作为图片解析，或者使用通用的八位字节流
-            return MimeTypeUtils.APPLICATION_OCTET_STREAM;
+    public List<Media> convertMultipartFilesToMedia(List<MultipartFile> files) {
+        // 如果 required = false 且前端未传参，files 可能为 null
+        if (files == null || files.isEmpty()) {
+            return Collections.emptyList();
         }
+
+        // 直接对 List 进行流处理
+        return files.stream()
+                .filter(file -> file != null && !file.isEmpty()) // 过滤掉空对象或空文件
+                .map(file -> {
+                    // 解析 MimeType（保留你提供的参考逻辑）
+                    String contentType = file.getContentType();
+                    MimeType mimeType = MimeType.valueOf(
+                            contentType != null ? contentType : "image/jpeg");
+
+                    // 构建 Media 对象
+                    return Media.builder()
+                            .mimeType(mimeType)
+                            .data(file.getResource()) // 使用 getResource() 获取数据源
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     /**
      * 处理流式响应完成
      */
-    private void handleStreamComplete(Long sessionId, Long userId, String userMessage, String aiResponse, String chatId, String urlsString) {
+    private void handleStreamComplete(Long sessionId, Long userId, String userMessage, String aiResponse, String chatId) {
         // 使用CAS确保只保存一次AI消息（防止与doOnCancel重复）
         AtomicBoolean messageSaved = messageSavedFlags.get(chatId);
         if (messageSaved != null && messageSaved.compareAndSet(false, true)) {
             // 保存AI回复消息
             if (aiResponse.length() > 0) {
-                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse, urlsString);
+                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse, null);
                 log.info("流式对话完成，已保存AI消息 [sessionId: {}, 长度: {}]", sessionId, aiResponse.length());
             }
 
@@ -206,13 +211,13 @@ public class AiChatStreamServiceImpl implements IAiChatStreamService {
     /**
      * 处理流式响应取消
      */
-    private void handleStreamCancel(Long sessionId, Long userId, String aiResponse, String chatId, String urlsString) {
+    private void handleStreamCancel(Long sessionId, Long userId, String aiResponse, String chatId) {
         // 使用CAS确保只保存一次AI消息（防止与doOnComplete重复）
         AtomicBoolean messageSaved = messageSavedFlags.get(chatId);
         if (messageSaved != null && messageSaved.compareAndSet(false, true)) {
             // 即使取消也保存部分回复
             if (aiResponse.length() > 0) {
-                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse, urlsString);
+                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse, null);
                 log.info("流式对话被取消，已保存部分AI消息 [sessionId: {}, 长度: {}]", sessionId, aiResponse.length());
             }
         } else {

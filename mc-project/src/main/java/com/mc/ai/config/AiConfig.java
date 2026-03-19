@@ -1,12 +1,12 @@
 package com.mc.ai.config;
 
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.alibaba.cloud.ai.memory.redis.RedisChatMemoryRepository;
 import com.mc.ai.prompt.AiPrompts;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
-import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -72,46 +72,81 @@ public class AiConfig {
 
     // 基础文本模型
     @Bean
-    @Primary // 设置为默认，防止其他地方注入报错
+    @Primary
     public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory) {
-        return configureClient(builder.clone(), chatMemory, modelName);
+        // 获取工具 Bean 的逻辑保留
+        String[] toolNames = getToolNames();
+
+        return builder.clone()
+                // 使用 DashScopeChatOptions
+                .defaultOptions(DashScopeChatOptions.builder()
+                        .withModel(modelName)
+                        .build())
+                .defaultSystem(AiPrompts.GENERAL_ASSISTANT)
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                .defaultToolNames(toolNames)
+                .build();
     }
 
     // 多模态模型
     @Bean
     public ChatClient multiModalChatClient(ChatClient.Builder builder, ChatMemory chatMemory) {
-        // 注意：多模态模型通常需要特定的 Options 配置
-        return configureClient(builder.clone(), chatMemory, multiModalModelName);
-    }
+        String[] toolNames = getToolNames();
 
-
-    /**
-     * 公共配置方法
-     * 该方法会自动发现并注册 Spring 容器中所有的 Supplier 和 Function 类型的 Bean 作为 AI 工具。
-     * 这样做的好处是无需手动维护工具列表，新增的工具 Bean 会自动被注册到 ChatClient 中。
-     *
-     * @param builder Spring AI 的 ChatClient 构建器，用于配置和创建 ChatClient 实例
-     * @param chatMemory Redis 聊天记忆仓库，用于持久化对话历史
-     * @return 配置完成的 ChatClient 实例，包含所有自动发现的工具和对话记忆功能
-     */
-    private ChatClient configureClient(ChatClient.Builder builder, ChatMemory chatMemory, String modelName){
-        // 获取 Spring 容器中所有 Supplier 和 Function Bean
-        Map<String, Supplier> supplierBeans = applicationContext.getBeansOfType(Supplier.class);
-        Map<String, Function> functionBeans = applicationContext.getBeansOfType(Function.class);
-
-        // 收集 Bean 名称
-        Set<String> allToolNames = new HashSet<>(supplierBeans.keySet());
-        allToolNames.addAll(functionBeans.keySet());
-
-        return builder
-                .defaultOptions(ChatOptions.builder().model(modelName).build())
+        return builder.clone()
+                // 必须使用 DashScopeChatOptions 并开启 MultiModel
+                .defaultOptions(DashScopeChatOptions.builder()
+                        .withModel(multiModalModelName) // 例如 qwen-vl-max
+                        .withMultiModel(true)           // 灵魂参数：不加这个流式和多模态都会失效！
+                        .build())
                 .defaultSystem(AiPrompts.GENERAL_ASSISTANT)
-                .defaultAdvisors(
-                        MessageChatMemoryAdvisor.builder(chatMemory)
-                                .build())
-                .defaultToolNames(allToolNames.toArray(new String[0]))
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                // 注意：部分视觉模型可能对 Tool 调用支持不好，如果报错可以把下面这行注释掉
+                .defaultToolNames(toolNames)
                 .build();
     }
+
+    /**
+     * 获取所有工具名称
+     * 公共配置方法，自动发现并注册 Spring 容器中所有的 Supplier 和 Function 类型的 Bean 作为 AI 工具。
+     * 这样做的好处是无需手动维护工具列表，新增的工具 Bean 会自动被注册到 ChatClient 中。
+     */
+    private String[] getToolNames() {
+        Map<String, Supplier> supplierBeans = applicationContext.getBeansOfType(Supplier.class);
+        Map<String, Function> functionBeans = applicationContext.getBeansOfType(Function.class);
+        Set<String> allToolNames = new HashSet<>(supplierBeans.keySet());
+        allToolNames.addAll(functionBeans.keySet());
+        return allToolNames.toArray(new String[0]);
+    }
+
+
+//    /**
+//     * 公共配置方法
+//     * 该方法会自动发现并注册 Spring 容器中所有的 Supplier 和 Function 类型的 Bean 作为 AI 工具。
+//     * 这样做的好处是无需手动维护工具列表，新增的工具 Bean 会自动被注册到 ChatClient 中。
+//     *
+//     * @param builder Spring AI 的 ChatClient 构建器，用于配置和创建 ChatClient 实例
+//     * @param chatMemory Redis 聊天记忆仓库，用于持久化对话历史
+//     * @return 配置完成的 ChatClient 实例，包含所有自动发现的工具和对话记忆功能
+//     */
+//    private ChatClient configureClient(ChatClient.Builder builder, ChatMemory chatMemory, String modelName){
+//        // 获取 Spring 容器中所有 Supplier 和 Function Bean
+//        Map<String, Supplier> supplierBeans = applicationContext.getBeansOfType(Supplier.class);
+//        Map<String, Function> functionBeans = applicationContext.getBeansOfType(Function.class);
+//
+//        // 收集 Bean 名称
+//        Set<String> allToolNames = new HashSet<>(supplierBeans.keySet());
+//        allToolNames.addAll(functionBeans.keySet());
+//
+//        return builder
+//                .defaultOptions(ChatOptions.builder().model(modelName).build())
+//                .defaultSystem(AiPrompts.GENERAL_ASSISTANT)
+//                .defaultAdvisors(
+//                        MessageChatMemoryAdvisor.builder(chatMemory)
+//                                .build())
+//                .defaultToolNames(allToolNames.toArray(new String[0]))
+//                .build();
+//    }
 
     @Bean
     public RedisChatMemoryRepository chatMemoryRepository() {
