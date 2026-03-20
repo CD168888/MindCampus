@@ -7,8 +7,12 @@ import com.mc.common.core.page.TableDataInfo;
 import com.mc.common.enums.BusinessType;
 import com.mc.common.utils.poi.ExcelUtil;
 import com.mc.questionnaire.domain.QuestionBank;
+import com.mc.questionnaire.domain.dto.AiGenerateQuestionDTO;
+import com.mc.questionnaire.domain.vo.AiGenerateQuestionVO;
+import com.mc.questionnaire.service.IQuestionBankAiService;
 import com.mc.questionnaire.service.IQuestionBankService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +30,9 @@ import java.util.List;
 public class QuestionBankController extends BaseController {
     @Autowired
     private IQuestionBankService questionBankService;
+
+    @Autowired
+    private IQuestionBankAiService questionBankAiService;
 
     /**
      * 查询题库管理列表
@@ -87,5 +94,15 @@ public class QuestionBankController extends BaseController {
     @DeleteMapping("/{bankIds}")
     public AjaxResult remove(@PathVariable Long[] bankIds) {
         return toAjax(questionBankService.deleteQuestionBankByBankIds(bankIds));
+    }
+
+    /**
+     * AI 生成心理测评题目（预览，不入库）
+     */
+    @PreAuthorize("@ss.hasPermi('questionnaire:questionnairebank:add')")
+    @PostMapping("/ai/generate")
+    public AjaxResult generateQuestion(@Valid @RequestBody AiGenerateQuestionDTO dto) {
+        AiGenerateQuestionVO vo = questionBankAiService.generateQuestion(dto);
+        return success(vo);
     }
 }

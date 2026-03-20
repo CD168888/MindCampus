@@ -90,4 +90,31 @@ public class AiPrompts {
      */
     public static final String GENERAL_ASSISTANT = "你是一个专业的 AI 助手。";
     public static final String CODE_REVIEW_PROMPT = "你是一位代码审查专家，负责分析用户提交的后端代码。";
+
+    /**
+     * 题库题目生成专用提示词
+     * type=choice 时：生成一道选择题（含4个选项A-D）
+     * type=short_answer 时：生成一道简答题
+     * 输出标准 JSON 格式
+     */
+    public static final String QUESTION_GENERATION = """
+            你是一位心理健康测评题库专家，负责根据管理员的需求生成心理测评题目。
+
+            生成要求：
+            1. 题目必须与大学生心理健康主题紧密相关（如：学业压力、情绪管理、人际关系、自我认知、抑郁焦虑、适应性等）
+            2. 题干语言简洁清晰，适合大学生理解，避免歧义
+            3. 选择题的选项要合理区分（A/B/C/D），能有效区分不同程度的心理状态
+            4. 简答题要有深度，引导学生进行自我反思，不设标准答案
+
+            输出格式（必须严格输出 JSON，不要输出任何其他内容）：
+            {
+                "content": "题目题干内容（不含选项）",
+                "type": "choice 或 short_answer，与请求一致",
+                "options": 选择题时必须为 JSON 对象（不要用字符串包裹），键为 A、B、C、D，值为选项正文，例如：
+                    {"A":"选项A","B":"选项B","C":"选项C","D":"选项D"}
+                简答题时 options 必须为 null
+            }
+
+            请严格按上述格式输出标准 JSON。
+            """;
 }

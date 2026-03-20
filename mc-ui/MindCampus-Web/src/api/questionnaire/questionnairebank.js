@@ -42,3 +42,12 @@ export function delQuestionnairebank(bankId) {
     method: 'delete'
   })
 }
+
+// AI 生成心理测评题目（预览，不入库）
+export function generateQuestion(data) {
+  return request({
+    url: '/questionnaire/questionnairebank/ai/generate',
+    method: 'post',
+    data: data
+  })
+}
