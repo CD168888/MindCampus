@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mc.dashboard.mapper.DashboardMapper">
+
+    <select id="selectTotalStudents" resultType="Long">
+        select count(*) from student_info
+    </select>
+
+    <select id="selectCompletedEvaluations" resultType="Long">
+        select count(*) from evaluation_result where completion_status = '1'
+    </select>
+
+    <select id="selectAttentionStudents" resultType="Long">
+        select count(distinct student_id) from evaluation_result where risk_level in ('中', '高风险')
+    </select>
+
+    <select id="selectHighRiskCount" resultType="Long">
+        select count(*) from evaluation_result where risk_level = '高风险'
+    </select>
+
+    <select id="selectLowRiskCount" resultType="Long">
+        select count(*) from evaluation_result where risk_level = '低'
+    </select>
+
+    <select id="selectMediumRiskCount" resultType="Long">
+        select count(*) from evaluation_result where risk_level = '中'
+    </select>
+
+    <select id="selectWeekNewEvaluations" resultType="Long">
+        select count(*) from evaluation_result 
+        where create_time between #{startDate} and #{endDate}
+    </select>
+
+    <select id="selectLastWeekEvaluations" resultType="Long">
+        select count(*) from evaluation_result 
+        where create_time between #{startDate} and #{endDate}
+    </select>
+
+    <select id="selectTrendData" resultType="com.mc.dashboard.domain.vo.DashboardTrendVO">
+        select 
+            DATE_FORMAT(create_time, '%Y-%m-%d') as date,
+            count(*) as evaluationCount,
+            sum(case when completion_status = '1' then 1 else 0 end) as completedCount,
+            sum(case when risk_level = '高风险' then 1 else 0 end) as highRiskCount
+        from evaluation_result
+        where create_time between #{startDate} and #{endDate}
+        group by DATE_FORMAT(create_time, '%Y-%m-%d')
+        order by date asc
+    </select>
+
+    <select id="selectRecentActivities" resultType="com.mc.dashboard.domain.vo.DashboardActivityVO">
+        select 
+            er.result_id as resultId,
+            s.name as studentName,
+            q.title as questionnaireTitle,
+            er.risk_level as riskLevel,
+            er.create_time as createTime
+        from evaluation_result er
+        left join student_info s on er.student_id = s.student_id
+        left join questionnaire q on er.questionnaire_id = q.questionnaire_id
+        order by er.create_time desc
+        limit #{limit}
+    </select>
+
+    <select id="selectTodoList" resultType="com.mc.dashboard.domain.vo.DashboardTodoVO">
+        select 
+            inot.notification_id as notificationId,
+            s.name as studentName,
+            q.title as questionnaireTitle,
+            er.risk_level as riskLevel,
+            inot.create_time as createTime
+        from intervention_notification inot
+        left join evaluation_result er on inot.result_id = er.result_id
+        left join student_info s on er.student_id = s.student_id
+        left join questionnaire q on er.questionnaire_id = q.questionnaire_id
+        where inot.process_status = '0'
+        order by inot.create_time desc
+        limit #{limit}
+    </select>
+
+</mapper>

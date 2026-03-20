@@ -1,31 +1,29 @@
 <template>
-  <div class="dashboard-container">
-    <!-- 欢迎卡片 -->
+  <div class="dashboard-container" v-loading="loading">
     <el-card class="welcome-card" shadow="hover">
       <div class="welcome-content">
         <div class="welcome-left">
-          <h2 class="welcome-title">欢迎回来，{{ userInfo.name }}</h2>
+          <h2 class="welcome-title">欢迎回来，{{ userStore.nickName || userStore.name }}</h2>
           <p class="welcome-subtitle">{{ getCurrentGreeting() }}，今天是{{ getCurrentDate() }}</p>
           <div class="welcome-stats">
             <div class="stat-item">
               <el-icon class="stat-icon"><User /></el-icon>
-              <span class="stat-text">{{ userInfo.role }}</span>
+              <span class="stat-text">{{ getRoleName() }}</span>
             </div>
             <div class="stat-item">
               <el-icon class="stat-icon"><Location /></el-icon>
-              <span class="stat-text">{{ userInfo.department }}</span>
+              <span class="stat-text">心理健康管理系统</span>
             </div>
           </div>
         </div>
         <div class="welcome-right">
-          <el-avatar :size="80" :src="userInfo.avatar">
+          <el-avatar :size="80" :src="userStore.avatar">
             <el-icon><User /></el-icon>
           </el-avatar>
         </div>
       </div>
     </el-card>
 
-    <!-- 数据统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :xs="24" :sm="12" :md="6" v-for="(stat, index) in statistics" :key="index">
         <el-card class="stat-card" :class="'stat-card-' + stat.type" shadow="hover">
@@ -46,9 +44,7 @@
       </el-col>
     </el-row>
 
-    <!-- 图表区域 -->
     <el-row :gutter="20" class="chart-row">
-      <!-- 测评趋势 -->
       <el-col :xs="24" :lg="16">
         <el-card class="chart-card" shadow="hover">
           <template #header>
@@ -57,10 +53,9 @@
                 <el-icon><TrendCharts /></el-icon>
                 测评趋势分析
               </span>
-              <el-radio-group v-model="trendPeriod" size="small">
+              <el-radio-group v-model="trendPeriod" size="small" @change="loadTrendData">
                 <el-radio-button label="week">近7天</el-radio-button>
                 <el-radio-button label="month">近30天</el-radio-button>
-                <el-radio-button label="year">近一年</el-radio-button>
               </el-radio-group>
             </div>
           </template>
@@ -68,7 +63,6 @@
         </el-card>
       </el-col>
 
-      <!-- 风险等级分布 -->
       <el-col :xs="24" :lg="8">
         <el-card class="chart-card" shadow="hover">
           <template #header>
@@ -84,9 +78,7 @@
       </el-col>
     </el-row>
 
-    <!-- 待办事项和最新动态 -->
     <el-row :gutter="20" class="content-row">
-      <!-- 待办事项 -->
       <el-col :xs="24" :lg="12">
         <el-card class="content-card" shadow="hover">
           <template #header>
@@ -95,28 +87,28 @@
                 <el-icon><List /></el-icon>
                 待办事项
               </span>
-              <el-badge :value="todoList.filter(item => !item.completed).length" class="badge-item">
-                <el-button size="small" text>查看全部</el-button>
+              <el-badge :value="todoList.length" class="badge-item" v-if="todoList.length > 0">
+                <el-button size="small" text @click="goToNotification">查看全部</el-button>
               </el-badge>
             </div>
           </template>
-          <div class="todo-list">
-            <div v-for="(todo, index) in todoList" :key="index" class="todo-item" :class="{ completed: todo.completed }">
-              <el-checkbox v-model="todo.completed" @change="handleTodoChange(index)">
-                <span class="todo-text">{{ todo.text }}</span>
-              </el-checkbox>
+          <div class="todo-list" v-if="todoList.length > 0">
+            <div v-for="(todo, index) in todoList" :key="index" class="todo-item">
+              <div class="todo-content">
+                <span class="todo-text">{{ todo.content }}</span>
+              </div>
               <div class="todo-meta">
                 <el-tag :type="todo.priority === 'high' ? 'danger' : todo.priority === 'medium' ? 'warning' : 'info'" size="small">
                   {{ getPriorityText(todo.priority) }}
                 </el-tag>
-                <span class="todo-time">{{ todo.time }}</span>
+                <span class="todo-time">{{ formatTime(todo.createTime) }}</span>
               </div>
             </div>
           </div>
+          <el-empty description="暂无待办事项" v-else :image-size="80" />
         </el-card>
       </el-col>
 
-      <!-- 最新动态 -->
       <el-col :xs="24" :lg="12">
         <el-card class="content-card" shadow="hover">
           <template #header>
@@ -125,28 +117,28 @@
                 <el-icon><BellFilled /></el-icon>
                 最新动态
               </span>
-              <el-button size="small" text>更多</el-button>
+              <el-button size="small" text @click="goToEvaluationResult">更多</el-button>
             </div>
           </template>
-          <el-timeline class="activity-timeline">
+          <el-timeline class="activity-timeline" v-if="activities.length > 0">
             <el-timeline-item
               v-for="(activity, index) in activities"
               :key="index"
-              :timestamp="activity.time"
-              :type="activity.type"
+              :timestamp="formatTime(activity.createTime)"
+              :type="activity.activityType"
               placement="top"
             >
               <div class="activity-content">
                 <p class="activity-title">{{ activity.title }}</p>
-                <p class="activity-desc">{{ activity.desc }}</p>
+                <p class="activity-desc">{{ activity.description }}</p>
               </div>
             </el-timeline-item>
           </el-timeline>
+          <el-empty description="暂无最新动态" v-else :image-size="80" />
         </el-card>
       </el-col>
     </el-row>
 
-    <!-- 快捷入口 -->
     <el-card class="quick-entry-card" shadow="hover">
       <template #header>
         <div class="card-header">
@@ -171,150 +163,89 @@
 </template>
 
 <script setup name="Index">
-import {nextTick, onMounted, ref} from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
-import {BellFilled, Grid, List, Location, PieChart, TrendCharts, User} from '@element-plus/icons-vue'
+import { BellFilled, Grid, List, Location, PieChart, TrendCharts, User } from '@element-plus/icons-vue'
+import useUserStore from '@/store/modules/user'
+import { getStatistics, getTrendData, getRecentActivities, getTodoList } from '@/api/dashboard/dashboard'
 
-// 用户信息
-const userInfo = ref({
-  name: '张老师',
-  role: '心理咨询师',
-  department: '学生工作处',
-  avatar: ''
-})
+const router = useRouter()
+const userStore = useUserStore()
+const loading = ref(false)
 
-// 统计数据
 const statistics = ref([
   {
     type: 'primary',
-    label: '待处理问卷',
-    value: 28,
-    change: '+12% 较上周',
+    label: '学生总数',
+    value: 0,
+    change: '已注册学生',
     changeType: 'up',
-    changeIcon: 'ArrowUp',
-    icon: 'Document',
-    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+    changeIcon: 'User',
+    icon: 'User',
+    gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)'
   },
   {
     type: 'success',
     label: '已完成测评',
-    value: 156,
-    change: '+8% 较上周',
+    value: 0,
+    change: '累计完成',
     changeType: 'up',
     changeIcon: 'ArrowUp',
     icon: 'DataAnalysis',
-    gradient: 'linear-gradient(135deg, #6ee7b7 0%, #10b981 100%)'
+    gradient: 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
   },
   {
     type: 'warning',
     label: '待关注学生',
-    value: 12,
-    change: '-3% 较上周',
-    changeType: 'down',
-    changeIcon: 'ArrowDown',
+    value: 0,
+    change: '需重点关注',
+    changeType: 'up',
+    changeIcon: 'User',
     icon: 'User',
-    gradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
+    gradient: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)'
   },
   {
     type: 'danger',
     label: '高风险预警',
-    value: 3,
-    change: '-1人 较上周',
-    changeType: 'down',
-    changeIcon: 'ArrowDown',
+    value: 0,
+    change: '高风险测评',
+    changeType: 'up',
+    changeIcon: 'BellFilled',
     icon: 'BellFilled',
-    gradient: 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)'
+    gradient: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)'
   }
 ])
 
-// 趋势周期
 const trendPeriod = ref('week')
+const todoList = ref([])
+const activities = ref([])
 
-// 待办事项
-const todoList = ref([
-  {
-    text: '审核新提交的心理测评问卷',
-    priority: 'high',
-    time: '今天 14:00',
-    completed: false
-  },
-  {
-    text: '跟进张三同学的心理咨询预约',
-    priority: 'high',
-    time: '今天 16:00',
-    completed: false
-  },
-  {
-    text: '完成本周心理健康报告',
-    priority: 'medium',
-    time: '明天',
-    completed: false
-  },
-  {
-    text: '准备下周心理讲座PPT',
-    priority: 'low',
-    time: '本周五',
-    completed: false
-  },
-  {
-    text: '回复学生咨询邮件',
-    priority: 'medium',
-    time: '今天',
-    completed: true
-  }
-])
-
-// 最新动态
-const activities = ref([
-  {
-    title: '张三完成了焦虑测评',
-    desc: '测评结果为中度焦虑，建议关注',
-    time: '10分钟前',
-    type: 'primary'
-  },
-  {
-    title: '李四提交了心理咨询预约',
-    desc: '预约时间：明天下午2点',
-    time: '30分钟前',
-    type: 'success'
-  },
-  {
-    title: '王五的测评结果需要审核',
-    desc: '抑郁量表测评已完成',
-    time: '1小时前',
-    type: 'warning'
-  },
-  {
-    title: '系统通知',
-    desc: '新的心理测评问卷已发布',
-    time: '2小时前',
-    type: 'info'
-  },
-  {
-    title: '赵六完成了人格测试',
-    desc: '测评结果正常',
-    time: '3小时前',
-    type: 'success'
-  }
-])
-
-// 快捷入口
 const quickEntries = ref([
-  { label: '问卷管理', icon: 'Document', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', path: '/questionnaire/info' },
-  { label: '测评结果', icon: 'DataAnalysis', gradient: 'linear-gradient(135deg, #6ee7b7 0%, #10b981 100%)', path: '/evaluation/result' },
-  { label: '学生信息', icon: 'User', gradient: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)', path: '/student/info' },
-  { label: '咨询预约', icon: 'Calendar', gradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)', path: '/counselor/info' },
-  { label: '数据分析', icon: 'TrendCharts', gradient: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)', path: '#' },
-  { label: '系统设置', icon: 'Setting', gradient: 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)', path: '/system/config' }
+  { label: '问卷管理', icon: 'Document', gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)', path: '/questionnaire/questionnaireinfo' },
+  { label: '测评结果', icon: 'DataAnalysis', gradient: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', path: '/evaluation/evaluationResult' },
+  { label: '学生信息', icon: 'User', gradient: 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)', path: '/student/info' },
+  { label: '干预通知', icon: 'Bell', gradient: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)', path: '/intervention/notification' },
+  { label: '风险配置', icon: 'Setting', gradient: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)', path: '/intervention/riskConfig' },
+  { label: '系统设置', icon: 'Setting', gradient: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)', path: '/system/config' }
 ])
 
-// 图表实例
 const trendChart = ref(null)
 const riskChart = ref(null)
 let trendChartInstance = null
 let riskChartInstance = null
 
-// 获取当前问候语
+let statisticsData = ref({
+  totalStudents: 0,
+  completedEvaluations: 0,
+  attentionStudents: 0,
+  highRiskCount: 0,
+  lowRiskCount: 0,
+  mediumRiskCount: 0,
+  weekNewEvaluations: 0,
+  lastWeekEvaluations: 0
+})
+
 function getCurrentGreeting() {
   const hour = new Date().getHours()
   if (hour < 6) return '凌晨好'
@@ -326,35 +257,120 @@ function getCurrentGreeting() {
   return '夜深了'
 }
 
-// 获取当前日期
 function getCurrentDate() {
   const date = new Date()
   const week = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${week[date.getDay()]}`
 }
 
-// 获取优先级文本
+function getRoleName() {
+  const roles = userStore.roles
+  if (roles && roles.length > 0) {
+    const roleMap = {
+      'admin': '系统管理员',
+      'counselor': '心理咨询师',
+      'teacher': '教师'
+    }
+    return roleMap[roles[0]] || roles[0]
+  }
+  return '用户'
+}
+
 function getPriorityText(priority) {
   const map = { high: '紧急', medium: '普通', low: '一般' }
   return map[priority] || '普通'
 }
 
-// 处理待办事项变化
-function handleTodoChange(index) {
-  console.log('Todo changed:', index, todoList.value[index])
+function formatTime(time) {
+  if (!time) return ''
+  const date = new Date(time)
+  const now = new Date()
+  const diff = now - date
+  
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
+  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
+  if (diff < 604800000) return Math.floor(diff / 86400000) + '天前'
+  
+  return `${date.getMonth() + 1}月${date.getDate()}日`
 }
 
-// 处理快捷入口点击
 function handleEntryClick(entry) {
-  if (entry.path && entry.path !== '#') {
-    // 这里可以使用 router.push(entry.path)
-    console.log('Navigate to:', entry.path)
-  } else {
-    ElMessage.info('功能开发中')
+  if (entry.path) {
+    router.push(entry.path)
   }
 }
 
-// 初始化趋势图表
+function goToNotification() {
+  router.push('/intervention/notification')
+}
+
+function goToEvaluationResult() {
+  router.push('/evaluation/evaluationResult')
+}
+
+async function loadDashboardData() {
+  loading.value = true
+  try {
+    const [statsRes, trendRes, activitiesRes, todosRes] = await Promise.all([
+      getStatistics(),
+      getTrendData(trendPeriod.value),
+      getRecentActivities(5),
+      getTodoList(5)
+    ])
+    
+    if (statsRes.code === 200) {
+      statisticsData.value = statsRes.data
+      updateStatistics()
+    }
+    
+    if (trendRes.code === 200) {
+      updateTrendChart(trendRes.data)
+    }
+    
+    if (activitiesRes.code === 200) {
+      activities.value = activitiesRes.data
+    }
+    
+    if (todosRes.code === 200) {
+      todoList.value = todosRes.data
+    }
+  } catch (error) {
+    console.error('加载首页数据失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+function updateStatistics() {
+  const data = statisticsData.value
+  
+  statistics.value[0].value = data.totalStudents || 0
+  statistics.value[1].value = data.completedEvaluations || 0
+  statistics.value[2].value = data.attentionStudents || 0
+  statistics.value[3].value = data.highRiskCount || 0
+  
+  if (data.weekNewEvaluations && data.lastWeekEvaluations) {
+    const changePercent = data.lastWeekEvaluations > 0 
+      ? Math.round((data.weekNewEvaluations - data.lastWeekEvaluations) / data.lastWeekEvaluations * 100)
+      : 100
+    statistics.value[1].change = `${changePercent >= 0 ? '+' : ''}${changePercent}% 较上周`
+  }
+  
+  updateRiskChart()
+}
+
+async function loadTrendData() {
+  try {
+    const res = await getTrendData(trendPeriod.value)
+    if (res.code === 200) {
+      updateTrendChart(res.data)
+    }
+  } catch (error) {
+    console.error('加载趋势数据失败:', error)
+  }
+}
+
 function initTrendChart() {
   if (!trendChart.value) return
   
@@ -378,7 +394,7 @@ function initTrendChart() {
     },
     xAxis: {
       type: 'category',
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      data: [],
       axisLine: {
         lineStyle: {
           color: '#e5e7eb'
@@ -408,21 +424,21 @@ function initTrendChart() {
       {
         name: '测评人数',
         type: 'bar',
-        data: [45, 52, 48, 60, 55, 38, 42],
+        data: [],
         itemStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#667eea' },
-            { offset: 1, color: '#764ba2' }
+            { offset: 0, color: '#0f766e' },
+            { offset: 1, color: '#14b8a6' }
           ])
         }
       },
       {
         name: '完成人数',
         type: 'bar',
-        data: [42, 48, 45, 56, 52, 35, 39],
+        data: [],
         itemStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#6ee7b7' },
+            { offset: 0, color: '#059669' },
             { offset: 1, color: '#10b981' }
           ])
         }
@@ -430,7 +446,7 @@ function initTrendChart() {
       {
         name: '高风险人数',
         type: 'line',
-        data: [3, 5, 2, 4, 3, 2, 1],
+        data: [],
         smooth: true,
         itemStyle: {
           color: '#ef4444'
@@ -445,7 +461,26 @@ function initTrendChart() {
   trendChartInstance.setOption(option)
 }
 
-// 初始化风险等级分布图表
+function updateTrendChart(data) {
+  if (!trendChartInstance || !data) return
+  
+  const xData = data.map(item => item.date)
+  const evaluationData = data.map(item => item.evaluationCount || 0)
+  const completedData = data.map(item => item.completedCount || 0)
+  const highRiskData = data.map(item => item.highRiskCount || 0)
+  
+  trendChartInstance.setOption({
+    xAxis: {
+      data: xData
+    },
+    series: [
+      { data: evaluationData },
+      { data: completedData },
+      { data: highRiskData }
+    ]
+  })
+}
+
 function initRiskChart() {
   if (!riskChart.value) return
   
@@ -490,31 +525,31 @@ function initRiskChart() {
         },
         data: [
           { 
-            value: 141, 
+            value: 0, 
             name: '低风险',
             itemStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 1, 1, [
-                { offset: 0, color: '#6ee7b7' },
+                { offset: 0, color: '#059669' },
                 { offset: 1, color: '#10b981' }
               ])
             }
           },
           { 
-            value: 12, 
+            value: 0, 
             name: '中风险',
             itemStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 1, 1, [
-                { offset: 0, color: '#fbbf24' },
+                { offset: 0, color: '#d97706' },
                 { offset: 1, color: '#f59e0b' }
               ])
             }
           },
           { 
-            value: 3, 
+            value: 0, 
             name: '高风险',
             itemStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 1, 1, [
-                { offset: 0, color: '#f87171' },
+                { offset: 0, color: '#dc2626' },
                 { offset: 1, color: '#ef4444' }
               ])
             }
@@ -527,19 +562,39 @@ function initRiskChart() {
   riskChartInstance.setOption(option)
 }
 
-// 监听窗口大小变化
+function updateRiskChart() {
+  if (!riskChartInstance) return
+  
+  const data = statisticsData.value
+  riskChartInstance.setOption({
+    series: [{
+      data: [
+        { value: data.lowRiskCount || 0, name: '低风险' },
+        { value: data.mediumRiskCount || 0, name: '中风险' },
+        { value: data.highRiskCount || 0, name: '高风险' }
+      ]
+    }]
+  })
+}
+
 function handleResize() {
   trendChartInstance?.resize()
   riskChartInstance?.resize()
 }
 
-// 生命周期
 onMounted(() => {
   nextTick(() => {
     initTrendChart()
     initRiskChart()
+    loadDashboardData()
     window.addEventListener('resize', handleResize)
   })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  trendChartInstance?.dispose()
+  riskChartInstance?.dispose()
 })
 </script>
 
@@ -550,7 +605,6 @@ onMounted(() => {
   min-height: calc(100vh - 84px);
 }
 
-/* 欢迎卡片 */
 .welcome-card {
   margin-bottom: 20px;
   border-radius: 12px;
@@ -597,7 +651,7 @@ onMounted(() => {
 }
 
 .stat-icon {
-  color: #667eea;
+  color: #0f766e;
 }
 
 .welcome-right {
@@ -607,7 +661,6 @@ onMounted(() => {
   }
 }
 
-/* 统计卡片 */
 .stats-row {
   margin-bottom: 20px;
 }
@@ -615,6 +668,7 @@ onMounted(() => {
 .stat-card {
   border-radius: 12px;
   transition: all 0.3s ease;
+  margin-bottom: 10px;
   
   &:hover {
     transform: translateY(-4px);
@@ -676,7 +730,6 @@ onMounted(() => {
   }
 }
 
-/* 图表区域 */
 .chart-row {
   margin-bottom: 20px;
 }
@@ -715,7 +768,6 @@ onMounted(() => {
   width: 100%;
 }
 
-/* 内容区域 */
 .content-row {
   margin-bottom: 20px;
 }
@@ -741,7 +793,6 @@ onMounted(() => {
   }
 }
 
-/* 待办事项 */
 .todo-list {
   display: flex;
   flex-direction: column;
@@ -760,24 +811,15 @@ onMounted(() => {
   &:hover {
     background: #f3f4f6;
   }
-  
-  &.completed {
-    opacity: 0.6;
-    
-    .todo-text {
-      text-decoration: line-through;
-    }
-  }
-  
-  :deep(.el-checkbox) {
-    flex: 1;
-  }
+}
+
+.todo-content {
+  flex: 1;
 }
 
 .todo-text {
   font-size: 14px;
   color: #1f2937;
-  margin-left: 8px;
 }
 
 .todo-meta {
@@ -791,7 +833,6 @@ onMounted(() => {
   color: #9ca3af;
 }
 
-/* 最新动态 */
 .activity-timeline {
   padding: 0;
   
@@ -820,7 +861,6 @@ onMounted(() => {
   }
 }
 
-/* 快捷入口 */
 .quick-entry-card {
   border-radius: 12px;
   
@@ -876,7 +916,6 @@ onMounted(() => {
   margin: 0;
 }
 
-/* 响应式 */
 @media (max-width: 768px) {
   .dashboard-container {
     padding: 12px;
