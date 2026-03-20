@@ -1469,26 +1469,55 @@ CREATE TABLE `recommend_music` (
 学生信息管理实现的关键代码为：
 
 ```java
-@GetMapping("/list")
-public TableDataInfo<List<Student>> list(Student student) {
-    startPage();
-    List<Student> list = studentInfoService.selectStudentInfoList(student);
-    return getDataTable(list);
-}
+@Service
+public class StudentInfoServiceImpl extends ServiceImpl<StudentInfoMapper, Student> 
+        implements IStudentInfoService {
+    @Autowired
+    private StudentInfoMapper studentInfoMapper;
+    @Autowired
+    private SysUserMapper sysUserMapper;
 
-@PostMapping
-public R<Integer> add(@RequestBody Student student) {
-    return R.ok(studentInfoService.insertStudentInfo(student));
-}
+    @Override
+    public List<Student> selectStudentInfoList(Student student) {
+        return studentInfoMapper.selectStudentInfoList(student);
+    }
 
-@PutMapping
-public R<Integer> edit(@RequestBody Student student) {
-    return R.ok(studentInfoService.updateStudentInfo(student));
-}
+    @Override
+    public int insertStudentInfo(Student student) {
+        student.setCreateTime(DateUtils.getNowDate());
+        return studentInfoMapper.insertStudentInfo(student);
+    }
 
-@DeleteMapping("/{studentIds}")
-public R<Integer> remove(@PathVariable Long[] studentIds) {
-    return R.ok(studentInfoService.deleteStudentInfoByStudentIds(studentIds));
+    @Override
+    public int updateStudentInfo(Student student) {
+        student.setUpdateTime(DateUtils.getNowDate());
+        return studentInfoMapper.updateStudentInfo(student);
+    }
+
+    @Override
+    public int deleteStudentInfoByStudentIds(Long[] studentIds) {
+        return studentInfoMapper.deleteStudentInfoByStudentIds(studentIds);
+    }
+
+    @Override
+    public List<Map<String, Object>> listUnbindUserInfos() {
+        List<SysUser> sysUsers = sysUserMapper.selectUserList(new SysUser());
+        Map<Long, SysUser> userMap = sysUsers.stream()
+                .filter(user -> "01".equals(user.getUserType()) 
+                        && user.getUserId() != null && user.getUserId() != 1)
+                .collect(Collectors.toMap(SysUser::getUserId, user -> user));
+        Set<Long> boundUserIds = studentInfoMapper.selectStudentInfoList(new Student())
+                .stream().map(Student::getUserId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        return userMap.keySet().stream()
+                .filter(id -> !boundUserIds.contains(id))
+                .map(id -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("userId", id);
+                    map.put("nickName", userMap.get(id).getNickName());
+                    return map;
+                }).toList();
+    }
 }
 ```
 
@@ -1509,58 +1538,142 @@ public R<Integer> remove(@PathVariable Long[] studentIds) {
 问卷管理实现的关键代码为：
 
 ```java
-@PostMapping
-public R<Integer> add(@RequestBody Questionnaire questionnaire) {
-    return R.ok(questionnaireService.insertQuestionnaire(questionnaire));
-}
+@Service
+@RequiredArgsConstructor
+public class QuestionnaireServiceImpl extends ServiceImpl<QuestionnaireMapper, Questionnaire>
+        implements IQuestionnaireService {
+    
+    @Autowired
+    private QuestionMapper questionMapper;
+    @Autowired
+    private final QuestionnaireMapper questionnaireMapper;
 
-@PutMapping
-public R<Integer> edit(@RequestBody Questionnaire questionnaire) {
-    return R.ok(questionnaireService.updateQuestionnaire(questionnaire));
-}
+    @Override
+    public List<Questionnaire> selectQuestionnaireList(Questionnaire questionnaire) {
+        return this.lambdaQuery()
+                .like(questionnaire.getTitle() != null, Questionnaire::getTitle, questionnaire.getTitle())
+                .like(questionnaire.getDescription() != null, Questionnaire::getDescription, questionnaire.getDescription())
+                .eq(questionnaire.getStatus() != null, Questionnaire::getStatus, questionnaire.getStatus())
+                .eq(questionnaire.getType() != null, Questionnaire::getType, questionnaire.getType())
+                .ge(questionnaire.getStartTime() != null, Questionnaire::getStartTime, questionnaire.getStartTime())
+                .le(questionnaire.getEndTime() != null, Questionnaire::getEndTime, questionnaire.getEndTime())
+                .list();
+    }
 
-@DeleteMapping("/{questionnaireIds}")
-public R<Integer> remove(@PathVariable Long[] questionnaireIds) {
-    return R.ok(questionnaireService.deleteQuestionnaireByQuestionnaireIds(questionnaireIds));
-}
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void saveQuestionnaire(QuestionnaireDTO questionnaireDTO) {
+        Questionnaire questionnaire = new Questionnaire();
+        questionnaire.setQuestionnaireId(questionnaireDTO.getQuestionnaireId());
+        questionnaire.setTitle(questionnaireDTO.getTitle());
+        questionnaire.setDescription(questionnaireDTO.getDescription());
+        questionnaire.setStatus(questionnaireDTO.getStatus());
+        questionnaire.setType(questionnaireDTO.getType());
+        questionnaire.setStartTime(questionnaireDTO.getStartTime());
+        questionnaire.setEndTime(questionnaireDTO.getEndTime());
 
-@GetMapping("/{questionnaireId}")
-public R<Questionnaire> getInfo(@PathVariable("questionnaireId") Long questionnaireId) {
-    return R.ok(questionnaireService.selectQuestionnaireByQuestionnaireId(questionnaireId));
+        if (questionnaireDTO.getQuestionnaireId() == null) {
+            questionnaire.setCreateBy(SecurityUtils.getUsername());
+            questionnaire.setCreateTime(DateUtils.getNowDate());
+            questionnaireMapper.insert(questionnaire);
+            questionnaireDTO.setQuestionnaireId(questionnaire.getQuestionnaireId());
+        } else {
+            questionnaire.setUpdateBy(SecurityUtils.getUsername());
+            questionnaire.setUpdateTime(DateUtils.getNowDate());
+            questionnaireMapper.updateById(questionnaire);
+            questionMapper.delete(new LambdaQueryWrapper<Question>()
+                    .eq(Question::getQuestionnaireId, questionnaireDTO.getQuestionnaireId()));
+        }
+
+        List<Question> questions = questionnaireDTO.getQuestions();
+        if (questions != null && !questions.isEmpty()) {
+            int orderNum = 1;
+            for (Question q : questions) {
+                q.setQuestionnaireId(questionnaireDTO.getQuestionnaireId());
+                q.setOrderNum(orderNum++);
+                q.setCreateBy(SecurityUtils.getUsername());
+                q.setCreateTime(DateUtils.getNowDate());
+                questionMapper.insert(q);
+            }
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteQuestionnaire(Long[] questionnaireIds) {
+        questionMapper.delete(new LambdaQueryWrapper<Question>().in(Question::getQuestionnaireId, questionnaireIds));
+        this.removeByIds(List.of(questionnaireIds));
+    }
 }
 ```
 
 #### 5.1.3 题库管理功能实现
 
-题库管理功能的实现主要包括题目的创建、编辑、删除和管理。题库管理组件实现心理测评题目的维护，支持选择题和简答题两种题型。管理员可以添加、编辑和删除题目，设置题目内容、选项和分值等。
+题库管理功能采用分层架构设计，包含题库主数据管理与题目关联处理两大核心组件。题库主数据组件实现题库基本信息的全生命周期管理，提供标准化的CRUD操作接口；题目关联处理组件实现题库与问卷的关联关系维护，确保题库数据的完整性和一致性。
 
-题目创建功能：首先前端通过实现一个表单来收集管理员输入的题目信息，包括题目类型、题干内容、选项、分值等，然后将收集到数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
+增加功能：首先前端通过实现一个弹窗来收集管理员输入的题库信息，包括题库名称、描述、分类等，然后将收集到的数据信息通过POST请求发送到服务端，服务端根据收集到的数据信息判断无误之后存储到数据库中，然后返回状态码200。
 
-题目修改功能：首先通过获取表格中这一项的题目ID信息，然后去请求服务端的数据信息，获取当前题目的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据题目ID修改数据库中的数据信息。
+分页查询功能：通过将用户输入的查询条件，如题库名称、分类、状态等，通过Axios的GET请求SpringBoot的服务端接口，然后在接口中处理数据，最后通过MyBatis-Plus的分页插件构造分页器，将分页的数据信息传递回前端。
 
-题目删除功能：首先前端通过获取这一项的题目ID数据，然后请求服务端，服务端通过获取到ID之后，删除该题目的信息。
+修改功能：首先通过获取表格中这一项的题库ID信息，然后去请求服务端的数据信息，获取当前题库的详细信息，然后将数据信息渲染到表单中。用户修改完成之后，再通过PUT请求传递到服务端，服务端根据题库ID修改数据库中的数据信息。
+
+删除功能：首先前端通过获取这一项的题库ID数据，然后请求服务端，服务端通过获取到ID之后，检查该题库是否关联了问卷数据，若存在关联则禁止删除并返回提示信息，否则执行删除操作。
 
 题库管理实现的关键代码为：
 
 ```java
-@PostMapping
-public R<Integer> add(@RequestBody Question question) {
-    return R.ok(questionService.insertQuestion(question));
-}
+@Service
+public class QuestionBankServiceImpl implements IQuestionBankService {
+    @Autowired
+    private QuestionBankMapper questionBankMapper;
+    @Autowired
+    private QuestionnaireMapper questionnaireMapper;
 
-@PutMapping
-public R<Integer> edit(@RequestBody Question question) {
-    return R.ok(questionService.updateQuestion(question));
-}
+    @Override
+    public QuestionBank selectQuestionBankByBankId(Long bankId) {
+        QuestionBank bank = questionBankMapper.selectQuestionBankByBankId(bankId);
+        if (bank != null) {
+            Integer questionCount = questionBankMapper.countQuestionsByBankId(bankId);
+            bank.setQuestionCount(questionCount != null ? questionCount : 0);
+        }
+        return bank;
+    }
 
-@DeleteMapping("/{questionIds}")
-public R<Integer> remove(@PathVariable Long[] questionIds) {
-    return R.ok(questionService.deleteQuestionByQuestionIds(questionIds));
-}
+    @Override
+    public List<QuestionBank> selectQuestionBankList(QuestionBank questionBank) {
+        List<QuestionBank> banks = questionBankMapper.selectQuestionBankList(questionBank);
+        banks.forEach(bank -> {
+            Integer count = questionBankMapper.countQuestionsByBankId(bank.getBankId());
+            bank.setQuestionCount(count != null ? count : 0);
+        });
+        return banks;
+    }
 
-@GetMapping("/{questionId}")
-public R<Question> getInfo(@PathVariable("questionId") Long questionId) {
-    return R.ok(questionService.selectQuestionByQuestionId(questionId));
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int deleteQuestionBankByBankIds(Long[] bankIds) {
+        for (Long bankId : bankIds) {
+            Integer usedCount = questionnaireMapper.countByBankId(bankId);
+            if (usedCount != null && usedCount > 0) {
+                throw new ServiceException("题库[" + bankId + "]已被问卷引用，无法删除");
+            }
+        }
+        return questionBankMapper.deleteQuestionBankByBankIds(bankIds);
+    }
+
+    @Override
+    public int insertQuestionBank(QuestionBank questionBank) {
+        questionBank.setCreateTime(DateUtils.getNowDate());
+        questionBank.setCreateBy(SecurityUtils.getUsername());
+        return questionBankMapper.insertQuestionBank(questionBank);
+    }
+
+    @Override
+    public int updateQuestionBank(QuestionBank questionBank) {
+        questionBank.setUpdateTime(DateUtils.getNowDate());
+        questionBank.setUpdateBy(SecurityUtils.getUsername());
+        return questionBankMapper.updateQuestionBank(questionBank);
+    }
 }
 ```
 
@@ -1577,21 +1690,42 @@ public R<Question> getInfo(@PathVariable("questionId") Long questionId) {
 评估结果管理实现的关键代码为：
 
 ```java
-@GetMapping("/list")
-public TableDataInfo<List<EvaluationResult>> list(EvaluationResult evaluationResult) {
-    startPage();
-    List<EvaluationResult> list = evaluationResultService.selectEvaluationResultList(evaluationResult);
-    return getDataTable(list);
-}
+@Service
+public class EvaluationResultServiceImpl implements IEvaluationResultService {
+    @Autowired
+    private EvaluationResultMapper evaluationResultMapper;
+    @Autowired
+    private StudentInfoMapper studentInfoMapper;
+    @Autowired
+    private QuestionnaireMapper questionnaireMapper;
+    @Autowired
+    private QuestionnaireAnswerMapper questionnaireAnswerMapper;
 
-@GetMapping("/{resultId}")
-public R<EvaluationResult> getInfo(@PathVariable("resultId") Long resultId) {
-    return R.ok(evaluationResultService.selectEvaluationResultByResultId(resultId));
-}
+    @Override
+    public List<EvaluationResult> selectEvaluationResultList(EvaluationResult evaluationResult) {
+        List<EvaluationResult> evaluationResults = evaluationResultMapper.selectEvaluationResultList(evaluationResult);
+        return evaluationResults.stream()
+                .peek(result -> {
+                    Student student = studentInfoMapper.selectStudentInfoByStudentId(result.getStudentId());
+                    if (student != null) {
+                        result.setStudentName(student.getName());
+                    }
+                    Questionnaire questionnaire = questionnaireMapper.selectById(result.getQuestionnaireId());
+                    if (questionnaire != null) {
+                        result.setQuestionnaireTitle(questionnaire.getTitle());
+                    }
+                })
+                .toList();
+    }
 
-@PutMapping("/aiAnalysis/{resultId}")
-public R<Integer> aiAnalysis(@PathVariable Long resultId) {
-    return R.ok(evaluationResultService.aiAnalysis(resultId));
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int deleteEvaluationResultByResultIds(Long[] resultIds) {
+        for (Long resultId : resultIds) {
+            questionnaireAnswerMapper.deleteByResultId(resultId);
+        }
+        return evaluationResultMapper.deleteEvaluationResultByResultIds(resultIds);
+    }
 }
 ```
 
@@ -1610,19 +1744,60 @@ public R<Integer> aiAnalysis(@PathVariable Long resultId) {
 风险配置实现的关键代码如下：
 
 ```java
-@PostMapping
-public R<Integer> add(@RequestBody InterventionRiskConfig interventionRiskConfig) {
-    return R.ok(interventionRiskConfigService.insertInterventionRiskConfig(interventionRiskConfig));
-}
+@Service
+public class InterventionRiskConfigServiceImpl implements IInterventionRiskConfigService {
+    @Autowired
+    private InterventionRiskConfigMapper configMapper;
 
-@PutMapping
-public R<Integer> edit(@RequestBody InterventionRiskConfig interventionRiskConfig) {
-    return R.ok(interventionRiskConfigService.updateInterventionRiskConfig(interventionRiskConfig));
-}
+    @Override
+    public List<InterventionRiskConfig> getOrCreateAllConfig() {
+        List<InterventionRiskConfig> result = new ArrayList<>();
+        String[] levels = {"低", "中", "高"};
+        for (String level : levels) {
+            InterventionRiskConfig config = getOrCreateConfigByLevel(level);
+            result.add(config);
+        }
+        return result;
+    }
 
-@DeleteMapping("/{configIds}")
-public R<Integer> remove(@PathVariable Long[] configIds) {
-    return R.ok(interventionRiskConfigService.deleteInterventionRiskConfigByConfigIds(configIds));
+    @Override
+    public InterventionRiskConfig getOrCreateConfigByLevel(String riskLevel) {
+        InterventionRiskConfig query = new InterventionRiskConfig();
+        query.setRiskLevel(riskLevel);
+        List<InterventionRiskConfig> configs = configMapper.selectConfigList(query);
+
+        if (configs != null && !configs.isEmpty()) {
+            return configs.get(0);
+        }
+
+        InterventionRiskConfig config = new InterventionRiskConfig();
+        config.setRiskLevel(riskLevel);
+
+        if ("低".equals(riskLevel)) {
+            config.setMinScore(0);
+            config.setMaxScore(60);
+            config.setNotificationTemplate("学生测评分数为${score}分，风险等级为低，请关注学生心理健康。");
+        } else if ("中".equals(riskLevel)) {
+            config.setMinScore(61);
+            config.setMaxScore(80);
+            config.setNotificationTemplate("学生测评分数为${score}分，风险等级为中，建议关注并适时干预。");
+        } else if ("高".equals(riskLevel)) {
+            config.setMinScore(81);
+            config.setMaxScore(100);
+            config.setNotificationTemplate("学生测评分数为${score}分，风险等级为高，请及时采取干预措施！");
+        }
+
+        config.setStatus("0");
+        config.setCreateTime(new Date());
+        configMapper.insertConfig(config);
+        return config;
+    }
+
+    @Override
+    public String judgeRiskLevel(Integer score) {
+        InterventionRiskConfig config = configMapper.selectConfigByScore(score);
+        return config != null ? config.getRiskLevel() : "低";
+    }
 }
 ```
 
@@ -1679,26 +1854,53 @@ public R<Integer> remove(@PathVariable Long[] configIds) {
 内容推荐管理实现的关键代码为：
 
 ```java
-@GetMapping("/list")
-public TableDataInfo<List<RecommendArticle>> list(RecommendArticle recommendArticle) {
-    startPage();
-    List<RecommendArticle> list = recommendArticleService.selectRecommendArticleList(recommendArticle);
-    return getDataTable(list);
-}
+@Service
+public class RecommendArticleServiceImpl implements IRecommendArticleService {
+    @Autowired
+    private RecommendArticleMapper recommendArticleMapper;
+    @Autowired
+    private ArticleLikeMapper articleLikeMapper;
 
-@PostMapping
-public R<Integer> add(@RequestBody RecommendArticle recommendArticle) {
-    return R.ok(recommendArticleService.insertRecommendArticle(recommendArticle));
-}
+    @Override
+    public List<RecommendArticle> selectRecommendArticleList(RecommendArticle recommendArticle) {
+        return recommendArticleMapper.selectRecommendArticleList(recommendArticle);
+    }
 
-@PutMapping
-public R<Integer> edit(@RequestBody RecommendArticle recommendArticle) {
-    return R.ok(recommendArticleService.updateRecommendArticle(recommendArticle));
-}
+    @Override
+    public int incrementReadCount(Long articleId) {
+        return recommendArticleMapper.incrementReadCount(articleId);
+    }
 
-@DeleteMapping("/{articleIds}")
-public R<Integer> remove(@PathVariable Long[] articleIds) {
-    return R.ok(recommendArticleService.deleteRecommendArticleByArticleIds(articleIds));
+    @Override
+    public boolean likeArticle(Long articleId, Long userId) {
+        int count = articleLikeMapper.checkLike(articleId, userId);
+        if (count > 0) {
+            articleLikeMapper.deleteLike(articleId, userId);
+            return false;
+        } else {
+            ArticleLike articleLike = new ArticleLike();
+            articleLike.setArticleId(articleId);
+            articleLike.setUserId(userId);
+            articleLike.setCreateTime(new Date());
+            articleLikeMapper.insertLike(articleLike);
+            return true;
+        }
+    }
+
+    @Override
+    public boolean checkArticleLiked(Long articleId, Long userId) {
+        return articleLikeMapper.checkLike(articleId, userId) > 0;
+    }
+
+    @Override
+    public int getArticleLikeCount(Long articleId) {
+        return articleLikeMapper.selectLikeCount(articleId);
+    }
+
+    @Override
+    public List<RecommendArticle> getLikedArticles(Long userId) {
+        return articleLikeMapper.selectLikedArticles(userId);
+    }
 }
 ```
 
@@ -1713,21 +1915,74 @@ public R<Integer> remove(@PathVariable Long[] articleIds) {
 社区管理实现的关键代码为：
 
 ```java
-@GetMapping("/list")
-public TableDataInfo<List<CommunityPost>> list(CommunityPost communityPost) {
-    startPage();
-    List<CommunityPost> list = communityPostService.selectCommunityPostList(communityPost);
-    return getDataTable(list);
-}
+@Service
+public class CommunityPostServiceImpl implements ICommunityPostService {
+    @Autowired
+    private CommunityPostMapper communityPostMapper;
+    @Autowired
+    private CommunityPostLikeMapper communityPostLikeMapper;
+    @Autowired
+    private CommunityCommentMapper communityCommentMapper;
+    @Autowired
+    private StudentInfoMapper studentInfoMapper;
 
-@PutMapping("/status/{postId}")
-public R<Integer> updateStatus(@PathVariable Long postId, @RequestParam String status) {
-    return R.ok(communityPostService.updateCommunityPostStatus(postId, status));
-}
+    private Long getStudentIdByUserId(Long userId) {
+        if (userId == null) {
+            throw new ServiceException("用户ID不能为空");
+        }
+        LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Student::getUserId, userId);
+        Student student = studentInfoMapper.selectOne(wrapper);
+        if (student == null) {
+            throw new ServiceException("学生信息不存在，请先完善学生档案");
+        }
+        return student.getStudentId();
+    }
 
-@DeleteMapping("/{postIds}")
-public R<Integer> remove(@PathVariable Long[] postIds) {
-    return R.ok(communityPostService.deleteCommunityPostByPostIds(postIds));
+    @Override
+    public List<CommunityPost> selectCommunityPostList(CommunityPost communityPost) {
+        return communityPostMapper.selectCommunityPostList(communityPost);
+    }
+
+    @Override
+    @Transactional
+    public int deleteCommunityPostByPostIds(Long[] postIds) {
+        communityCommentMapper.deleteCommunityCommentByPostIds(postIds);
+        return communityPostMapper.deleteCommunityPostByPostIds(postIds);
+    }
+
+    @Override
+    public boolean likePost(Long postId, Long userId) {
+        CommunityPostLike existingLike = communityPostLikeMapper.selectLikeByPostAndUser(postId, userId);
+        if (existingLike != null) {
+            throw new ServiceException("您已经点赞过该帖子");
+        }
+        CommunityPost post = communityPostMapper.selectCommunityPostByPostId(postId);
+        if (post != null) {
+            CommunityPostLike like = new CommunityPostLike();
+            like.setPostId(postId);
+            like.setUserId(userId);
+            communityPostLikeMapper.insertLike(like);
+            post.setLikeCount(post.getLikeCount() + 1);
+            return communityPostMapper.updateCommunityPost(post) > 0;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean unlikePost(Long postId, Long userId) {
+        CommunityPostLike existingLike = communityPostLikeMapper.selectLikeByPostAndUser(postId, userId);
+        if (existingLike == null) {
+            throw new ServiceException("您还没有点赞该帖子");
+        }
+        CommunityPost post = communityPostMapper.selectCommunityPostByPostId(postId);
+        if (post != null && post.getLikeCount() > 0) {
+            communityPostLikeMapper.deleteLike(postId, userId);
+            post.setLikeCount(post.getLikeCount() - 1);
+            return communityPostMapper.updateCommunityPost(post) > 0;
+        }
+        return false;
+    }
 }
 ```
 

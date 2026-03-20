@@ -228,7 +228,7 @@ export default {
       inputAreaHeight: 60,
       safeAreaBottom: 34,
       userAvatar: uni.getStorageSync('avatar') || '/static/images/profile.jpg',
-      aiAvatar: 'https://wallpaper-web-pro.oss-cn-beijing.aliyuncs.com/images/ai.jpg',
+      aiAvatar: 'https://wallpaper-web-pro.oss-cn-beijing.aliyuncs.com/images/ai.png',
       chatType: 'chat'
     }
   },
