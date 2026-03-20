@@ -149,7 +149,7 @@
             <div class="total-score">
               <h3>总得分</h3>
               <div class="score-value">{{ aiResultData.total_score }}</div>
-              <div class="risk-level">风险等级：{{ aiResultData.risk_level }}</div>
+              <div class="risk-level">风险等级：{{ formatRiskLevel(aiResultData.risk_level) }}</div>
             </div>
           </div>
           
@@ -322,6 +322,12 @@ window.addEventListener('resize', () => {
     radarChart.resize()
   }
 })
+
+/** 格式化风险等级展示：低→低风险 中→中风险 高→高风险 */
+function formatRiskLevel(level) {
+  const map = { '低': '低风险', '中': '中风险', '高': '高风险' }
+  return map[level] || level || '-'
+}
 
 /** 获取学生列表 */
 function getStudentList() {

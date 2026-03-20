@@ -13,11 +13,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectAttentionStudents" resultType="Long">
-        select count(distinct student_id) from evaluation_result where risk_level in ('中', '高风险')
+        select count(distinct student_id) from evaluation_result where risk_level in ('中', '高')
     </select>
 
     <select id="selectHighRiskCount" resultType="Long">
-        select count(*) from evaluation_result where risk_level = '高风险'
+        select count(*) from evaluation_result where risk_level = '高'
     </select>
 
     <select id="selectLowRiskCount" resultType="Long">
@@ -30,23 +30,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectWeekNewEvaluations" resultType="Long">
         select count(*) from evaluation_result 
-        where create_time between #{startDate} and #{endDate}
+        where coalesce(create_time, update_time) between #{startDate} and #{endDate}
     </select>
 
     <select id="selectLastWeekEvaluations" resultType="Long">
         select count(*) from evaluation_result 
-        where create_time between #{startDate} and #{endDate}
+        where coalesce(create_time, update_time) between #{startDate} and #{endDate}
     </select>
 
     <select id="selectTrendData" resultType="com.mc.dashboard.domain.vo.DashboardTrendVO">
         select 
-            DATE_FORMAT(create_time, '%Y-%m-%d') as date,
+            DATE_FORMAT(coalesce(create_time, update_time), '%Y-%m-%d') as date,
             count(*) as evaluationCount,
             sum(case when completion_status = '1' then 1 else 0 end) as completedCount,
-            sum(case when risk_level = '高风险' then 1 else 0 end) as highRiskCount
+            sum(case when risk_level = '高' then 1 else 0 end) as highRiskCount
         from evaluation_result
-        where create_time between #{startDate} and #{endDate}
-        group by DATE_FORMAT(create_time, '%Y-%m-%d')
+        where coalesce(create_time, update_time) between #{startDate} and #{endDate}
+        group by DATE_FORMAT(coalesce(create_time, update_time), '%Y-%m-%d')
         order by date asc
     </select>
 
@@ -60,7 +60,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from evaluation_result er
         left join student_info s on er.student_id = s.student_id
         left join questionnaire q on er.questionnaire_id = q.questionnaire_id
-        order by er.create_time desc
+        order by coalesce(er.create_time, er.update_time) desc
         limit #{limit}
     </select>
 

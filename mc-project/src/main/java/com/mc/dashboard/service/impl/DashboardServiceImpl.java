@@ -9,11 +9,9 @@ import com.mc.dashboard.service.IDashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 @Service
@@ -87,7 +85,7 @@ public class DashboardServiceImpl implements IDashboardService {
         
         for (DashboardActivityVO activity : activities) {
             String riskLevel = activity.getRiskLevel();
-            if ("高风险".equals(riskLevel)) {
+            if ("高".equals(riskLevel)) {
                 activity.setActivityType("danger");
                 activity.setTitle(activity.getStudentName() + "完成了" + activity.getQuestionnaireTitle());
                 activity.setDescription("测评结果为高风险，需要关注");
@@ -111,7 +109,7 @@ public class DashboardServiceImpl implements IDashboardService {
         
         for (DashboardTodoVO todo : todoList) {
             String riskLevel = todo.getRiskLevel();
-            if ("高风险".equals(riskLevel)) {
+            if ("高".equals(riskLevel)) {
                 todo.setPriority("high");
                 todo.setContent("跟进" + todo.getStudentName() + "的高风险测评结果");
             } else if ("中".equals(riskLevel)) {

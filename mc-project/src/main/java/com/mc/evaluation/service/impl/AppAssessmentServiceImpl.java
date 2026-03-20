@@ -2,6 +2,7 @@ package com.mc.evaluation.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mc.common.exception.ServiceException;
+import com.mc.common.utils.DateUtils;
 import com.mc.evaluation.domain.EvaluationResult;
 import com.mc.evaluation.domain.QuestionnaireAnswer;
 import com.mc.evaluation.domain.dto.SubmitAnswerDTO;
@@ -287,6 +288,10 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
             result.setCompletionStatus("1"); // 1已完成
             result.setAiStatus("0"); // 0未完成
             result.setReadStatus("1"); // 1已读（提交时标记为已读）
+            if (result.getCreateTime() == null) {
+                result.setCreateTime(DateUtils.getNowDate());
+            }
+            result.setUpdateTime(DateUtils.getNowDate());
             evaluationResultMapper.updateEvaluationResult(result);
         } else {
             // 如果没有记录（异常情况），则插入新记录
@@ -299,6 +304,8 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
             result.setCompletionStatus("1"); // 1已完成
             result.setAiStatus("0"); // 0未完成
             result.setReadStatus("1"); // 1已读（提交时标记为已读）
+            result.setCreateTime(DateUtils.getNowDate());
+            result.setUpdateTime(DateUtils.getNowDate());
             evaluationResultMapper.insertEvaluationResult(result);
         }
 

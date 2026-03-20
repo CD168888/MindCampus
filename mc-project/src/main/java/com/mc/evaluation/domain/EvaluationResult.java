@@ -50,6 +50,12 @@ public class EvaluationResult extends BaseEntity {
     private String riskLevel;
 
     /**
+     * 综合评估总分（0-100，与 ai_analysis JSON 中 total_score 一致，AI 分析完成后写入）
+     */
+    @Excel(name = "综合得分")
+    private Integer totalScore;
+
+    /**
      * AI 分析结果（JSON格式）
      */
     @Excel(name = "AI 分析结果")
@@ -123,6 +129,14 @@ public class EvaluationResult extends BaseEntity {
         return riskLevel;
     }
 
+    public Integer getTotalScore() {
+        return totalScore;
+    }
+
+    public void setTotalScore(Integer totalScore) {
+        this.totalScore = totalScore;
+    }
+
     public void setAiAnalysis(String aiAnalysis) {
         this.aiAnalysis = aiAnalysis;
     }
@@ -164,6 +178,7 @@ public class EvaluationResult extends BaseEntity {
                 .append("questionnaireId", getQuestionnaireId())
                 .append("questionnaireTitle", getQuestionnaireTitle())
                 .append("riskLevel", getRiskLevel())
+                .append("totalScore", getTotalScore())
                 .append("aiAnalysis", getAiAnalysis())
                 .append("aiStatus", getAiStatus())
                 .append("readStatus", getReadStatus())

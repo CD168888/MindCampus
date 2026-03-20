@@ -11,6 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="questionnaireId"    column="questionnaire_id"    />
         <result property="questionnaireTitle"    column="questionnaire_title"    />
         <result property="riskLevel"    column="risk_level"    />
+        <result property="totalScore"    column="total_score"    />
         <result property="aiAnalysis"    column="ai_analysis"    />
         <result property="aiStatus"    column="ai_status"    />
         <result property="readStatus"    column="read_status"    />
@@ -28,6 +29,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             er.student_id, 
             er.questionnaire_id, 
             er.risk_level, 
+            er.total_score, 
             er.ai_analysis, 
             er.ai_status, 
             er.read_status, 
@@ -56,7 +58,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="readStatus != null  and readStatus != ''"> and er.read_status = #{readStatus}</if>
             <if test="completionStatus != null  and completionStatus != ''"> and er.completion_status = #{completionStatus}</if>
         </where>
-        order by er.create_time desc
+        order by coalesce(er.create_time, er.update_time) desc
     </select>
     
     <select id="selectEvaluationResultByResultId" parameterType="Long" resultMap="EvaluationResultResult">
@@ -70,6 +72,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="studentId != null">student_id,</if>
             <if test="questionnaireId != null">questionnaire_id,</if>
             <if test="riskLevel != null and riskLevel != ''">risk_level,</if>
+            <if test="totalScore != null">total_score,</if>
             <if test="aiAnalysis != null and aiAnalysis != ''">ai_analysis,</if>
             <if test="aiStatus != null and aiStatus != ''">ai_status,</if>
             <if test="readStatus != null and readStatus != ''">read_status,</if>
@@ -84,6 +87,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="studentId != null">#{studentId},</if>
             <if test="questionnaireId != null">#{questionnaireId},</if>
             <if test="riskLevel != null and riskLevel != ''">#{riskLevel},</if>
+            <if test="totalScore != null">#{totalScore},</if>
             <if test="aiAnalysis != null and aiAnalysis != ''">#{aiAnalysis},</if>
             <if test="aiStatus != null and aiStatus != ''">#{aiStatus},</if>
             <if test="readStatus != null and readStatus != ''">#{readStatus},</if>
@@ -102,6 +106,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="studentId != null">student_id = #{studentId},</if>
             <if test="questionnaireId != null">questionnaire_id = #{questionnaireId},</if>
             <if test="riskLevel != null and riskLevel != ''">risk_level = #{riskLevel},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
             <if test="aiAnalysis != null and aiAnalysis != ''">ai_analysis = #{aiAnalysis},</if>
             <if test="aiStatus != null and aiStatus != ''">ai_status = #{aiStatus},</if>
             <if test="readStatus != null and readStatus != ''">read_status = #{readStatus},</if>

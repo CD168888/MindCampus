@@ -2,6 +2,7 @@ package com.mc.evaluation.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mc.ai.domain.MentalHealthEvaluationResult;
+import com.mc.common.utils.DateUtils;
 import com.mc.evaluation.domain.EvaluationResult;
 import com.mc.evaluation.domain.QuestionnaireAnswer;
 import com.mc.evaluation.mapper.EvaluationResultMapper;
@@ -121,9 +122,15 @@ public class MentalHealthEvaluationServiceImpl implements IMentalHealthEvaluatio
                 
                 // 更新风险等级（从AI评估结果中获取）
                 dbResult.setRiskLevel(evaluationResult.getRiskLevel());
+                // 同步综合得分到表字段（便于列表/统计/SQL 查询；详情仍以 ai_analysis JSON 为准）
+                dbResult.setTotalScore(evaluationResult.getTotalScore());
                 
                 // 更新AI分析状态为已完成
                 dbResult.setAiStatus("1");
+                if (dbResult.getCreateTime() == null) {
+                    dbResult.setCreateTime(DateUtils.getNowDate());
+                }
+                dbResult.setUpdateTime(DateUtils.getNowDate());
 
                 evaluationResultMapper.updateEvaluationResult(dbResult);
                 log.info("更新评估结果到数据库 - 测评结果ID: {}, 总得分: {}, 风险等级: {}", 

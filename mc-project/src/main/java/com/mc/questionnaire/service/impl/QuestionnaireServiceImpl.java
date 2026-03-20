@@ -148,16 +148,16 @@ public class QuestionnaireServiceImpl extends ServiceImpl<QuestionnaireMapper, Q
             return false; // 返回 false 表示跳过
         }
 
-        // 5. 插入新的测评记录
-        evaluationResultMapper.insertEvaluationResult(new EvaluationResult() {
-            {
-                setQuestionnaireId(questionnaireId);
-                setStudentId(studentId);
-                setCompletionStatus("0"); // 0-未完成
-                setReadStatus("0"); // 0-未读
-                setAiStatus("0"); // 0-未分析
-            }
-        });
+        // 5. 插入新的测评记录（必须写入时间，否则首页趋势/周统计按 create_time 过滤会漏数）
+        EvaluationResult row = new EvaluationResult();
+        row.setQuestionnaireId(questionnaireId);
+        row.setStudentId(studentId);
+        row.setCompletionStatus("0"); // 0-未完成
+        row.setReadStatus("0"); // 0-未读
+        row.setAiStatus("0"); // 0-未分析
+        row.setCreateTime(DateUtils.getNowDate());
+        row.setUpdateTime(DateUtils.getNowDate());
+        evaluationResultMapper.insertEvaluationResult(row);
 
         return true; // 返回 true 表示发送成功
     }

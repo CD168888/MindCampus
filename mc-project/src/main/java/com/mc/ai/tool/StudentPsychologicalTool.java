@@ -31,7 +31,7 @@ public class StudentPsychologicalTool {
         status.put("mentalHealthLevel", "良好");
         status.put("lastAssessmentDate", "2025-09-15");
         status.put("assessmentScore", 85);
-        status.put("riskLevel", "低风险");
+        status.put("riskLevel", "低");
         status.put("suggestion", "保持当前积极心态，继续参与集体活动");
         return status;
     }

@@ -58,7 +58,7 @@
       <el-table-column label="风险等级" align="center" prop="riskLevel">
         <template #default="scope">
           <el-tag :type="scope.row.riskLevel === '高' ? 'danger' : scope.row.riskLevel === '中' ? 'warning' : 'success'">
-            {{ scope.row.riskLevel || '未知' }}
+            {{ formatRiskLevel(scope.row.riskLevel) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -101,7 +101,7 @@
         <el-descriptions-item label="学生姓名">{{ recordForm.studentName }}</el-descriptions-item>
         <el-descriptions-item label="风险等级">
           <el-tag :type="recordForm.riskLevel === '高' ? 'danger' : recordForm.riskLevel === '中' ? 'warning' : 'success'">
-            {{ recordForm.riskLevel || '未知' }}
+            {{ formatRiskLevel(recordForm.riskLevel) }}
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="发送时间">{{ parseTime(recordForm.sendTime) }}</el-descriptions-item>
@@ -161,7 +161,7 @@
         <el-table-column label="班级" align="center" prop="className" />
         <el-table-column label="风险等级" align="center" prop="riskLevel" width="100">
           <template #default="scope">
-            <el-tag type="danger">{{ scope.row.riskLevel }}</el-tag>
+            <el-tag type="danger">{{ formatRiskLevel(scope.row.riskLevel) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="问卷标题" align="center" prop="questionnaireTitle" :show-overflow-tooltip="true" />
@@ -192,10 +192,10 @@ import {
   updateNotification,
   viewRecord
 } from '@/api/intervention/notification'
-import { updateProcessRecord } from '@/api/intervention/processRecord'
+import {updateProcessRecord} from '@/api/intervention/processRecord'
 import Pagination from '@/components/Pagination'
 import RightToolbar from '@/components/RightToolbar'
-import { parseTime } from '@/utils/ruoyi'
+import {parseTime} from '@/utils/ruoyi'
 
 const { proxy } = getCurrentInstance()
 const { record_status } = proxy.useDict('record_status')
@@ -295,6 +295,12 @@ function getHighRiskList() {
     highRiskList.value = response.data
     highRiskLoading.value = false
   })
+}
+
+/** 格式化风险等级展示：低→低风险 中→中度风险 高→高风险 */
+function formatRiskLevel(level) {
+  const map = { '低': '低风险', '中': '中度风险', '高': '高风险' }
+  return map[level] || level || '-'
 }
 
 /** 高风险选择变化 */
