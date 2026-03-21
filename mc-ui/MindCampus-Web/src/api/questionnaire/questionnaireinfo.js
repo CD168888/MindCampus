@@ -45,3 +45,12 @@ export function sendQuestionnaire(questionnaireId, deptId) {
     },
   });
 }
+
+// AI 生成整套问卷（预览，不入库）
+export function generateQuestionnaire(data) {
+  return request({
+    url: '/questionnaire/info/ai/generate',
+    method: 'post',
+    data: data,
+  });
+}

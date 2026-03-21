@@ -8,13 +8,17 @@ import com.mc.common.core.page.TableDataInfo;
 import com.mc.common.enums.BusinessType;
 import com.mc.questionnaire.domain.Question;
 import com.mc.questionnaire.domain.Questionnaire;
+import com.mc.questionnaire.domain.dto.AiGenerateQuestionnaireDTO;
 import com.mc.questionnaire.domain.dto.QuestionnaireDTO;
+import com.mc.questionnaire.domain.vo.AiGenerateQuestionnaireVO;
+import com.mc.questionnaire.service.IQuestionBankAiService;
 import com.mc.questionnaire.service.IQuestionnaireService;
 import com.mc.student.domain.Student;
 import com.mc.student.service.IStudentInfoService;
 import com.mc.system.service.ISysUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +42,8 @@ public class QuestionnaireController extends BaseController {
     private final ISysUserService sysUserService;
 
     private final IStudentInfoService studentInfoService;
+
+    private final IQuestionBankAiService questionBankAiService;
 
     /**
      * 查询问卷列表
@@ -84,6 +90,17 @@ public class QuestionnaireController extends BaseController {
     public R<Void> remove(@PathVariable Long[] questionnaireIds) {
         questionnaireService.deleteQuestionnaire(questionnaireIds);
         return R.ok();
+    }
+
+    /**
+     * AI 生成整套心理测评问卷（预览，不入库）
+     */
+    @Operation(summary = "AI 生成整套心理测评问卷")
+    @PreAuthorize("@ss.hasPermi('questionnaire:questionnaireinfo:add')")
+    @PostMapping("/ai/generate")
+    public R<AiGenerateQuestionnaireVO> generateQuestionnaire(@Valid @RequestBody AiGenerateQuestionnaireDTO dto) {
+        AiGenerateQuestionnaireVO vo = questionBankAiService.generateQuestionnaire(dto);
+        return R.ok(vo);
     }
 
     /**

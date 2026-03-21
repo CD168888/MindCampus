@@ -187,6 +187,7 @@
         <div class="add-question-btn">
           <el-button type="primary" icon="Plus" @click="addQuestion">手动新增题目</el-button>
           <el-button type="success" icon="Collection" @click="openQuestionBankDialog">从题库选择</el-button>
+          <el-button type="warning" icon="MagicStick" @click="openAiDialog">AI 出卷</el-button>
         </div>
 
         <!-- 题目轮播图容器 -->
@@ -302,6 +303,94 @@
       </template>
     </el-dialog>
 
+    <!-- AI 出卷对话框 -->
+    <el-dialog title="AI 生成整套问卷" v-model="aiDialogVisible" width="900px" append-to-body>
+      <!-- 生成条件区 -->
+      <el-form ref="aiFormRef" :model="aiForm" label-width="120px" style="margin-bottom: 16px;">
+        <el-form-item label="问卷主题" prop="description">
+          <el-input v-model="aiForm.description" type="textarea" :rows="3"
+            placeholder="请描述问卷主题，例如：大学生学业压力与适应能力综合评估、关于抑郁情绪的全面筛查等" />
+        </el-form-item>
+        <el-form-item label="选择题数量" prop="choiceCount">
+          <el-input-number v-model="aiForm.choiceCount" :min="1" :max="20" />
+          <span style="margin-left: 10px; color: #909399; font-size: 12px;">建议 3-10 道，覆盖多个心理健康维度</span>
+        </el-form-item>
+        <el-form-item label="简答题数量" prop="shortAnswerCount">
+          <el-input-number v-model="aiForm.shortAnswerCount" :min="0" :max="10" />
+          <span style="margin-left: 10px; color: #909399; font-size: 12px;">简答题将放置在问卷末尾</span>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="MagicStick" :loading="aiGenerating" @click="handleAiGenerate">
+            {{ aiGenerating ? 'AI 生成中...' : '生成问卷' }}
+          </el-button>
+          <el-button icon="RefreshLeft" @click="resetAiForm" :disabled="aiGenerating">重置</el-button>
+        </el-form-item>
+      </el-form>
+
+      <!-- AI 生成结果预览区 -->
+      <div v-if="aiPreviewQuestions.length > 0" class="ai-preview-box">
+        <div class="ai-preview-header">
+          <el-icon color="#409EFF"><InfoFilled /></el-icon>
+          <span style="margin-left: 6px; font-weight: 600;">问卷预览（共 {{ aiPreviewQuestions.length }} 道）</span>
+          <el-tag size="small" style="margin-left: 10px;" type="success">
+            选择题 {{ aiPreviewQuestions.filter(q => q.type === 'choice').length }} 道
+          </el-tag>
+          <el-tag size="small" style="margin-left: 6px;" type="warning">
+            简答题 {{ aiPreviewQuestions.filter(q => q.type === 'short_answer').length }} 道
+          </el-tag>
+        </div>
+
+        <div v-for="(q, index) in aiPreviewQuestions" :key="index"
+          style="border: 1px solid #e4e7ed; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h4 style="margin: 0; color: #303133;">题目 {{ index + 1 }}</h4>
+              <el-tag :type="q.type === 'choice' ? 'success' : 'warning'" size="small">
+                {{ q.type === 'choice' ? '选择题' : '简答题' }}
+              </el-tag>
+            </div>
+            <el-button type="danger" size="small" icon="Delete" @click="removeAiQuestion(index)">删除</el-button>
+          </div>
+
+          <el-input v-if="editingAiQuestionIndex === index" v-model="editingAiQuestionContent"
+            type="textarea" :rows="2" @blur="finishEditAiQuestion(index)" @keyup.enter.native="finishEditAiQuestion(index)"
+            placeholder="请输入题干内容" />
+
+          <div v-else style="font-size: 14px; color: #303133; line-height: 1.7; cursor: text; background: #f5f7fa; padding: 10px 14px; border-radius: 6px; border: 1px solid #e4e7ed; min-height: 44px;"
+            @click="startEditAiQuestion(index, q.content)">
+            {{ q.content }}
+          </div>
+
+          <!-- 选择题选项 -->
+          <div v-if="q.type === 'choice'" style="margin-top: 10px;">
+            <div v-for="(opt, i) in q.optionList" :key="i" style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span style="font-weight: bold; color: #409eff; min-width: 20px;">{{ String.fromCharCode(65 + i) }}.</span>
+
+              <el-input v-if="editingAiOptionIndex === `${index}-${i}`" v-model="editingAiOptionContent"
+                size="small" style="flex: 1;" @blur="finishEditAiOption(index, i)"
+                @keyup.enter.native="finishEditAiOption(index, i)" />
+
+              <span v-else style="flex: 1; font-size: 14px; color: #303133; background: #fff; padding: 6px 10px; border-radius: 4px; border: 1px solid #e4e7ed; cursor: text;"
+                @click="startEditAiOption(index, i, opt)">
+                {{ opt }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 空状态提示 -->
+      <el-empty v-else-if="!aiGenerating" description="填写问卷主题和题目数量后，点击「生成问卷」即可预览 AI 生成的整套题目" :image-size="80" />
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" :disabled="aiPreviewQuestions.length === 0 || aiGenerating"
+            @click="handleAiConfirm">确认添加</el-button>
+          <el-button @click="aiDialogVisible = false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 发送问卷对话框 -->
     <el-dialog title="发送问卷" v-model="sendOpen" width="1000px" append-to-body>
       <div class="send-container">
@@ -380,6 +469,7 @@
 import {watch} from 'vue'
 import {
   delQuestionnaire,
+  generateQuestionnaire,
   getQuestions,
   listQuestionnaire,
   saveQuestionnaire,
@@ -427,6 +517,23 @@ const sendForm = ref({})
 const deptOptions = ref([])
 const deptName = ref("")
 const selectedDept = ref(null)
+
+// AI 出卷相关状态
+const aiDialogVisible = ref(false)
+const aiGenerating = ref(false)
+const aiFormRef = ref(null)
+const aiForm = ref({
+  description: '',
+  choiceCount: 5,
+  shortAnswerCount: 2
+})
+const aiPreviewQuestions = ref([])
+
+// AI 题目编辑状态
+const editingAiQuestionIndex = ref(-1)
+const editingAiQuestionContent = ref('')
+const editingAiOptionIndex = ref('')
+const editingAiOptionContent = ref('')
 
 const data = reactive({
   form: {},
@@ -740,7 +847,7 @@ function addSelectedQuestions() {
       content: question.content,
       type: question.type,
       optionList: ['', '', '', ''],
-    
+
     }
 
     // 如果是选择题且有选项数据，解析选项
@@ -771,6 +878,150 @@ function addSelectedQuestions() {
   currentQuestionIndex.value = form.value.questions.length - 1
   questionBankOpen.value = false
   proxy.$modal.msgSuccess(`成功添加 ${selectedQuestions.value.length} 道题目`)
+}
+
+// 打开 AI 出卷对话框
+function openAiDialog() {
+  resetAiForm()
+  aiDialogVisible.value = true
+}
+
+// 重置 AI 表单
+function resetAiForm() {
+  aiForm.value = {
+    description: '',
+    choiceCount: 5,
+    shortAnswerCount: 2
+  }
+  aiPreviewQuestions.value = []
+  editingAiQuestionIndex.value = -1
+  editingAiQuestionContent.value = ''
+  editingAiOptionIndex.value = ''
+  editingAiOptionContent.value = ''
+  if (aiFormRef.value) {
+    proxy.resetForm("aiFormRef")
+  }
+}
+
+// AI 生成整套问卷
+async function handleAiGenerate() {
+  if (!aiForm.value.description || aiForm.value.description.trim() === '') {
+    proxy.$modal.msgWarning("请输入问卷主题描述")
+    return
+  }
+  if (aiForm.value.choiceCount < 1 && aiForm.value.shortAnswerCount < 1) {
+    proxy.$modal.msgWarning("选择题和简答题数量至少各选1道")
+    return
+  }
+  aiGenerating.value = true
+  aiPreviewQuestions.value = []
+  try {
+    const response = await generateQuestionnaire({
+      description: aiForm.value.description.trim(),
+      choiceCount: aiForm.value.choiceCount,
+      shortAnswerCount: aiForm.value.shortAnswerCount
+    })
+    if (response.code === 200 && response.data && response.data.questions) {
+      const questions = response.data.questions
+      // 转换为预览格式
+      aiPreviewQuestions.value = questions.map(q => {
+        const item = {
+          content: q.content,
+          type: q.type,
+          optionList: []
+        }
+        if (q.type === 'choice') {
+          if (Array.isArray(q.optionList) && q.optionList.length > 0) {
+            item.optionList = q.optionList.map(o => o.content || o)
+          } else if (q.options && typeof q.options === 'string') {
+            try {
+              const obj = JSON.parse(q.options)
+              if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+                item.optionList = ['A', 'B', 'C', 'D'].map(k => obj[k] || '')
+              }
+            } catch {
+              item.optionList = ['', '', '', '']
+            }
+          } else {
+            item.optionList = ['', '', '', '']
+          }
+        }
+        return item
+      })
+      if (aiPreviewQuestions.value.length === 0) {
+        proxy.$modal.msgWarning("AI 返回内容为空，请检查主题描述是否合理后重试")
+      }
+    } else {
+      proxy.$modal.msgError(response.msg || "AI 生成失败")
+    }
+  } catch (error) {
+    console.error('AI 生成问卷失败:', error)
+    proxy.$modal.msgError("AI 生成问卷失败，请稍后重试")
+  } finally {
+    aiGenerating.value = false
+  }
+}
+
+// 开始编辑 AI 题目题干
+function startEditAiQuestion(index, content) {
+  editingAiQuestionIndex.value = index
+  editingAiQuestionContent.value = content
+}
+
+// 完成编辑 AI 题目题干
+function finishEditAiQuestion(index) {
+  if (editingAiQuestionIndex.value === index) {
+    if (aiPreviewQuestions.value[index]) {
+      aiPreviewQuestions.value[index].content = editingAiQuestionContent.value
+    }
+    editingAiQuestionIndex.value = -1
+    editingAiQuestionContent.value = ''
+  }
+}
+
+// 开始编辑 AI 题目选项
+function startEditAiOption(index, optIndex, content) {
+  editingAiOptionIndex.value = `${index}-${optIndex}`
+  editingAiOptionContent.value = content
+}
+
+// 完成编辑 AI 题目选项
+function finishEditAiOption(index, optIndex) {
+  const key = `${index}-${optIndex}`
+  if (editingAiOptionIndex.value === key) {
+    if (aiPreviewQuestions.value[index] && aiPreviewQuestions.value[index].optionList) {
+      aiPreviewQuestions.value[index].optionList[optIndex] = editingAiOptionContent.value
+    }
+    editingAiOptionIndex.value = ''
+    editingAiOptionContent.value = ''
+  }
+}
+
+// 删除 AI 预览题目
+function removeAiQuestion(index) {
+  aiPreviewQuestions.value.splice(index, 1)
+}
+
+// 确认添加 AI 生成题目到问卷
+function handleAiConfirm() {
+  if (aiPreviewQuestions.value.length === 0) {
+    proxy.$modal.msgWarning("请先生成题目")
+    return
+  }
+
+  aiPreviewQuestions.value.forEach(q => {
+    const newQuestion = {
+      content: q.content,
+      type: q.type,
+      optionList: q.type === 'choice' ? [...(q.optionList || []), '', '', '', ''].slice(0, 4) : []
+    }
+    form.value.questions.push(newQuestion)
+  })
+
+  // 跳转到最后一题
+  currentQuestionIndex.value = form.value.questions.length - 1
+  aiDialogVisible.value = false
+  proxy.$modal.msgSuccess(`成功添加 ${aiPreviewQuestions.value.length} 道 AI 生成题目`)
 }
 
 // 发送问卷相关方法
@@ -1263,5 +1514,23 @@ getList()
   margin: 0;
   color: #909399;
   font-style: italic;
+}
+
+/* AI 预览区域样式 */
+.ai-preview-box {
+  background: #f8faff;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  padding: 16px 20px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.ai-preview-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
+  font-size: 14px;
+  color: #303133;
 }
 </style>
