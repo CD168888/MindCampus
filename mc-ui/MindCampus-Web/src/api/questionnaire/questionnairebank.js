@@ -48,6 +48,7 @@ export function generateQuestion(data) {
   return request({
     url: '/questionnaire/questionnairebank/ai/generate',
     method: 'post',
-    data: data
+    data: data,
+    timeout: 180000
   })
 }

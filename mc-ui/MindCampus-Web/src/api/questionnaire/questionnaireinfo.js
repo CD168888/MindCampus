@@ -52,5 +52,6 @@ export function generateQuestionnaire(data) {
     url: '/questionnaire/info/ai/generate',
     method: 'post',
     data: data,
+    timeout: 180000
   });
 }
