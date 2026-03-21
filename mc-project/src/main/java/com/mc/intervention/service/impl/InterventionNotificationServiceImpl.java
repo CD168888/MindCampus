@@ -2,6 +2,7 @@ package com.mc.intervention.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mc.common.core.domain.entity.SysUser;
+import com.mc.common.utils.email.EmailService;
 import com.mc.counselor.domain.CounselorInfo;
 import com.mc.counselor.service.ICounselorDeptService;
 import com.mc.counselor.service.ICounselorInfoService;
@@ -421,5 +422,70 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
             }
         }
         return count;
+    }
+
+    /**
+     * 催一催辅导员处理（发送邮件提醒）
+     * <p>
+     * 流程：通知ID → 查询通知获取userId（辅导员） → 查询SysUser获取邮箱 → 发送邮件
+     */
+    @Override
+    public boolean remindCounselor(Long notificationId) {
+        InterventionNotification notification = notificationMapper.selectNotificationById(notificationId);
+        if (notification == null) {
+            log.warn("通知不存在 - notificationId: {}", notificationId);
+            return false;
+        }
+        Long userId = notification.getUserId();
+        if (userId == null) {
+            log.warn("通知关联的辅导员用户ID为空 - notificationId: {}", notificationId);
+            return false;
+        }
+        SysUser counselor = sysUserService.selectUserById(userId);
+        if (counselor == null) {
+            log.warn("辅导员用户信息不存在 - userId: {}", userId);
+            return false;
+        }
+        String email = counselor.getEmail();
+        if (email == null || email.trim().isEmpty()) {
+            log.warn("辅导员邮箱为空 - userId: {}, userName: {}", userId, counselor.getUserName());
+            return false;
+        }
+        String studentName = notification.getStudentName() != null ? notification.getStudentName() : "未知学生";
+        String riskLevel = notification.getRiskLevel() != null ? notification.getRiskLevel() : "未知";
+        String subject = "【MindCampus 心理干预提醒】您有待处理的高风险学生干预通知";
+        String content = String.format("""
+                尊敬的老师，您好！
+
+                系统提醒：有一条心理干预通知待您处理，请尽快登录 MindCampus 平台查看并处理。
+
+                以下是通知概要：
+                - 学生姓名：%s
+                - 风险等级：%s
+                - 通知类型：%s
+                - 发送时间：%s
+
+                通知内容：
+                %s
+
+                请及时登录 MindCampus 管理平台，在"干预通知管理"中查看详情并进行干预处理。
+                如有疑问，请联系系统管理员。
+
+                此致
+                MindCampus 心理健康管理平台
+                """,
+                studentName,
+                riskLevel,
+                notification.getNotificationType() != null ? notification.getNotificationType() : "风险干预",
+                notification.getSendTime() != null ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(notification.getSendTime()) : "-",
+                notification.getNotificationContent() != null ? notification.getNotificationContent() : "无"
+        );
+        boolean success = EmailService.send(email, subject, content);
+        if (success) {
+            log.info("辅导员邮件提醒发送成功 - notificationId: {}, email: {}, userId: {}", notificationId, email, userId);
+        } else {
+            log.error("辅导员邮件提醒发送失败 - notificationId: {}, email: {}, userId: {}", notificationId, email, userId);
+        }
+        return success;
     }
 }

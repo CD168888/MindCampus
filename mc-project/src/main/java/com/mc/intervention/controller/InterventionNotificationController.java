@@ -160,4 +160,14 @@ public class InterventionNotificationController extends BaseController {
     public R<List<HighRiskUnnotifiedVo>> getHighRiskUnnotified() {
         return R.ok(notificationService.selectHighRiskUnnotifiedResults());
     }
+
+    /**
+     * 催一催辅导员处理（发送邮件提醒）
+     */
+    @PreAuthorize("@ss.hasPermi('intervention:notification:edit')")
+    @Log(title = "干预通知表", businessType = BusinessType.UPDATE)
+    @PutMapping("/remind/{notificationId}")
+    public R<Boolean> remindCounselor(@PathVariable Long notificationId) {
+        return R.ok(notificationService.remindCounselor(notificationId));
+    }
 }

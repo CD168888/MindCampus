@@ -124,4 +124,12 @@ public interface IInterventionNotificationService {
      * @return 结果
      */
     public int batchGenerateNotification(List<Long> resultIds);
+
+    /**
+     * 催一催辅导员处理（发送邮件提醒）
+     *
+     * @param notificationId 通知ID
+     * @return 发送成功返回 true，失败返回 false
+     */
+    public boolean remindCounselor(Long notificationId);
 }

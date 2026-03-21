@@ -88,3 +88,12 @@ export function listHighRiskUnnotified() {
     method: 'get'
   })
 }
+
+// 催一催辅导员处理（发送邮件提醒）
+export function remindCounselor(notificationId) {
+  return request({
+    url: '/intervention/notification/remind/' + notificationId,
+    method: 'put',
+    timeout: 600000
+  })
+}

@@ -83,9 +83,10 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="280">
         <template #default="scope">
           <el-button link type="primary" icon="View" @click="handleViewRecord(scope.row)" v-hasPermi="['intervention:notification:query']">查看记录</el-button>
+          <el-button link type="warning" icon="Bell" @click="handleRemind(scope.row)" :disabled="scope.row.processStatus === '2'" v-hasPermi="['intervention:notification:edit']">催一催</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['intervention:notification:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -189,6 +190,7 @@ import {
   getNotification,
   listHighRiskUnnotified,
   listNotification,
+  remindCounselor,
   updateNotification,
   viewRecord
 } from '@/api/intervention/notification'
@@ -362,6 +364,19 @@ function handleViewRecord(row) {
     openRecord.value = true
     getList()
   })
+}
+
+/** 催一催按钮操作 */
+function handleRemind(row) {
+  proxy.$modal.confirm('是否向辅导员 "' + row.userName + '" 发送邮件提醒？').then(() => {
+    return remindCounselor(row.notificationId)
+  }).then(response => {
+    if (response.data === true) {
+      proxy.$modal.msgSuccess('邮件提醒已发送')
+    } else {
+      proxy.$modal.msgWarning('邮件发送失败，请检查辅导员邮箱是否已配置')
+    }
+  }).catch(() => { })
 }
 
 /** 提交处理记录 */
