@@ -92,14 +92,45 @@ spring:
   ai:
     dashscope:
       # DashScope 的 API Key
-      api-key: sk-7b671ef9eed54705a350cb20e7b30fff
+      api-key: sk-xxxxxxxxxxxxxxx
+      # HTTP 请求超时时间（生成多道题目需要较长等待）
+      timeout: 120s
+      chat:
+        options:
+          model: qwen-plus
+          temperature: 0.8
+    model:
+      name: qwen-vl-max
 
-      # 百炼的 Agent 应用，可以配置 app-id
-      agent:
-        app-id: 2027848
+    memory:
+      redis:
+        host: 127.0.0.1
+        port: 6379
+        timeout: 20000
 
-      # 可选：业务空间 ID（如果使用主账号空间可不配）
-      # workspace-id: your-workspace-id
+  # 邮件服务器配置（QQ邮箱SMTP）
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 888888888@qq.com
+    password: xxxxxxxxxx
+    default-encoding: UTF-8
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          auth: true
+          connectiontimeout: 5000
+          timeout: 30000
+          writetimeout: 5000
+          ssl:
+            enable: true
+          socketFactory:
+            port: 465
+            class: javax.net.ssl.SSLSocketFactory
+            fallback: false
+
+
 
   # Jackson 配置
   jackson:
@@ -182,3 +213,10 @@ knife4j:
     password: 123456
   setting:
     swagger-model-name: 心理健康系统实体类
+
+# oss配置
+oss:
+  endpoint: xxxxxxxxxx
+  access-key-id: xxxxxxxxxxx
+  access-key-secret: Xxxxxxxxxx
+  bucket-name: xxxxxxxxxxxx
