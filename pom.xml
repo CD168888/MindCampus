@@ -185,6 +185,22 @@
                 <version>${mc.version}</version>
             </dependency>
 
+            <!-- AI 模块 -->
+            <dependency>
+                <groupId>com.mc</groupId>
+                <artifactId>mc-ai</artifactId>
+                <version>${mc.version}</version>
+            </dependency>
+
+            <!-- 阿里云 Spring AI Alibaba BOM -->
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-bom</artifactId>
+                <version>1.0.0.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- 通用工具-->
             <dependency>
                 <groupId>com.mc</groupId>
@@ -203,6 +219,7 @@
         <module>mc-generator</module>
         <module>mc-common</module>
         <module>mc-project</module>
+        <module>mc-ai</module>
     </modules>
     <packaging>pom</packaging>
 

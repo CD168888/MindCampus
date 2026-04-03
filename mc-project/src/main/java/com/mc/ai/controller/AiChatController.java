@@ -2,9 +2,10 @@ package com.mc.ai.controller;
 
 import com.mc.ai.domain.AiChatMessage;
 import com.mc.ai.domain.AiChatSession;
+import com.mc.ai.prompt.AiPrompts;
 import com.mc.ai.service.IAiChatMessageService;
 import com.mc.ai.service.IAiChatSessionService;
-import com.mc.ai.service.IAiChatStreamService;
+import com.mc.ai.service.IAiChatService;
 import com.mc.common.core.domain.R;
 import com.mc.common.utils.SecurityUtils;
 import jakarta.annotation.Resource;
@@ -19,10 +20,21 @@ import reactor.core.publisher.Flux;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * AI 聊天控制器（重构版）
- * 所有异步逻辑已迁移到 AiChatStreamService
+ * AI 聊天控制器
+ * <p>
+ * HTTP 入口层，负责会话管理、消息 CRUD 及与前端 SSE 流式交互。
+ * 所有写库操作（用户消息、AI 消息持久化）在 Controller 层完成，
+ * AI 底层交互委托给 mc-ai 模块的 IAiChatService。
+ * <p>
+ * 职责划分：
+ * - mc-project.controller：HTTP 入口 + 会话/消息 CRUD + 流式 SSE 组装
+ * - mc-ai.service：与 DashScope API 的网络交互、流式发送
+ * - mc-project.tool / mc-project.config：业务工具 Bean（Supplier/Function）
+ *
+ * @author caidu
  */
 @RestController
 @RequestMapping("/ai")
@@ -30,7 +42,7 @@ import java.util.List;
 public class AiChatController {
 
     @Resource
-    private IAiChatStreamService chatStreamService;
+    private IAiChatService aiChatService;
 
     @Resource
     private IAiChatSessionService chatSessionService;
@@ -39,10 +51,17 @@ public class AiChatController {
     private IAiChatMessageService chatMessageService;
 
     /**
-     * 流式对话接口（3.1版本 - 需要登录，支持消息持久化，支持多模态）
-     * @param message 用户输入的消息
-     * @param files 附件列表
-     * @param fileUrls 附件URL列表
+     * 流式对话接口（需要登录，支持消息持久化，支持多模态）
+     * <p>
+     * 流程：
+     * 1. 验证/创建会话
+     * 2. 保存用户消息（写库）
+     * 3. 调用 AI 服务获取流式响应
+     * 4. 流式返回给前端，同时在流结束时保存 AI 回复（写库）
+     *
+     * @param message   用户输入的消息
+     * @param files     附件列表
+     * @param fileUrls  附件URL列表
      * @param sessionId 会话ID
      * @return Flux<ServerSentEvent<String>> 流式响应数据
      */
@@ -60,7 +79,7 @@ public class AiChatController {
         log.info("接收到 AI 对话请求 - 用户ID: {}, 会话ID: {}, 消息: {}", userId, sessionId, message);
 
         // 验证或创建会话
-        Long validSessionId = chatStreamService.validateOrCreateSession(sessionId, userId);
+        Long validSessionId = validateOrCreateSession(sessionId, userId);
         if (validSessionId == null) {
             return Flux.just(ServerSentEvent.<String>builder()
                     .event("error")
@@ -68,28 +87,101 @@ public class AiChatController {
                     .build());
         }
 
-        // 设置响应头，禁止缓存，否则无法流式输出？
+        // 设置响应头，禁止缓存，否则无法流式输出
         response.setHeader("Cache-Control", "no-cache, no-transform");
         response.setHeader("X-Accel-Buffering", "no");
 
         List<MultipartFile> fileList = (files != null) ? Arrays.asList(files) : Collections.emptyList();
+        String urlsString = (fileUrls != null) ? String.join(",", fileUrls) : "";
 
-        // 委托给 Service 层处理流式响应
-        return chatStreamService.generateStreamResponse(message, fileList, fileUrls, sessionId, userId);
+        // 保存用户消息（写库）
+        chatMessageService.saveMessage(validSessionId, userId, 1, message, urlsString);
+
+        // 用于在流结束后判断是否已保存 AI 回复（防止 doOnComplete 和 doOnCancel 重复保存）
+        AtomicBoolean messageSaved = new AtomicBoolean(false);
+
+        // 调用 AI 服务获取流式响应（AI 底层交互由 mc-ai 模块完成）
+        IAiChatService.StreamChatResult result = aiChatService.streamChat(
+                message, fileList, AiPrompts.GENERAL_ASSISTANT, String.valueOf(validSessionId));
+
+        // 获取会话消息数量，用于判断是否需要生成标题
+        List<AiChatMessage> sessionMessages = chatMessageService.getSessionMessages(validSessionId);
+        int messageCountBefore = sessionMessages.size();
+
+        // 异步生成会话标题（仅在第一次 Q&A 时触发）
+        boolean shouldGenerateTitle = (messageCountBefore == 1); // 刚存了用户消息，此时应有 2 条
+
+        return result.sseFlux()
+                .doOnComplete(() -> handleStreamComplete(validSessionId, userId, message,
+                        result.fullContentHolder(), messageSaved, shouldGenerateTitle))
+                .doOnCancel(() -> handleStreamCancel(validSessionId, userId,
+                        result.fullContentHolder(), messageSaved))
+                .doOnError(error -> handleStreamError(validSessionId, userId, error));
+    }
+
+    /**
+     * 处理流式响应完成
+     */
+    private void handleStreamComplete(Long sessionId, Long userId, String userMessage,
+                                     StringBuilder fullContentHolder, AtomicBoolean messageSaved,
+                                     boolean shouldGenerateTitle) {
+        if (messageSaved.compareAndSet(false, true)) {
+            String aiResponse = fullContentHolder.toString();
+            if (aiResponse.length() > 0) {
+                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse, null);
+                log.info("流式对话完成，已保存AI消息 [sessionId: {}, 长度: {}]", sessionId, aiResponse.length());
+            }
+
+            // 生成会话标题
+            if (shouldGenerateTitle) {
+                aiChatService.generateSessionTitleAsync(
+                        String.valueOf(sessionId), userMessage, aiResponse,
+                        title -> chatSessionService.updateSessionName(sessionId, title));
+            }
+        }
+        log.info("流式对话完成 [用户ID: {}, 会话ID: {}]", userId, sessionId);
+    }
+
+    /**
+     * 处理流式响应取消
+     */
+    private void handleStreamCancel(Long sessionId, Long userId,
+                                   StringBuilder fullContentHolder, AtomicBoolean messageSaved) {
+        if (messageSaved.compareAndSet(false, true)) {
+            String aiResponse = fullContentHolder.toString();
+            if (aiResponse.length() > 0) {
+                chatMessageService.saveMessage(sessionId, userId, 0, aiResponse, null);
+                log.info("流式对话被取消，已保存部分AI消息 [sessionId: {}, 长度: {}]", sessionId, aiResponse.length());
+            }
+        }
+        log.info("流式对话被取消 [用户ID: {}, 会话ID: {}]", userId, sessionId);
+    }
+
+    /**
+     * 处理流式响应错误
+     */
+    private void handleStreamError(Long sessionId, Long userId, Throwable error) {
+        log.error("AI对话异常 [用户ID: {}, 会话ID: {}]: {}", userId, sessionId, error.getMessage(), error);
     }
 
     /**
      * 中断流式输出接口
+     *
      * @param sessionId 会话ID
      */
     @PostMapping("/cancelStream")
     public R<String> cancelStream(@RequestParam(value = "sessionId") Long sessionId) {
-        boolean success = chatStreamService.cancelStream(sessionId);
-        if (success) {
-            return R.ok("已中断流式输出");
-        } else {
-            return R.fail("未找到活跃的流式对话");
+        Long userId = SecurityUtils.getUserId();
+
+        // 验证会话归属
+        if (!validateSessionAccess(sessionId, userId)) {
+            return R.fail("会话不存在或无权访问");
         }
+
+        // 调用 AI 服务的取消方法
+        aiChatService.cancelStream(String.valueOf(sessionId));
+        log.info("已触发流式输出中断 [会话ID: {}]", sessionId);
+        return R.ok("已中断流式输出");
     }
 
     /**
@@ -120,7 +212,7 @@ public class AiChatController {
         Long userId = SecurityUtils.getUserId();
 
         // 验证会话归属
-        if (!chatStreamService.validateSessionAccess(sessionId, userId)) {
+        if (!validateSessionAccess(sessionId, userId)) {
             return R.fail("会话不存在或无权访问");
         }
 
@@ -136,9 +228,12 @@ public class AiChatController {
         Long userId = SecurityUtils.getUserId();
 
         // 验证会话归属
-        if (!chatStreamService.validateSessionAccess(sessionId, userId)) {
+        if (!validateSessionAccess(sessionId, userId)) {
             return R.fail("会话不存在或无权访问");
         }
+
+        // 清空 AI 记忆（由 mc-ai 提供）
+        aiChatService.clearChatMemory(String.valueOf(sessionId));
 
         // 删除会话的所有消息
         chatMessageService.deleteSessionMessages(sessionId, userId);
@@ -161,7 +256,7 @@ public class AiChatController {
         Long userId = SecurityUtils.getUserId();
 
         // 验证会话归属
-        if (!chatStreamService.validateSessionAccess(sessionId, userId)) {
+        if (!validateSessionAccess(sessionId, userId)) {
             return R.fail("会话不存在或无权访问");
         }
 
@@ -176,5 +271,41 @@ public class AiChatController {
         // 更新标题
         chatSessionService.updateSessionName(sessionId, title.trim());
         return R.ok("标题更新成功");
+    }
+
+    /**
+     * 验证或创建会话
+     *
+     * @param sessionId 会话ID（可为null）
+     * @param userId    用户ID
+     * @return 有效的会话ID，如果验证失败返回null
+     */
+    private Long validateOrCreateSession(Long sessionId, Long userId) {
+        if (sessionId == null) {
+            AiChatSession newSession = chatSessionService.createSession(userId, "新会话");
+            log.info("自动创建新会话 - 用户ID: {}, 会话ID: {}", userId, newSession.getSessionId());
+            return newSession.getSessionId();
+        }
+
+        // 验证会话归属
+        AiChatSession session = chatSessionService.getById(sessionId);
+        if (session == null || !session.getUserId().equals(userId)) {
+            log.warn("会话验证失败 - 用户ID: {}, 会话ID: {}", userId, sessionId);
+            return null;
+        }
+
+        return sessionId;
+    }
+
+    /**
+     * 验证会话归属
+     *
+     * @param sessionId 会话ID
+     * @param userId    用户ID
+     * @return 是否有权访问
+     */
+    private boolean validateSessionAccess(Long sessionId, Long userId) {
+        AiChatSession session = chatSessionService.getById(sessionId);
+        return session != null && session.getUserId().equals(userId);
     }
 }

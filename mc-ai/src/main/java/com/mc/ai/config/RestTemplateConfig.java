@@ -14,8 +14,15 @@ import java.time.Duration;
 
 /**
  * 全局 RestTemplate 超时配置
- * Spring AI Alibaba 底层使用 RestTemplate 发送 DashScope 请求
- * 通过 @Primary 确保所有 RestTemplate 注入点默认使用此配置
+ * <p>
+ * Spring AI Alibaba 底层使用 RestTemplate 发送 DashScope 请求。
+ * 通过 @Primary 确保所有 RestTemplate 注入点默认使用此配置。
+ * <p>
+ * 配置说明：
+ * - connectTimeout=30s：建立 TCP 连接的最大等待时间
+ * - readTimeout=120s：等待服务器响应的最大时间（题目生成等耗时操作需要较长超时）
+ * - maxTotal=100：连接池最大连接数
+ * - defaultMaxPerRoute=20：每个路由的默认最大连接数
  *
  * @author caidu
  */

@@ -3,6 +3,7 @@ package com.mc.questionnaire.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mc.ai.service.IAiChatService;
 import com.mc.questionnaire.domain.dto.AiGenerateQuestionDTO;
 import com.mc.questionnaire.domain.dto.AiGenerateQuestionEntity;
 import com.mc.questionnaire.domain.dto.AiGenerateQuestionnaireDTO;
@@ -12,20 +13,20 @@ import com.mc.questionnaire.domain.vo.AiGenerateQuestionnaireVO;
 import com.mc.questionnaire.service.IQuestionBankAiService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 /**
- * 题库 AI 题目生成服务实现：使用 .entity() 固定输出结构，再转为前端 VO（含 options 字符串与 optionList）
+ * 题库 AI 题目生成服务实现：调用 mc-ai 模块的 IAiChatService，
+ * 将返回的 JSON 字符串反序列化为 DTO，再转为前端 VO（含 options 字符串与 optionList）
  */
 @Service
 @Slf4j
 public class QuestionBankAiServiceImpl implements IQuestionBankAiService {
 
-    @Resource(name = "questionGenerationChatClient")
-    private ChatClient questionGenerationChatClient;
+    @Resource
+    private IAiChatService aiChatService;
 
     @Resource
     private ObjectMapper objectMapper;
@@ -37,11 +38,17 @@ public class QuestionBankAiServiceImpl implements IQuestionBankAiService {
         String typeText = "choice".equals(dto.getType()) ? "选择题（含A/B/C/D四个选项）" : "简答题";
         String userPrompt = String.format("请生成一道%s，主题要求：%s", typeText, dto.getDescription());
 
-        AiGenerateQuestionEntity entity = questionGenerationChatClient
-                .prompt()
-                .user(userPrompt)
-                .call()
-                .entity(AiGenerateQuestionEntity.class);
+        // 调用 mc-ai 模块获取 AI 生成的 JSON 字符串，再自行反序列化
+        String jsonResult = aiChatService.generateQuestion(userPrompt);
+
+        AiGenerateQuestionEntity entity = null;
+        if (jsonResult != null && !jsonResult.isBlank()) {
+            try {
+                entity = objectMapper.readValue(jsonResult, AiGenerateQuestionEntity.class);
+            } catch (Exception e) {
+                log.error("解析 AI 题目生成结果失败: {}", e.getMessage(), e);
+            }
+        }
 
         AiGenerateQuestionVO vo = toVo(entity, dto.getType());
         log.info("AI 题目生成成功 - 内容: {}, options 已规范化: {}", vo.getContent(), vo.getOptions() != null);
@@ -139,11 +146,17 @@ public class QuestionBankAiServiceImpl implements IQuestionBankAiService {
                 dto.getChoiceCount(), dto.getShortAnswerCount(), dto.getDescription(), total);
 
         try {
-            AiGenerateQuestionnaireEntity entity = questionGenerationChatClient
-                    .prompt()
-                    .user(userPrompt)
-                    .call()
-                    .entity(AiGenerateQuestionnaireEntity.class);
+            // 调用 mc-ai 模块获取 AI 生成的 JSON 字符串，再自行反序列化
+            String jsonResult = aiChatService.generateQuestion(userPrompt);
+
+            AiGenerateQuestionnaireEntity entity = null;
+            if (jsonResult != null && !jsonResult.isBlank()) {
+                try {
+                    entity = objectMapper.readValue(jsonResult, AiGenerateQuestionnaireEntity.class);
+                } catch (Exception e) {
+                    log.error("解析 AI 整套问卷生成结果失败: {}", e.getMessage(), e);
+                }
+            }
 
             if (entity != null && entity.getQuestions() != null) {
                 for (AiGenerateQuestionnaireEntity.AiGenerateQuestionnaireItemEntity item : entity.getQuestions()) {
