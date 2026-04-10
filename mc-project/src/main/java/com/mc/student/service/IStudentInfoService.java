@@ -67,4 +67,12 @@ public interface IStudentInfoService extends IService<Student> {
      * @return 用户ID/昵称列表
      */
     List<Map<String, Object>> listUnbindUserInfos();
+
+    /**
+     * 根据用户ID查询学生信息
+     *
+     * @param userId 系统用户ID
+     * @return 学生信息
+     */
+    Student selectStudentInfoByUserId(Long userId);
 }

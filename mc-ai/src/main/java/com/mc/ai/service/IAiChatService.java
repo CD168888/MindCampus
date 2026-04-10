@@ -1,6 +1,5 @@
 package com.mc.ai.service;
 
-import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
@@ -147,4 +146,24 @@ public interface IAiChatService {
      * @param conversationId 会话 ID
      */
     void clearChatMemory(String conversationId);
+
+    // ==================== 学生端专用对话（带工具） ====================
+
+    /**
+     * 学生端专用流式对话
+     * <p>
+     * 使用学生端专用 ChatClient（studentChatClient），具备以下特性：
+     * - 系统提示词：STUDENT_WELL_BEING_PROMPT（大学生心理陪伴伙伴）
+     * - 对话记忆：Redis 持久化 ChatMemory
+     * - 业务工具：MentalHealthTools 中的学生端查询工具（@Tool 注解方法）
+     * <p>
+     * 适用于学生用户在移动端 App 与 AI 进行的心理陪伴对话场景。
+     *
+     * @param userMessage     用户消息内容
+     * @param files           附件列表（图片等），无附件时传 null 或空列表
+     * @param conversationId  会话 ID（用于 ChatMemory）
+     * @return 携带流式数据块（String）和完整内容累积器的结果对象
+     */
+    StreamChatResult streamStudentChat(String userMessage, List<MultipartFile> files,
+                                        String conversationId);
 }

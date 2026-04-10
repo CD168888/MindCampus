@@ -59,4 +59,12 @@ public interface StudentInfoMapper extends BaseMapper<Student> {
      * @return 结果
      */
     public int deleteStudentInfoByStudentIds(Long[] studentIds);
+
+    /**
+     * 根据用户ID查询学生信息
+     *
+     * @param userId 系统用户ID
+     * @return 学生信息
+     */
+    public Student selectStudentInfoByUserId(Long userId);
 }

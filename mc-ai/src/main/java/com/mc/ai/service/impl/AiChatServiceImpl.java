@@ -1,8 +1,7 @@
 package com.mc.ai.service.impl;
 
-import com.mc.ai.prompt.AiPrompts;
 import com.mc.ai.service.IAiChatService;
-import jakarta.annotation.Resource;
+import com.mc.common.utils.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -15,7 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -60,6 +61,11 @@ public class AiChatServiceImpl implements IAiChatService {
      */
     private final ChatMemory chatMemory;
 
+    /**
+     * 学生端专用 ChatClient（由 StudentChatClientConfig 配置，仅注册学生端工具）
+     */
+    private final ChatClient studentChatClient;
+
     private final ConcurrentHashMap<String, AtomicBoolean> cancelFlags = new ConcurrentHashMap<>();
 
     public AiChatServiceImpl(
@@ -67,11 +73,13 @@ public class AiChatServiceImpl implements IAiChatService {
             @Qualifier("multiModalChatClient") ChatClient multiModalChatClient,
             @Qualifier("mentalHealthChatClient") ChatClient mentalHealthChatClient,
             @Qualifier("questionGenerationChatClient") ChatClient questionGenerationChatClient,
+            @Qualifier("studentChatClient") ChatClient studentChatClient,
             ChatMemory chatMemory) {
         this.chatClient = chatClient;
         this.multiModalChatClient = multiModalChatClient;
         this.mentalHealthChatClient = mentalHealthChatClient;
         this.questionGenerationChatClient = questionGenerationChatClient;
+        this.studentChatClient = studentChatClient;
         this.chatMemory = chatMemory;
     }
 
@@ -301,5 +309,71 @@ public class AiChatServiceImpl implements IAiChatService {
         } catch (Exception e) {
             log.error("清空会话 AI 记忆失败 - 会话ID: {}", conversationId, e);
         }
+    }
+
+    // ==================== 学生端专用对话 ====================
+
+    /**
+     * 学生端专用流式对话实现
+     * <p>
+     * 使用 studentChatClient（具有学生端心理健康工具），为学生提供
+     * 个性化的心理陪伴对话体验。AI 可主动调用工具查询学生的心理健康状态、
+     * 评估历史、推荐文章等，提供更精准的陪伴和疏导。
+     *
+     * @param userMessage    用户消息内容
+     * @param files          附件列表（可为 null 或空列表）
+     * @param conversationId 会话 ID
+     * @return 流式结果对象
+     */
+    @Override
+    public StreamChatResult streamStudentChat(String userMessage, List<MultipartFile> files,
+                                               String conversationId) {
+        log.info("[StudentChat] 学生端流式对话 - 会话ID: {}, 消息长度: {}",
+                conversationId, userMessage != null ? userMessage.length() : 0);
+
+        List<org.springframework.ai.content.Media> memoryResources =
+                (files != null && !files.isEmpty()) ? convertMultipartFilesToMedia(files) : null;
+
+        UserMessage userMsg;
+        if (memoryResources != null && !memoryResources.isEmpty()) {
+            userMsg = UserMessage.builder()
+                    .text(userMessage)
+                    .media(memoryResources)
+                    .build();
+        } else {
+            userMsg = UserMessage.builder()
+                    .text(userMessage)
+                    .build();
+        }
+
+        StringBuilder fullContentHolder = new StringBuilder();
+        AtomicBoolean cancelFlag = cancelFlags.computeIfAbsent(conversationId, k -> new AtomicBoolean(false));
+        cancelFlag.set(false);
+
+        // 这里是 Tomcat 同步线程，100%能拿到 userId，永不丢失！
+        Long userId = SecurityUtils.getUserId();
+        Map<String, Object> toolContext = new HashMap<>();
+        toolContext.put("userId", userId);
+
+        Flux<String> contentFlux = studentChatClient.prompt()
+                .messages(userMsg)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .toolContext(toolContext)
+                .stream()
+                .content()
+                .takeWhile(data -> !cancelFlag.get());
+
+        Flux<ServerSentEvent<String>> sseFlux = contentFlux
+                .map(chunk -> {
+                    fullContentHolder.append(chunk);
+                    return ServerSentEvent.<String>builder()
+                            .data(chunk)
+                            .build();
+                })
+                .concatWith(Flux.just(ServerSentEvent.<String>builder()
+                        .data("\u0003")
+                        .build()));
+
+        return new StreamChatResult(sseFlux, fullContentHolder);
     }
 }

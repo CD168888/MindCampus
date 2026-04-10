@@ -122,4 +122,15 @@ public class StudentInfoServiceImpl extends ServiceImpl<StudentInfoMapper, Stude
                 })
                 .toList();
     }
+
+    /**
+     * 根据用户ID查询学生信息
+     *
+     * @param userId 系统用户ID
+     * @return 学生信息
+     */
+    @Override
+    public Student selectStudentInfoByUserId(Long userId) {
+        return studentInfoMapper.selectStudentInfoByUserId(userId);
+    }
 }

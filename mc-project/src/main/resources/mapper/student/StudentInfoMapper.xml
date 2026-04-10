@@ -105,9 +105,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteStudentInfoByStudentIds" parameterType="String">
-        delete from student_info where student_id in 
+        delete from student_info where student_id in
         <foreach item="studentId" collection="array" open="(" separator="," close=")">
             #{studentId}
         </foreach>
     </delete>
+
+    <select id="selectStudentInfoByUserId" parameterType="Long" resultMap="StudentInfoResult">
+        <include refid="selectStudentInfoVo"/>
+        where user_id = #{userId} limit 1
+    </select>
 </mapper>

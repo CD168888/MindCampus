@@ -2,10 +2,9 @@ package com.mc.ai.controller;
 
 import com.mc.ai.domain.AiChatMessage;
 import com.mc.ai.domain.AiChatSession;
-import com.mc.ai.prompt.AiPrompts;
 import com.mc.ai.service.IAiChatMessageService;
-import com.mc.ai.service.IAiChatSessionService;
 import com.mc.ai.service.IAiChatService;
+import com.mc.ai.service.IAiChatSessionService;
 import com.mc.common.core.domain.R;
 import com.mc.common.utils.SecurityUtils;
 import jakarta.annotation.Resource;
@@ -100,9 +99,9 @@ public class AiChatController {
         // 用于在流结束后判断是否已保存 AI 回复（防止 doOnComplete 和 doOnCancel 重复保存）
         AtomicBoolean messageSaved = new AtomicBoolean(false);
 
-        // 调用 AI 服务获取流式响应（AI 底层交互由 mc-ai 模块完成）
-        IAiChatService.StreamChatResult result = aiChatService.streamChat(
-                message, fileList, AiPrompts.GENERAL_ASSISTANT, String.valueOf(validSessionId));
+        // 调用 AI 服务获取流式响应（学生端专用，带心理健康工具）
+        IAiChatService.StreamChatResult result = aiChatService.streamStudentChat(
+                message, fileList, String.valueOf(validSessionId));
 
         // 获取会话消息数量，用于判断是否需要生成标题
         List<AiChatMessage> sessionMessages = chatMessageService.getSessionMessages(validSessionId);
