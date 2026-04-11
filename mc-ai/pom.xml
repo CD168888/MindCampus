@@ -44,6 +44,12 @@
             <artifactId>jedis</artifactId>
         </dependency>
 
+        <!-- Spring AI MCP Client（用于连接外部MCP服务器） -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-client</artifactId>
+        </dependency>
+
         <!-- mc-framework：引入 Spring Context / Web 及基础框架 -->
         <dependency>
             <groupId>com.mc</groupId>

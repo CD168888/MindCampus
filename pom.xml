@@ -201,6 +201,22 @@
                 <scope>import</scope>
             </dependency>
 
+            <!-- Spring AI 官方 BOM（管理 org.springframework.ai 系列包的版本） -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>1.0.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring AI MCP Client -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-starter-mcp-client</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+
             <!-- 通用工具-->
             <dependency>
                 <groupId>com.mc</groupId>
