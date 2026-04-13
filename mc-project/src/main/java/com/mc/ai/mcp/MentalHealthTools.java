@@ -49,6 +49,24 @@ public class MentalHealthTools {
         return student.getStudentId();
     }
 
+    @Tool(name = "get_current_date",
+            description = "获取当前的日期和时间。此工具用于解决AI模型知识截止日期不确定的问题，确保在进行需要时效性的操作（如搜索最新资讯）时能使用准确的当前时间。")
+    public Map<String, Object> getCurrentDate() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        Calendar calendar = Calendar.getInstance();
+        result.put("year", calendar.get(Calendar.YEAR));
+        result.put("month", calendar.get(Calendar.MONTH) + 1);
+        result.put("day", calendar.get(Calendar.DAY_OF_MONTH));
+        result.put("hour", calendar.get(Calendar.HOUR_OF_DAY));
+        result.put("minute", calendar.get(Calendar.MINUTE));
+        result.put("dateString", String.format("%d年%02d月%02d日",
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.DAY_OF_MONTH)));
+        result.put("timestamp", System.currentTimeMillis());
+        return result;
+    }
+
     private Student getStudentOrNull(Long studentId) {
         return studentInfoService.selectStudentInfoByStudentId(studentId);
     }
