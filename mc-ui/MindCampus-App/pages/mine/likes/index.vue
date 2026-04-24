@@ -246,17 +246,17 @@ export default {
     },
     goToMusicDetail(item) {
       uni.navigateTo({
-        url: `/pages/music/detail?id=${item.musicId}`
+        url: `/pages/music/player?musicId=${item.musicId}`
       })
     },
     goToCourseDetail(item) {
       uni.navigateTo({
-        url: `/pages/course/detail?id=${item.courseId}`
+        url: `/pages/course/detail?courseId=${item.courseId}`
       })
     },
     goToArticleDetail(item) {
       uni.navigateTo({
-        url: `/pages/article/detail?id=${item.articleId}`
+        url: `/pages/article/detail?articleId=${item.articleId}`
       })
     },
     getCategoryIcon(category) {
