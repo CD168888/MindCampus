@@ -1,5 +1,7 @@
 package com.mc.ai.service;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
@@ -69,6 +71,7 @@ public interface IAiChatService {
     /**
      * 心理健康评估结果（迁移自 mc-project.domain）
      */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     record MentalHealthEvaluationResult(
             int totalScore,
             String riskLevel,
@@ -81,6 +84,7 @@ public interface IAiChatService {
     /**
      * 心理健康指标维度
      */
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     record MentalHealthIndicator(
             int anxietyScore,
             int depressionScore,
