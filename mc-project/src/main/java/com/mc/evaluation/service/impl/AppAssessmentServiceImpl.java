@@ -21,6 +21,7 @@ import com.mc.questionnaire.mapper.QuestionnaireMapper;
 import com.mc.student.domain.Student;
 import com.mc.student.mapper.StudentInfoMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppAssessmentServiceImpl implements IAppAssessmentService {
 
     private final QuestionnaireMapper questionnaireMapper;
@@ -249,6 +251,7 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
         for (SubmitAnswerDTO.AnswerItem answerItem : dto.getAnswers()) {
             Question question = questionMap.get(answerItem.getQuestionId());
             if (question == null) {
+                log.warn("未找到题目: questionId={}", answerItem.getQuestionId());
                 continue;
             }
 
@@ -266,6 +269,7 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
 
             answerList.add(answer);
         }
+        log.info("创建答题记录列表，共 {} 条", answerList.size());
 
         // 移除风险等级计算，直接设为空或默认值
         String riskLevel = "";
@@ -295,6 +299,7 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
             evaluationResultMapper.updateEvaluationResult(result);
         } else {
             // 如果没有记录（异常情况），则插入新记录
+            log.warn("未找到已有的测评记录，为学生 {} 创建新记录", studentId);
             result = new EvaluationResult();
             result.setStudentId(studentId);
             result.setStudentName(student.getName());
@@ -309,11 +314,16 @@ public class AppAssessmentServiceImpl implements IAppAssessmentService {
             evaluationResultMapper.insertEvaluationResult(result);
         }
 
-        // 批量保存答题记录
+        // 批量保存答题记录（先设置 resultId）
+        log.info("开始保存答题记录，resultId={}，共 {} 条", result.getResultId(), answerList.size());
         for (QuestionnaireAnswer answer : answerList) {
             answer.setResultId(result.getResultId());
+            // 逐条插入，确保数据正确
+            answerMapper.insert(answer);
+            log.debug("已插入答题记录: answerId={}, resultId={}, questionId={}, userAnswer={}",
+                    answer.getAnswerId(), answer.getResultId(), answer.getQuestionId(), answer.getUserAnswer());
         }
-        answerMapper.batchInsert(answerList);
+        log.info("答题记录保存完成");
 
         // 事务提交后再异步调用AI评估服务
         final Long finalResultId = result.getResultId();
