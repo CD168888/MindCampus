@@ -41,17 +41,15 @@ public class QuestionnaireServiceImpl extends ServiceImpl<QuestionnaireMapper, Q
 
     @Override
     public List<Questionnaire> selectQuestionnaireList(Questionnaire questionnaire) {
-        return this.lambdaQuery()
-                .like(questionnaire.getTitle() != null, Questionnaire::getTitle, questionnaire.getTitle())
-                .like(questionnaire.getDescription() != null, Questionnaire::getDescription,
-                        questionnaire.getDescription())
-                .eq(questionnaire.getStatus() != null, Questionnaire::getStatus, questionnaire.getStatus())
-                .eq(questionnaire.getType() != null, Questionnaire::getType, questionnaire.getType())
-                // 开始时间 >= 查询条件
-                .ge(questionnaire.getStartTime() != null, Questionnaire::getStartTime, questionnaire.getStartTime())
-                // 结束时间 <= 查询条件
-                .le(questionnaire.getEndTime() != null, Questionnaire::getEndTime, questionnaire.getEndTime())
-                .list();
+        LambdaQueryWrapper<Questionnaire> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(questionnaire.getTitle() != null, Questionnaire::getTitle, questionnaire.getTitle());
+        wrapper.like(questionnaire.getDescription() != null, Questionnaire::getDescription, questionnaire.getDescription());
+        wrapper.eq(questionnaire.getStatus() != null, Questionnaire::getStatus, questionnaire.getStatus());
+        wrapper.eq(questionnaire.getType() != null, Questionnaire::getType, questionnaire.getType());
+        wrapper.ge(questionnaire.getStartTime() != null, Questionnaire::getStartTime, questionnaire.getStartTime());
+        wrapper.le(questionnaire.getEndTime() != null, Questionnaire::getEndTime, questionnaire.getEndTime());
+        wrapper.orderByDesc(Questionnaire::getCreateTime);
+        return super.list(wrapper);
     }
 
     @Override

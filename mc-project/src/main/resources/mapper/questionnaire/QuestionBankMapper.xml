@@ -26,6 +26,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="type != null  and type != ''"> and type = #{type}</if>
             <if test="content != null  and content != ''"> and content like concat('%', #{content}, '%')</if>
         </where>
+        order by coalesce(create_time, update_time) desc
     </select>
     
     <select id="selectQuestionBankByBankId" parameterType="Long" resultMap="QuestionBankResult">

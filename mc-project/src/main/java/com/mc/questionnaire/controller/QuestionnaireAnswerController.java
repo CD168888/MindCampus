@@ -13,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 心理测评答题记录Controller
@@ -35,6 +37,13 @@ public class QuestionnaireAnswerController extends BaseController {
     public TableDataInfo list(QuestionnaireAnswer questionnaireAnswer) {
         startPage();
         List<QuestionnaireAnswer> list = questionnaireAnswerService.selectQuestionnaireAnswerList(questionnaireAnswer);
+        // 按创建时间倒序排列（新的在前）
+        list = list.stream()
+                .sorted(Comparator.comparing(
+                        (QuestionnaireAnswer q) -> q.getCreateTime() != null ? q.getCreateTime() : q.getUpdateTime(),
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ))
+                .collect(Collectors.toList());
         return getDataTable(list);
     }
 
