@@ -49,7 +49,7 @@
 
     <el-table v-loading="loading" :data="questionnaireList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="问卷编号" align="center" prop="questionnaireId" width="80" />
+      <el-table-column label="序号" align="center" width="70" type="index" :index="getIndex" />
       <el-table-column label="问卷标题" align="center" prop="title" show-overflow-tooltip />
       <el-table-column label="问卷描述" align="center" prop="description" show-overflow-tooltip />
       <el-table-column label="状态" align="center" prop="status" width="100">
@@ -564,6 +564,11 @@ const data = reactive({
 })
 
 const { queryParams, form, rules } = toRefs(data)
+
+// 计算序号
+function getIndex(index) {
+  return (queryParams.value.pageNum - 1) * queryParams.value.pageSize + index + 1
+}
 
 /** 查询问卷列表 */
 function getList() {

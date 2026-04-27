@@ -41,7 +41,7 @@
 
     <el-table v-loading="loading" :data="questionnairebankList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="题目编号" align="center" prop="bankId" />
+      <el-table-column label="序号" align="center" width="70" type="index" :index="getIndex" />
       <el-table-column label="题目类型" align="center" prop="type">
         <template #default="scope">
           <dict-tag :options="question_type" :value="scope.row.type" />
@@ -291,6 +291,11 @@ const data = reactive({
 })
 
 const { queryParams, form, rules } = toRefs(data)
+
+// 计算序号
+function getIndex(index) {
+  return (queryParams.value.pageNum - 1) * queryParams.value.pageSize + index + 1
+}
 
 /** 查询题库管理列表 */
 function getList() {

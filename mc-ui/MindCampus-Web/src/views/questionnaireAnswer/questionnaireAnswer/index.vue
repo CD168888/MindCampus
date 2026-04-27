@@ -43,7 +43,7 @@
     <el-table v-loading="loading" :data="questionnaireAnswerList" @selection-change="handleSelectionChange"
       :span-method="objectSpanMethod" border>
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="测评结果编号" align="center" prop="resultId" width="120" />
+      <el-table-column label="序号" align="center" width="70" type="index" :index="getIndex" />
       <el-table-column label="学生姓名" align="center" prop="studentName" width="120">
         <template #default="scope">
           <span>{{ scope.row.studentName || '-' }}</span>
@@ -54,7 +54,6 @@
           <span>{{ scope.row.questionnaireTitle || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="答题记录编号" align="center" prop="answerId" width="120" />
       <el-table-column label="题目类型" align="center" prop="type" width="100">
         <template #default="scope">
           <el-tag v-if="scope.row.type === 'choice'" type="success">选择题</el-tag>
@@ -251,7 +250,7 @@ function handleSpanArr() {
       // 判断是否属于同一组（result_id + questionnaire_id 相同）
       if (current.resultId === prev.resultId &&
         current.questionnaireId === prev.questionnaireId) {
-        // 同一组，第一列合并，其他列不合并
+        // 同一组，学生姓名和问卷标题列合并，其他列不合并
         spanArr.value[pos] += 1
         spanArr.value.push(0)
       } else {
@@ -265,7 +264,7 @@ function handleSpanArr() {
 
 // 表格合并单元格方法
 function objectSpanMethod({ row, column, rowIndex, columnIndex }) {
-  // 需要合并的列：测评结果编号(1)、学生姓名(2)、问卷标题(3)
+  // 需要合并的列：序号(1)、学生姓名(2)、问卷标题(3)
   if (columnIndex === 1 || columnIndex === 2 || columnIndex === 3) {
     const _row = spanArr.value[rowIndex]
     const _col = _row > 0 ? 1 : 0
@@ -274,6 +273,11 @@ function objectSpanMethod({ row, column, rowIndex, columnIndex }) {
       colspan: _col
     }
   }
+}
+
+// 计算序号
+function getIndex(index) {
+  return (queryParams.value.pageNum - 1) * queryParams.value.pageSize + index + 1
 }
 
 // 取消按钮
