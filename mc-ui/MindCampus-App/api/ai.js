@@ -83,13 +83,15 @@ export function cancelStream(sessionId) {
  * @param {number} options.sessionId - 会话ID(可选,后端会自动创建)
  * @param {Array<Object>} options.files - 文件对象数组 [{path, name}] (可选)
  * @param {Array<string>} options.fileUrls - 附件URL列表(可选)
+ * @param {boolean} options.enableRag - 是否启用 RAG 向量检索增强(可选,默认false)
+ * @param {boolean} options.enableKg - 是否启用知识图谱检索增强(可选,默认false)
  * @param {Function} options.onMessage - 接收消息回调 (chunk, fullContent)
  * @param {Function} options.onError - 错误回调
  * @param {Function} options.onComplete - 完成回调
  * @returns {Object} 返回包含 abortController 和 close 方法的对象
  */
 export function streamChat(options) {
-    const {message, sessionId, files, fileUrls, onMessage, onError, onComplete} = options
+    const {message, sessionId, files, fileUrls, enableRag, enableKg, onMessage, onError, onComplete} = options
 
     const token = getToken()
     let fullContent = ''
@@ -104,6 +106,13 @@ export function streamChat(options) {
     formData.append('message', message)
     if (sessionId) {
         formData.append('sessionId', sessionId)
+    }
+    // RAG+KG 增强参数
+    if (enableRag) {
+        formData.append('enableRag', 'true')
+    }
+    if (enableKg) {
+        formData.append('enableKg', 'true')
     }
     // 添加文件
     if (files && files.length > 0) {
@@ -288,6 +297,13 @@ export function streamChat(options) {
         let requestUrl = `${baseUrl}/ai/chatStream?message=${encodeURIComponent(message)}`
         if (sessionId) {
             requestUrl += `&sessionId=${sessionId}`
+        }
+        // RAG+KG 增强参数
+        if (enableRag) {
+            requestUrl += '&enableRag=true'
+        }
+        if (enableKg) {
+            requestUrl += '&enableKg=true'
         }
         if (uploadedFileUrls.length > 0) {
             uploadedFileUrls.forEach(url => {

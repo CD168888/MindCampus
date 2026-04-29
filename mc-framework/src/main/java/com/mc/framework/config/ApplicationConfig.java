@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
@@ -16,9 +17,8 @@ import java.util.TimeZone;
  * @author caidu
  */
 @Configuration
-// 表示通过aop框架暴露该代理对象,AopContext能够访问
+@EnableScheduling
 @EnableAspectJAutoProxy(exposeProxy = true)
-// 指定要扫描的Mapper类的包的路径
 @MapperScan("com.mc.**.mapper")
 public class ApplicationConfig
 {

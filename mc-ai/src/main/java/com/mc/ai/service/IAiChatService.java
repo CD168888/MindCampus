@@ -170,4 +170,27 @@ public interface IAiChatService {
      */
     StreamChatResult streamStudentChat(String userMessage, List<MultipartFile> files,
                                         String conversationId);
+
+    // ==================== 学生端 RAG+KG 增强对话 ====================
+
+    /**
+     * 学生端 RAG + 知识图谱增强流式对话
+     * <p>
+     * 相比 streamStudentChat，新增两个增强阶段：
+     * 1. 知识图谱检索（Neo4j）- 查询学生画像（性格/情绪/风险/历史评估）
+     * 2. RAG 向量检索（Milvus/Zilliz Cloud）- 在知识库中检索相关内容
+     * <p>
+     * 检索结果被注入到系统提示词中，引导 AI 生成更个性化、更精准的回答。
+     *
+     * @param userMessage     用户消息内容
+     * @param files          附件列表
+     * @param conversationId 会话 ID
+     * @param userId         用户 ID（用于知识图谱查询）
+     * @param enableRag      是否启用 RAG 检索
+     * @param enableKg       是否启用知识图谱检索
+     * @return 流式结果对象
+     */
+    StreamChatResult streamStudentChatRag(String userMessage, List<MultipartFile> files,
+                                          String conversationId, Long userId,
+                                          boolean enableRag, boolean enableKg);
 }

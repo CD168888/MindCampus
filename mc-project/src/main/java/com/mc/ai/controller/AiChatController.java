@@ -57,11 +57,15 @@ public class AiChatController {
      * 2. 保存用户消息（写库）
      * 3. 调用 AI 服务获取流式响应
      * 4. 流式返回给前端，同时在流结束时保存 AI 回复（写库）
+     * <p>
+     * 支持 RAG+KG 增强模式（enableRag/enableKg 参数），由前端控制启用。
      *
      * @param message   用户输入的消息
      * @param files     附件列表
      * @param fileUrls  附件URL列表
      * @param sessionId 会话ID
+     * @param enableRag 是否启用 RAG 向量检索（默认 false，向后兼容）
+     * @param enableKg  是否启用知识图谱检索（默认 false，向后兼容）
      * @return Flux<ServerSentEvent<String>> 流式响应数据
      */
     @PostMapping(value = "/chatStream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -70,12 +74,15 @@ public class AiChatController {
             @RequestPart(value = "files", required = false) MultipartFile[] files,
             @RequestParam(value = "fileUrls", required = false) List<String> fileUrls,
             @RequestParam(value = "sessionId", required = false) Long sessionId,
+            @RequestParam(value = "enableRag", required = false, defaultValue = "false") Boolean enableRag,
+            @RequestParam(value = "enableKg", required = false, defaultValue = "false") Boolean enableKg,
             HttpServletResponse response) {
 
         // 验证用户登录
         Long userId = SecurityUtils.getUserId();
 
-        log.info("接收到 AI 对话请求 - 用户ID: {}, 会话ID: {}, 消息: {}", userId, sessionId, message);
+        log.info("接收到 AI 对话请求 - 用户ID: {}, 会话ID: {}, 消息: {}, enableRag: {}, enableKg: {}",
+            userId, sessionId, message, enableRag, enableKg);
 
         // 验证或创建会话
         Long validSessionId = validateOrCreateSession(sessionId, userId);
@@ -99,16 +106,26 @@ public class AiChatController {
         // 用于在流结束后判断是否已保存 AI 回复（防止 doOnComplete 和 doOnCancel 重复保存）
         AtomicBoolean messageSaved = new AtomicBoolean(false);
 
-        // 调用 AI 服务获取流式响应（学生端专用，带心理健康工具）
-        IAiChatService.StreamChatResult result = aiChatService.streamStudentChat(
-                message, fileList, String.valueOf(validSessionId));
-
         // 获取会话消息数量，用于判断是否需要生成标题
         List<AiChatMessage> sessionMessages = chatMessageService.getSessionMessages(validSessionId);
         int messageCountBefore = sessionMessages.size();
 
         // 异步生成会话标题（仅在第一次 Q&A 时触发）
         boolean shouldGenerateTitle = (messageCountBefore == 1); // 刚存了用户消息，此时应有 2 条
+
+        // 根据是否启用 RAG+KG 选择调用哪个 AI 服务方法
+        IAiChatService.StreamChatResult result;
+        if ((enableRag != null && enableRag) || (enableKg != null && enableKg)) {
+            // RAG + KG 增强模式
+            result = aiChatService.streamStudentChatRag(
+                message, fileList, String.valueOf(validSessionId), userId,
+                Boolean.TRUE.equals(enableRag), Boolean.TRUE.equals(enableKg));
+            log.info("[RAG-Chat] 使用增强对话模式 - enableRag: {}, enableKg: {}", enableRag, enableKg);
+        } else {
+            // 普通学生端对话模式（向后兼容）
+            result = aiChatService.streamStudentChat(
+                message, fileList, String.valueOf(validSessionId));
+        }
 
         return result.sseFlux()
                 .doOnComplete(() -> handleStreamComplete(validSessionId, userId, message,

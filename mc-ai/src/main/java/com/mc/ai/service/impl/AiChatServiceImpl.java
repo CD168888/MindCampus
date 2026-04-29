@@ -1,18 +1,23 @@
 package com.mc.ai.service.impl;
 
+import com.mc.ai.prompt.AiPrompts;
 import com.mc.ai.service.IAiChatService;
 import com.mc.common.utils.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.content.Media;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +72,13 @@ public class AiChatServiceImpl implements IAiChatService {
     private final ChatClient studentChatClient;
 
     private final ConcurrentHashMap<String, AtomicBoolean> cancelFlags = new ConcurrentHashMap<>();
+
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
 
     public AiChatServiceImpl(
             ChatClient chatClient,
@@ -374,6 +386,129 @@ public class AiChatServiceImpl implements IAiChatService {
                         .data("\u0003")
                         .build()));
 
+        return new StreamChatResult(sseFlux, fullContentHolder);
+    }
+
+    // ==================== RAG + 知识图谱增强对话 ====================
+
+    /**
+     * 运行时获取知识图谱服务（避免循环依赖）
+     */
+    private Object getKnowledgeService(String serviceName) {
+        try {
+            return applicationContext.getBean(serviceName);
+        } catch (Exception e) {
+            log.warn("[RAG] 未找到知识服务 Bean: {}", serviceName);
+            return null;
+        }
+    }
+
+    /**
+     * 学生端 RAG + 知识图谱增强流式对话
+     */
+    @Override
+    public StreamChatResult streamStudentChatRag(String userMessage, List<MultipartFile> files,
+                                                 String conversationId, Long userId,
+                                                 boolean enableRag, boolean enableKg) {
+        log.info("[RAG-Chat] 增强对话开始 - 会话ID: {}, userId: {}, enableRag: {}, enableKg: {}",
+            conversationId, userId, enableRag, enableKg);
+
+        // 阶段1：知识图谱检索
+        String kgContext = "";
+        if (enableKg && userId != null) {
+            try {
+                Object kgService = getKnowledgeService("studentProfileKGService");
+                if (kgService != null) {
+                    Method buildMethod = kgService.getClass().getMethod("buildKgContext", Long.class);
+                    kgContext = (String) buildMethod.invoke(kgService, userId);
+                    log.info("[RAG-Chat] 知识图谱上下文获取成功 - 长度: {}", kgContext.length());
+                }
+            } catch (Exception e) {
+                log.warn("[RAG-Chat] 知识图谱检索失败: {}", e.getMessage());
+            }
+        }
+        if (kgContext.isEmpty()) {
+            kgContext = "【用户画像】暂无该用户的画像数据。";
+        }
+
+        // 阶段2：RAG 向量检索
+        String ragContext = "";
+        if (enableRag && userMessage != null && !userMessage.isBlank()) {
+            try {
+                Object kgService = getKnowledgeService("studentProfileKGService");
+                if (kgService != null) {
+                    Method ragMethod = kgService.getClass().getMethod("ragRetrieve",
+                        String.class, Long.class, int.class);
+                    @SuppressWarnings("unchecked")
+                    List<?> ragResults = (List<?>) ragMethod.invoke(kgService, userMessage, null, 5);
+                    if (ragResults != null && !ragResults.isEmpty()) {
+                        StringBuilder sb = new StringBuilder();
+                        int idx = 1;
+                        for (Object result : ragResults) {
+                            Method contentMethod = result.getClass().getMethod("getContent");
+                            Method scoreMethod = result.getClass().getMethod("getScore");
+                            Method kbNameMethod = result.getClass().getMethod("getKbName");
+                            String content = (String) contentMethod.invoke(result);
+                            Object score = scoreMethod.invoke(result);
+                            String kbName = (String) kbNameMethod.invoke(result);
+                            if (content != null && !content.isEmpty()) {
+                                sb.append(String.format("[参考%d - %s (相似度: %.2f)] %s\n",
+                                    idx++, kbName != null ? kbName : "知识库",
+                                    score instanceof Number ? ((Number) score).doubleValue() : 0.0,
+                                    content.length() > 200 ? content.substring(0, 200) + "..." : content));
+                            }
+                        }
+                        ragContext = sb.toString();
+                        log.info("[RAG-Chat] RAG 检索结果 - {} 条", ragResults.size());
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("[RAG-Chat] RAG 检索失败: {}", e.getMessage());
+            }
+        }
+        if (ragContext.isEmpty()) {
+            ragContext = "【知识库参考】暂无相关知识库内容。";
+        }
+
+        // 阶段3：构建增强系统提示词
+        String enhancedPrompt = String.format(AiPrompts.STUDENT_WELL_BEING_PROMPT_RAG_TEMPLATE,
+            kgContext, ragContext, AiPrompts.STUDENT_WELL_BEING_PROMPT);
+
+        // 构建消息
+        List<Media> memoryResources =
+            (files != null && !files.isEmpty()) ? convertMultipartFilesToMedia(files) : null;
+
+        UserMessage userMsg;
+        if (memoryResources != null && !memoryResources.isEmpty()) {
+            userMsg = UserMessage.builder().text(userMessage).media(memoryResources).build();
+        } else {
+            userMsg = UserMessage.builder().text(userMessage).build();
+        }
+
+        StringBuilder fullContentHolder = new StringBuilder();
+        AtomicBoolean cancelFlag = cancelFlags.computeIfAbsent(conversationId, k -> new AtomicBoolean(false));
+        cancelFlag.set(false);
+
+        Map<String, Object> toolContext = new HashMap<>();
+        toolContext.put("userId", userId);
+
+        Flux<String> contentFlux = chatClient.prompt()
+            .messages(userMsg)
+            .system(enhancedPrompt)
+            .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+            .toolContext(toolContext)
+            .stream()
+            .content()
+            .takeWhile(data -> !cancelFlag.get());
+
+        Flux<ServerSentEvent<String>> sseFlux = contentFlux
+            .map(chunk -> {
+                fullContentHolder.append(chunk);
+                return ServerSentEvent.<String>builder().data(chunk).build();
+            })
+            .concatWith(Flux.just(ServerSentEvent.<String>builder().data("\u0003").build()));
+
+        log.info("[RAG-Chat] 增强对话返回 SSE 流 - 系统提示词长度: {}", enhancedPrompt.length());
         return new StreamChatResult(sseFlux, fullContentHolder);
     }
 }
