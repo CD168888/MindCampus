@@ -1,6 +1,7 @@
 package com.mc.knowledge.domain.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,6 +52,7 @@ public class StudentProfileNode {
     private List<String> concerns;
 
     @Schema(description = "最近风险等级")
+    @JsonProperty("latestRiskLevel")
     private String riskLevel;
 
     @Schema(description = "最近评估分数")

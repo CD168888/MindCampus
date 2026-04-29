@@ -208,12 +208,16 @@ function handleNodeClick(node) {
 function handleSyncStudent(row) {
   proxy.$modal.confirm('确认同步该学生的图谱数据到 Neo4j？')
     .then(() => {
+      proxy.$modal.loading('同步中，请稍候...');
       return syncStudent(row.studentId);
     })
     .then(() => {
+      proxy.$modal.closeLoading();
       ElMessage.success('同步成功');
     })
-    .catch(() => {});
+    .catch((e) => {
+      proxy.$modal.closeLoading();
+    });
 }
 
 function handleFullSync() {

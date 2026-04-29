@@ -28,6 +28,52 @@ public class Neo4jClient {
     private Driver neo4jDriver;
 
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_DELAY_MS = 500;
+
+    private static final Set<Class<? extends Exception>> RETRYABLE_EXCEPTIONS = Set.of(
+            org.neo4j.driver.exceptions.ServiceUnavailableException.class,
+            org.neo4j.driver.exceptions.SessionExpiredException.class,
+            java.net.SocketException.class,
+            java.io.IOException.class,
+            io.netty.channel.ChannelException.class
+    );
+
+    /**
+     * 带重试的 Neo4j 会话执行
+     */
+    private void executeWithRetry(String cypher, org.neo4j.driver.Value parameters) {
+        Exception lastException = null;
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try (Session session = neo4jDriver.session()) {
+                session.run(cypher, parameters);
+                return;
+            } catch (Exception e) {
+                lastException = e;
+                if (!isRetryable(e) || attempt == MAX_RETRIES) {
+                    throw e;
+                }
+                log.warn("[Neo4j] 连接异常，第 {} 次重试（{}ms 后）: {}", attempt, RETRY_DELAY_MS, e.getMessage());
+                try {
+                    Thread.sleep(RETRY_DELAY_MS * attempt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("重试被中断", ie);
+                }
+            }
+        }
+        throw new RuntimeException("Neo4j 操作失败，已重试 " + MAX_RETRIES + " 次", lastException);
+    }
+
+    private boolean isRetryable(Exception e) {
+        if (RETRYABLE_EXCEPTIONS.contains(e.getClass())) return true;
+        Throwable cause = e.getCause();
+        while (cause != null) {
+            if (RETRYABLE_EXCEPTIONS.contains(cause.getClass())) return true;
+            cause = cause.getCause();
+        }
+        return false;
+    }
 
     /**
      * 创建或更新学生节点
@@ -43,8 +89,8 @@ public class Neo4jClient {
                 s.className = $className,
                 s.updatedAt = datetime()
             """;
-        try (Session session = neo4jDriver.session()) {
-            session.run(cypher,
+        try {
+            executeWithRetry(cypher,
                 org.neo4j.driver.Values.parameters(
                     "userId", userId,
                     "studentId", studentId,
@@ -74,8 +120,8 @@ public class Neo4jClient {
                 a.date = datetime()
             MERGE (s)-[:TOOK_ASSESSMENT]->(a)
             """;
-        try (Session session = neo4jDriver.session()) {
-            session.run(cypher,
+        try {
+            executeWithRetry(cypher,
                 org.neo4j.driver.Values.parameters(
                     "userId", userId,
                     "resultId", resultId,
@@ -102,8 +148,8 @@ public class Neo4jClient {
                 date: datetime()
             })
             """;
-        try (Session session = neo4jDriver.session()) {
-            session.run(cypher,
+        try {
+            executeWithRetry(cypher,
                 org.neo4j.driver.Values.parameters(
                     "userId", userId,
                     "emotion", emotion != null ? emotion : "未知",
@@ -127,8 +173,8 @@ public class Neo4jClient {
                 r.avgScore = $avgScore,
                 r.lastDate = datetime()
             """;
-        try (Session session = neo4jDriver.session()) {
-            session.run(cypher,
+        try {
+            executeWithRetry(cypher,
                 org.neo4j.driver.Values.parameters(
                     "userId", userId,
                     "sessionId", sessionId,
@@ -156,8 +202,8 @@ public class Neo4jClient {
                 p.concerns = $concerns,
                 p.updatedAt = datetime()
             """;
-        try (Session session = neo4jDriver.session()) {
-            session.run(cypher,
+        try {
+            executeWithRetry(cypher,
                 org.neo4j.driver.Values.parameters(
                     "userId", userId,
                     "personality", personality != null ? personality : "",
@@ -201,16 +247,14 @@ public class Neo4jClient {
             }
             Record record = result.next();
             StudentProfileNode profile = parseProfileRecord(record, userId);
-            // 如果评估记录没有日期，按 resultId 降序取最新的
-            if ((profile.getLatestScore() == null || profile.getRiskLevel() == null) && profile.getAssessmentHistory() != null && !profile.getAssessmentHistory().isEmpty()) {
-                StudentProfileNode.AssessmentRecord latest = profile.getAssessmentHistory().stream()
-                    .filter(r -> r.getResultId() != null)
-                    .max((r1, r2) -> Long.compare(r1.getResultId(), r2.getResultId()))
-                    .orElse(profile.getAssessmentHistory().get(0));
-                profile.setLatestScore(latest.getTotalScore());
-                profile.setRiskLevel(latest.getRiskLevel());
-                profile.setLatestAssessmentDate(latest.getAssessmentDate());
+            if (profile == null) {
+                return null;
             }
+            log.debug("[Neo4j] 查询画像 - userId: {}, assessmentHistory.size: {}, latestScore: {}, riskLevel: {}",
+                userId,
+                profile.getAssessmentHistory() != null ? profile.getAssessmentHistory().size() : 0,
+                profile.getLatestScore(),
+                profile.getRiskLevel());
             return profile;
         } catch (Exception e) {
             log.error("[Neo4j] 查询学生画像失败 - userId: {}", userId, e);
@@ -316,7 +360,9 @@ public class Neo4jClient {
                    .concerns(toStringList(p.get("concerns")));
         }
 
-        List<Object> assessments = record.get("assessments").asList();
+        Value assessmentsVal = record.get("assessments");
+        List<Object> assessments = assessmentsVal.isNull() ? Collections.emptyList() : assessmentsVal.asList();
+        log.info("[Neo4j] 原始 assessments 数据 - isNull: {}, size: {}", assessmentsVal.isNull(), assessments.size());
         if (assessments != null && !assessments.isEmpty()) {
             List<StudentProfileNode.AssessmentRecord> assessmentRecords = new ArrayList<>();
             for (Object obj : assessments) {
@@ -336,16 +382,24 @@ public class Neo4jClient {
             }
             builder.assessmentHistory(assessmentRecords);
 
-            // 最近一次评估（优先按日期排序，日期为空则按记录顺序取第一个）
+            // 最近一次评估（按 resultId 降序取最新的）
             StudentProfileNode.AssessmentRecord latest = assessmentRecords.stream()
-                .filter(r -> r.getAssessmentDate() != null)
-                .findFirst()
-                .orElseGet(() -> assessmentRecords.isEmpty() ? null : assessmentRecords.get(0));
+                .filter(r -> r.getResultId() != null)
+                .max((r1, r2) -> Long.compare(r1.getResultId(), r2.getResultId()))
+                .orElse(assessmentRecords.isEmpty() ? null : assessmentRecords.get(0));
+            log.info("[Neo4j] 评估记录解析 - 共 {} 条, latest: resultId={}, score={}, risk={}, title={}",
+                assessmentRecords.size(),
+                latest != null ? latest.getResultId() : null,
+                latest != null ? latest.getTotalScore() : null,
+                latest != null ? latest.getRiskLevel() : null,
+                latest != null ? latest.getQuestionnaireTitle() : null);
             if (latest != null) {
                 builder.latestScore(latest.getTotalScore())
                        .riskLevel(latest.getRiskLevel())
                        .latestAssessmentDate(latest.getAssessmentDate());
             }
+        } else {
+            log.debug("[Neo4j] 评估记录为空 - userId: {}", userId);
         }
 
         List<Object> emotions = record.get("emotions").asList();

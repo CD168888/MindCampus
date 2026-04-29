@@ -7,6 +7,7 @@ import com.mc.knowledge.mapper.EvaluationResultMapper;
 import com.mc.knowledge.mapper.StudentInfoMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,9 @@ public class KgSyncService {
 
     @Resource
     private JdbcTemplate jdbcTemplate;
+
+    @Resource
+    private ChatClient chatClient;
 
     /**
      * 每日凌晨2点同步所有学生数据到 Neo4j
@@ -197,12 +201,16 @@ public class KgSyncService {
             // 同步情绪状态
             Map<String, Object> emotionSync = syncAllEmotionStates();
 
+            // AI 生成所有学生画像
+            Map<String, Object> profileSync = syncAllProfiles();
+
             long cost = System.currentTimeMillis() - startTime;
             result.put("success", true);
             result.put("studentSync", Map.of("success", studentSuccess, "fail", studentFail));
             result.put("evaluationSync", Map.of("success", evalSuccess, "fail", evalFail));
             result.put("chatSync", chatSync);
             result.put("emotionSync", emotionSync);
+            result.put("profileSync", profileSync);
             result.put("costMs", cost);
             log.info("[KgSync] 手动全量同步完成 - {}", result);
         } catch (Exception e) {
@@ -325,6 +333,44 @@ public class KgSyncService {
         return syncResult;
     }
 
+    /**
+     * 同步所有学生的 AI 画像
+     */
+    public Map<String, Object> syncAllProfiles() {
+        Map<String, Object> syncResult = new LinkedHashMap<>();
+        int successCount = 0;
+        int failCount = 0;
+
+        List<StudentInfo> students = knowledgeStudentInfoMapper.selectAllStudents();
+        for (StudentInfo student : students) {
+            if (student.getUserId() == null) continue;
+            try {
+                analyzeAndSyncProfile(student.getUserId(), student.getStudentId(),
+                    student.getName(), student.getGrade(), student.getMajor());
+                successCount++;
+            } catch (Exception e) {
+                failCount++;
+                log.warn("[KgSync] AI生成画像失败 - userId: {}, name: {}", student.getUserId(), student.getName());
+            }
+        }
+
+        syncResult.put("success", successCount);
+        syncResult.put("fail", failCount);
+        log.info("[KgSync] AI画像同步完成 - 成功: {}, 失败: {}", successCount, failCount);
+        return syncResult;
+    }
+
+    @Scheduled(cron = "0 30 2 * * ?")
+    public void syncAllProfilesDaily() {
+        log.info("[KgSync] 开始每日AI画像同步...");
+        try {
+            syncAllProfiles();
+            log.info("[KgSync] 每日AI画像同步完成");
+        } catch (Exception e) {
+            log.error("[KgSync] 每日AI画像同步失败", e);
+        }
+    }
+
     private String extractEmotionFromContext(String context) {
         if (context == null || context.isEmpty()) return null;
         String lower = context.toLowerCase();
@@ -385,6 +431,10 @@ public class KgSyncService {
             // 同步该学生的情绪状态
             syncEmotionStateByUserId(student.getUserId());
 
+            // AI 自动分析并生成画像
+            analyzeAndSyncProfile(student.getUserId(), studentId,
+                student.getName(), student.getGrade(), student.getMajor());
+
             log.info("[KgSync] 同步学生数据完成 - studentId: {}, userId: {}", studentId, student.getUserId());
         }
     }
@@ -440,5 +490,187 @@ public class KgSyncService {
         } catch (Exception e) {
             log.warn("[KgSync] 同步情绪状态失败 - userId: {}", userId, e);
         }
+    }
+
+    private static final String PROFILE_ANALYSIS_PROMPT = """
+            你是一位专业的大学生心理健康画像分析专家。请根据以下学生的评估数据，为其生成一份心理画像。
+
+            【学生基本信息】
+            - 姓名：{0}
+            - 年级：{1}
+            - 专业：{2}
+
+            【评估记录】（按时间从新到旧排列）
+            {3}
+
+            【近期情绪状态】
+            {4}
+
+            【对话互动情况】
+            {5}
+
+            请分析以上数据，从以下四个维度生成画像：
+
+            1. **性格特点（personality）**：用一段话（50字以内）描述该学生的性格特征，结合评估分数和情绪状态。
+            2. **沟通风格（communicationStyle）**：用一段话（30字以内）描述该学生的沟通偏好或风格。
+            3. **兴趣爱好（interests）**：列出2-4个该学生可能感兴趣的话题或领域（用JSON数组格式，例如：["学业规划", "职业发展", "情绪管理"]）。
+            4. **关注事项（concerns）**：列出2-4个该学生当前最关心或最担忧的问题（用JSON数组格式，例如：["就业压力", "人际关系", "学业焦虑"]）。
+
+            输出格式（必须严格输出标准JSON，不要输出任何解释或说明）：
+            {
+                "personality": "性格特点描述",
+                "communicationStyle": "沟通风格描述",
+                "interests": ["兴趣1", "兴趣2", ...],
+                "concerns": ["关注事项1", "关注事项2", ...]
+            }
+            """;
+
+    /**
+     * AI 自动分析并生成学生心理画像，写入 Neo4j
+     */
+    public void analyzeAndSyncProfile(Long userId, Long studentId, String name, String grade, String major) {
+        try {
+            // 1. 获取评估记录
+            List<String> assessmentLines = new ArrayList<>();
+            List<KnowledgeEvaluationResult> evaluations = knowledgeEvaluationResultMapper.selectRecentByStudentId(studentId, 5);
+            if (evaluations != null && !evaluations.isEmpty()) {
+                for (int i = 0; i < evaluations.size(); i++) {
+                    KnowledgeEvaluationResult e = evaluations.get(i);
+                    String dateStr = e.getCreateTime() != null ? e.getCreateTime().toString() : "未知";
+                    assessmentLines.add(String.format("第%d条：[%s] %s，总分 %d，风险等级 %s",
+                        i + 1, dateStr, e.getQuestionnaireTitle() != null ? e.getQuestionnaireTitle() : "未知",
+                        e.getTotalScore() != null ? e.getTotalScore() : 0,
+                        e.getRiskLevel() != null ? e.getRiskLevel() : "未知"));
+                }
+            } else {
+                assessmentLines.add("暂无评估记录");
+            }
+
+            // 2. 获取情绪状态
+            String emotionState = queryEmotionState(userId);
+            if (emotionState == null || emotionState.isEmpty()) {
+                emotionState = "暂无情绪记录";
+            }
+
+            // 3. 获取对话互动情况
+            String chatInfo = queryChatInfo(userId);
+            if (chatInfo == null || chatInfo.isEmpty()) {
+                chatInfo = "暂无对话记录";
+            }
+
+            // 4. 拼接 Prompt
+            String assessmentText = String.join("\n", assessmentLines);
+            String prompt = PROFILE_ANALYSIS_PROMPT
+                .replace("{0}", name != null ? name : "未知")
+                .replace("{1}", grade != null ? grade : "未知")
+                .replace("{2}", major != null ? major : "未知")
+                .replace("{3}", assessmentText)
+                .replace("{4}", emotionState)
+                .replace("{5}", chatInfo);
+
+            // 5. 调用 AI
+            log.info("[KgSync] 开始AI分析学生画像 - userId: {}", userId);
+            String response = chatClient.prompt()
+                .user(prompt)
+                .call()
+                .content();
+
+            if (response == null || response.isEmpty()) {
+                log.warn("[KgSync] AI返回为空 - userId: {}", userId);
+                return;
+            }
+
+            // 6. 解析 JSON 结果
+            ProfileAnalysisResult result = parseProfileAnalysisResult(response);
+            if (result == null) {
+                log.warn("[KgSync] AI返回格式解析失败 - userId: {}, response: {}", userId, response);
+                return;
+            }
+
+            // 7. 写入 Neo4j
+            neo4jClient.upsertProfile(userId,
+                result.personality,
+                result.communicationStyle,
+                result.interests,
+                result.concerns);
+
+            log.info("[KgSync] AI生成画像完成 - userId: {}, personality: {}, communicationStyle: {}",
+                userId, result.personality, result.communicationStyle);
+
+        } catch (Exception e) {
+            log.error("[KgSync] AI分析画像失败 - userId: {}", userId, e);
+        }
+    }
+
+    private String queryEmotionState(Long userId) {
+        String sql = """
+            SELECT e.emotion as emotion, e.intensity as intensity, e.date as date
+            FROM emotion_state e
+            JOIN ai_chat_session c ON e.session_id = c.session_id
+            WHERE c.user_id = ?
+            ORDER BY e.date DESC
+            LIMIT 1
+            """;
+        try {
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, userId);
+            if (!rows.isEmpty()) {
+                Map<String, Object> row = rows.get(0);
+                String emotion = (String) row.get("emotion");
+                Integer intensity = row.get("intensity") instanceof Number ? ((Number) row.get("intensity")).intValue() : 5;
+                return String.format("%s（强度 %d/10）", emotion != null ? emotion : "未知", intensity);
+            }
+        } catch (Exception e) {
+            log.debug("[KgSync] 查询情绪状态失败 - userId: {}, error: {}", userId, e.getMessage());
+        }
+        return null;
+    }
+
+    private String queryChatInfo(Long userId) {
+        String sql = """
+            SELECT COUNT(DISTINCT c.session_id) as sessionCount,
+                   COUNT(m.message_id) as messageCount
+            FROM ai_chat_session c
+            JOIN ai_chat_message m ON c.session_id = m.session_id
+            WHERE c.user_id = ? AND m.message_type = 1
+            """;
+        try {
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, userId);
+            if (!rows.isEmpty()) {
+                Map<String, Object> row = rows.get(0);
+                Integer sessionCount = row.get("sessionCount") instanceof Number ? ((Number) row.get("sessionCount")).intValue() : 0;
+                Integer messageCount = row.get("messageCount") instanceof Number ? ((Number) row.get("messageCount")).intValue() : 0;
+                if (sessionCount > 0 || messageCount > 0) {
+                    return String.format("共 %d 个会话，%d 条消息", sessionCount, messageCount);
+                }
+            }
+        } catch (Exception e) {
+            log.debug("[KgSync] 查询对话信息失败 - userId: {}, error: {}", userId, e.getMessage());
+        }
+        return null;
+    }
+
+    private ProfileAnalysisResult parseProfileAnalysisResult(String json) {
+        try {
+            String cleaned = json.trim();
+            int jsonStart = cleaned.indexOf("{");
+            int jsonEnd = cleaned.lastIndexOf("}");
+            if (jsonStart == -1 || jsonEnd == -1) {
+                return null;
+            }
+            cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            return mapper.readValue(cleaned, ProfileAnalysisResult.class);
+        } catch (Exception e) {
+            log.error("[KgSync] 解析画像分析结果失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public static class ProfileAnalysisResult {
+        public String personality;
+        public String communicationStyle;
+        public List<String> interests;
+        public List<String> concerns;
     }
 }
