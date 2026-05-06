@@ -198,11 +198,19 @@
 </template>
 
 <script>
-import { getSessions, getMessages, deleteSession, updateSessionTitle, streamChat, cancelStream, createSession } from '@/api/ai.js';
-import { adjustHeight, formatTime, generateUUID, goBack, onInputBlur, onInputFocus, scrollToBottom } from './ai.js';
+import {
+  cancelStream,
+  createSession,
+  deleteSession,
+  getMessages,
+  getSessions,
+  streamChat,
+  updateSessionTitle
+} from '@/api/ai.js';
+import {adjustHeight, formatTime, onInputBlur, onInputFocus, scrollToBottom} from './ai.js';
 import UaMarkdown from '@/components/ua2-markdown/ua-markdown.vue';
 import config from '@/config';
-import { getToken } from '@/utils/auth';
+import {getToken} from '@/utils/auth';
 
 export default {
   components: { UaMarkdown },
@@ -229,7 +237,9 @@ export default {
       safeAreaBottom: 34,
       userAvatar: uni.getStorageSync('avatar') || '/static/images/profile.jpg',
       aiAvatar: 'https://wallpaper-web-pro.oss-cn-beijing.aliyuncs.com/images/ai.png',
-      chatType: 'chat'
+      chatType: 'chat',
+      enableRag: true,
+      enableKg: true
     }
   },
   computed: {
@@ -499,6 +509,8 @@ export default {
           sessionId: this.sessionId,
           files: filesToSend.length > 0 ? filesToSend : undefined,
           fileUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : undefined,
+          enableRag: this.enableRag,
+          enableKg: this.enableKg,
           onSessionId: (newSessionId) => { that.sessionId = parseInt(newSessionId); },
           onMessage: async (chunk, fullContent) => {
             that.fullResponse = fullContent;
