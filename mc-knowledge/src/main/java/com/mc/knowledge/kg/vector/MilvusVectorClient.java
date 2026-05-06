@@ -8,6 +8,7 @@ import com.mc.knowledge.kg.service.IEmbeddingService;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.HasCollectionReq;
+import io.milvus.v2.service.collection.request.LoadCollectionReq;
 import io.milvus.v2.service.vector.request.DeleteReq;
 import io.milvus.v2.service.vector.request.InsertReq;
 import io.milvus.v2.service.vector.request.SearchReq;
@@ -58,6 +59,12 @@ public class MilvusVectorClient {
             } else {
                 log.info("[Milvus] Collection '{}' 已存在", COLLECTION_NAME);
             }
+            // 加载 Collection 到内存
+            milvusClient.loadCollection(
+                LoadCollectionReq.builder()
+                    .collectionName(COLLECTION_NAME)
+                    .build());
+            log.info("[Milvus] Collection '{}' 加载成功", COLLECTION_NAME);
         } catch (Exception e) {
             log.warn("[Milvus] 初始化 Collection 失败: {}", e.getMessage());
         }
@@ -91,6 +98,12 @@ public class MilvusVectorClient {
 
             if (resp.getInsertCnt() > 0) {
                 log.info("[Milvus] 插入 {} 条向量成功", resp.getInsertCnt());
+                // 插入数据后需要重新加载 Collection
+                milvusClient.loadCollection(
+                    LoadCollectionReq.builder()
+                        .collectionName(COLLECTION_NAME)
+                        .build());
+                log.info("[Milvus] Collection '{}' 重新加载成功", COLLECTION_NAME);
             }
             return chunks.stream().map(c -> c.getChunkId()).collect(Collectors.toList());
         } catch (Exception e) {
@@ -101,6 +114,16 @@ public class MilvusVectorClient {
 
     public List<RagResultDTO> search(float[] queryVector, Long kbId, int topK, double minScore) {
         try {
+            // 确保 Collection 已加载
+            try {
+                milvusClient.loadCollection(
+                    LoadCollectionReq.builder()
+                        .collectionName(COLLECTION_NAME)
+                        .build());
+            } catch (Exception ignored) {
+                // 已加载时会抛异常，忽略即可
+            }
+
             SearchResp resp = milvusClient.search(
                 SearchReq.builder()
                     .collectionName(COLLECTION_NAME)

@@ -19,7 +19,7 @@ import java.util.List;
  *
  * @author MindCampus
  */
-@Service
+@Service("studentProfileKGService")
 @Slf4j
 public class StudentProfileKGServiceImpl implements IStudentProfileKGService {
 

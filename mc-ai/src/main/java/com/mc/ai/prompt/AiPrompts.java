@@ -138,19 +138,19 @@ public class AiPrompts {
     /**
      * 学生端 RAG + 知识图谱增强版提示词模板
      * 占位符：
-     * {0} = 用户画像上下文（来自 Neo4j 知识图谱）
-     * {1} = 知识库上下文（来自 Milvus RAG 检索）
-     * {2} = 原 STUDENT_WELL_BEING_PROMPT 内容
+     * %1$s = 用户画像上下文（来自 Neo4j 知识图谱）
+     * %2$s = 知识库上下文（来自 Milvus RAG 检索）
+     * %3$s = 原 STUDENT_WELL_BEING_PROMPT 内容
      */
     public static final String STUDENT_WELL_BEING_PROMPT_RAG_TEMPLATE = """
             【用户画像】（来自知识图谱）
-            {0}
+            %1$s
 
             【知识库参考】（来自 RAG 检索）
-            {1}
+            %2$s
 
             ---
             【系统角色】
-            {2}
+            %3$s
             """;
 }
