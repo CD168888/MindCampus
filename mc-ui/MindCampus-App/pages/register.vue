@@ -24,7 +24,7 @@
             <image v-if="globalConfig.appInfo && globalConfig.appInfo.logo" :src="globalConfig.appInfo.logo" mode="aspectFill" class="app-logo"></image>
             <uni-icons v-else type="paperplane-filled" size="48" color="#2CB5A0"></uni-icons>
           </view>
-          <text class="hero-title">加入 MindCampus</text>
+          <text class="hero-title">加入 青矜智护</text>
           <text class="hero-desc">创建您的专属账号，开启治愈之旅</text>
         </view>
 
@@ -116,7 +116,7 @@
 </template>
 
 <script>
-import { getCodeImg, register } from '@/api/login'
+import {getCodeImg, register} from '@/api/login'
 
 export default {
   data() {

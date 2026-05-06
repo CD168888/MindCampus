@@ -75,7 +75,7 @@ export default {
           childList: [
             {
               title: '项目是开源的吗？',
-              content: '本项目目前暂未完全开源，你可以访问我的 GitHub 主页：https://github.com/CD168888 关注我，也可以为其他项目点亮 Star 支持。待毕设完成后（6 月），项目将全部开源。',
+              content: '本项目目前暂未完全开源',
               isOpen: false
             }
           ]

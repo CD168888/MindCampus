@@ -22,7 +22,7 @@
             <image v-if="globalConfig.appInfo && globalConfig.appInfo.logo" :src="globalConfig.appInfo.logo" mode="aspectFill" class="app-logo"></image>
             <uni-icons v-else type="paperplane-filled" size="48" color="#2CB5A0"></uni-icons>
           </view>
-          <text class="hero-title">欢迎回到 MindCampus</text>
+          <text class="hero-title">欢迎回到 青矜智护</text>
           <text class="hero-desc">登录您的账号，开启治愈之旅</text>
         </view>
 
