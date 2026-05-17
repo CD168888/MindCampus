@@ -10,15 +10,28 @@ import useUserStore from '@/store/modules/user'
 let downloadLoadingInstance
 // 是否显示重新登录
 export let isRelogin = { show: false }
+// 401 重登录 Promise 单例（防止多个请求同时返回401时弹出多个对话框）
+let reloginPromise = null
 
 axios.defaults.headers['Content-Type'] = 'application/json;charset=utf-8'
 // 创建axios实例
 const service = axios.create({
   // axios中请求配置有baseURL选项，表示请求URL公共部分
   baseURL: import.meta.env.VITE_APP_BASE_API,
-  // 超时
-  timeout: 10000
+  // 超时（默认30秒）
+  timeout: 30000
 })
+
+/**
+ * AI 接口专用请求（超时时间120秒）
+ * 用于 AI 对话、评估等需要较长处理时间的接口
+ */
+export function aiRequest(config) {
+  return service({
+    ...config,
+    timeout: 120000
+  })
+}
 
 // request拦截器
 service.interceptors.request.use(config => {
@@ -82,17 +95,17 @@ service.interceptors.response.use(res => {
       return res.data
     }
     if (code === 401) {
-      if (!isRelogin.show) {
-        isRelogin.show = true
-        ElMessageBox.confirm('登录状态已过期，您可以继续留在该页面，或者重新登录', '系统提示', { confirmButtonText: '重新登录', cancelButtonText: '取消', type: 'warning' }).then(() => {
-          isRelogin.show = false
+      if (!reloginPromise) {
+        reloginPromise = ElMessageBox.confirm('登录状态已过期，您可以继续留在该页面，或者重新登录', '系统提示', { confirmButtonText: '重新登录', cancelButtonText: '取消', type: 'warning' }).then(() => {
           useUserStore().logOut().then(() => {
             location.href = '/index'
           })
-      }).catch(() => {
-        isRelogin.show = false
-      })
-    }
+        }).catch(() => {
+          // 用户取消
+        }).finally(() => {
+          reloginPromise = null
+        })
+      }
       return Promise.reject('无效的会话，或者会话已过期，请重新登录。')
     } else if (code === 500) {
       ElMessage({ message: msg, type: 'error' })
