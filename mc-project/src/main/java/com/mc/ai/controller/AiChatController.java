@@ -81,8 +81,9 @@ public class AiChatController {
         // 验证用户登录
         Long userId = SecurityUtils.getUserId();
 
-        log.info("接收到 AI 对话请求 - 用户ID: {}, 会话ID: {}, 消息: {}, enableRag: {}, enableKg: {}",
-            userId, sessionId, message, enableRag, enableKg);
+        // 不记录用户消息内容，保护隐私（心理健康相关对话可能包含敏感信息）
+        log.info("接收到 AI 对话请求 - 用户ID: {}, 会话ID: {}, 消息长度: {}, enableRag: {}, enableKg: {}",
+            userId, sessionId, message != null ? message.length() : 0, enableRag, enableKg);
 
         // 验证或创建会话
         Long validSessionId = validateOrCreateSession(sessionId, userId);
