@@ -2,6 +2,7 @@ package com.mc.intervention.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mc.common.core.domain.entity.SysUser;
+import com.mc.common.utils.QuestionnaireUtils;
 import com.mc.common.utils.email.EmailService;
 import com.mc.counselor.domain.CounselorInfo;
 import com.mc.counselor.service.ICounselorDeptService;
@@ -30,6 +31,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -304,14 +306,18 @@ public class InterventionNotificationServiceImpl implements IInterventionNotific
         if (answers == null || answers.isEmpty()) {
             return "无";
         }
-        return answers.stream()
-                .map(answer -> {
-                    String question = "题目: " + answer.getContent();
-                    String type = "类型: " + ("choice".equals(answer.getType()) ? "选择题" : "简答题");
-                    String userAnswer = "用户回答: " + answer.getUserAnswer();
-                    return String.format("%s\n%s\n%s", question, type, userAnswer);
-                })
-                .collect(Collectors.joining("\n\n"));
+
+        List<String> contents = new ArrayList<>();
+        List<String> types = new ArrayList<>();
+        List<String> userAnswers = new ArrayList<>();
+
+        for (QuestionnaireAnswer answer : answers) {
+            contents.add(answer.getContent());
+            types.add(answer.getType());
+            userAnswers.add(answer.getUserAnswer());
+        }
+
+        return QuestionnaireUtils.buildQuestionnaireContent(contents, types, userAnswers);
     }
 
     /**
