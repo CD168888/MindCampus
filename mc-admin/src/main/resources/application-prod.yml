@@ -1,19 +1,84 @@
-# 生产环境配置 - 所有敏感信息从环境变量读取
-# 使用方式：java -jar mc-admin.jar --spring.profiles.active=prod,druid
+# =============================================================================
+# 生产/打包环境配置文件
+# 打包命令: mvn clean package -Dmaven.test.skip=true
+# 运行命令: java -jar mc-admin.jar --spring.profiles.active=druid,prod
+#
+# 部署前请根据实际服务器环境填写以下配置项
+# =============================================================================
 
-# 生产环境关闭调试
 spring:
   devtools:
     restart:
       enabled: false
 
-# 日志级别调整
+  # ---- MySQL 数据库 ----
+  datasource:
+    druid:
+      master:
+        url:
+        username:
+        password:
+      statViewServlet:
+        login-username:
+        login-password:
+
+  # ---- Redis ----
+  data:
+    redis:
+      host:
+      port:
+      password:
+
+  # ---- DashScope AI ----
+  ai:
+    dashscope:
+      api-key:
+    memory:
+      redis:
+        host:
+        port:
+
+  # ---- Neo4j ----
+  neo4j:
+    uri:
+    authentication:
+      username:
+      password:
+
+  # ---- Milvus ----
+  milvus:
+    uri:
+    token:
+
+  # ---- 邮件 ----
+  mail:
+    host:
+    port:
+    username:
+    password:
+
+# ---- JWT Token ----
+token:
+  secret:
+
+# ---- 阿里云 OSS ----
+oss:
+  endpoint:
+  access-key-id:
+  access-key-secret:
+  bucket-name:
+
+# ---- 文件上传路径 ----
+ruoyi:
+  profile:
+
+# ---- 日志级别 ----
 logging:
   level:
     com.mc: info
     org.springframework: warn
 
-# 生产环境关闭 Swagger/Knife4j
+# ---- 关闭 Swagger/Knife4j ----
 springdoc:
   swagger-ui:
     enabled: false
@@ -22,7 +87,7 @@ knife4j:
   enable: false
   production: true
 
-# Tomcat 线程池调优
+# ---- Tomcat 线程池调优 ----
 server:
   tomcat:
     threads:

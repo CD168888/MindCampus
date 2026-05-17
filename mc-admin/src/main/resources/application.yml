@@ -6,8 +6,8 @@ ruoyi:
   version: 3.9.0
   # 版权年份
   copyrightYear: 2025
-  # 文件路径 示例（ Windows配置D:/ruoyi/uploadPath，Linux配置 /home/ruoyi/uploadPath）
-  profile: C:/Users/86173/Desktop/毕设项目/log/uploadPath
+  # 文件路径（在 application-local.yml 中配置）
+  profile: ./uploadPath
   # 获取ip地址开关
   addressEnabled: false
   # 验证码类型 math 数字计算 char 字符验证
@@ -52,7 +52,7 @@ spring:
     # 国际化资源文件路径
     basename: i18n/messages
   profiles:
-    active: druid
+    active: druid,local
   # 文件上传
   servlet:
     multipart:
@@ -66,16 +66,12 @@ spring:
       # 热部署开关
       enabled: true
   data:
-    # redis 配置
+    # redis 配置（在 application-local.yml 中配置）
     redis:
-      # 地址
-      host: localhost
-      # 端口，默认为6379
-      port: 6379
-      # 数据库索引
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       database: 0
-      # 密码
-      password:
+      password: ${REDIS_PASSWORD:}
       # 连接超时时间
       timeout: 10s
       lettuce:
@@ -91,8 +87,8 @@ spring:
 
   ai:
     dashscope:
-      # DashScope 的 API Key（从环境变量读取，本地开发可配置 application-local.yml）
-      api-key: ${DASHSCOPE_API_KEY:sk-placeholder-replace-with-real-key}
+      # DashScope API Key（在 application-local.yml 中配置）
+      api-key: ${DASHSCOPE_API_KEY:}
       # HTTP 请求超时时间（生成多道题目需要较长等待）
       timeout: 120s
       chat:
@@ -104,8 +100,8 @@ spring:
 
     memory:
       redis:
-        host: ${REDIS_HOST:localhost}
-        port: ${REDIS_PORT:6379}
+        host: ${spring.data.redis.host}
+        port: ${spring.data.redis.port}
         timeout: 20000
 
     # MCP Client 配置：连接外部MCP服务器
@@ -120,12 +116,12 @@ spring:
         stdio:
           servers-configuration: classpath:mcp-servers.json
 
-  # 邮件服务器配置（QQ邮箱SMTP）
+  # 邮件服务器配置（在 application-local.yml 中配置）
   mail:
-    host: smtp.qq.com
-    port: 465
-    username: 2364728886@qq.com
-    password: ${MAIL_SMTP_PASSWORD:}
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     default-encoding: UTF-8
     protocol: smtps
     properties:
@@ -141,17 +137,17 @@ spring:
             port: 465
             class: javax.net.ssl.SSLSocketFactory
             fallback: false
-  # Neo4j 图数据库配置（阿里云 ECS）
+  # Neo4j 图数据库配置（在 application-local.yml 中配置）
   neo4j:
-    uri: bolt://8.221.103.214:7687
+    uri: ${NEO4J_URI:bolt://localhost:7687}
     authentication:
-      username: neo4j
-      password: ${NEO4J_PASSWORD:password}
+      username: ${NEO4J_USERNAME:neo4j}
+      password: ${NEO4J_PASSWORD:}
 
-  # Milvus / Zilliz Cloud 向量数据库配置（阿里云 ECS）
+  # Milvus 向量数据库配置（在 application-local.yml 中配置）
   milvus:
-    uri: http://8.221.103.214:19530
-    token: ${MILVUS_TOKEN:1234567890}
+    uri: ${MILVUS_URI:http://localhost:19530}
+    token: ${MILVUS_TOKEN:}
 
   # 知识图谱与 RAG 配置
   knowledge:
@@ -178,11 +174,9 @@ spring:
       # 忽略未知属性
       fail-on-unknown-properties: false
 
-# token配置
+# token配置（在 application-local.yml 中配置）
 token:
-  # 令牌自定义标识
   header: Authorization
-  # 令牌密钥（生产环境必须通过环境变量设置，建议使用 openssl rand -base64 64 生成）
   secret: ${JWT_SECRET:abcdefghijklmnopqrstuvwxyz}
   # 令牌有效期（默认30分钟）
   expireTime: 30
@@ -249,9 +243,9 @@ knife4j:
   setting:
     swagger-model-name: 心理健康系统实体类
 
-# oss配置
+# oss配置（在 application-local.yml 中配置）
 oss:
-  endpoint: oss-cn-beijing.aliyuncs.com
+  endpoint: ${OSS_ENDPOINT:oss-cn-beijing.aliyuncs.com}
   access-key-id: ${OSS_ACCESS_KEY_ID:}
   access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
-  bucket-name: sky-take-out-jcd
+  bucket-name: ${OSS_BUCKET_NAME:}
