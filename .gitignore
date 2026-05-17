@@ -51,3 +51,7 @@ nbdist/
 #mc-ui/MindCampus-App
 
 deploy
+
+# 本地开发配置（包含敏感信息，不要提交）
+mc-admin/src/main/resources/application-local.yml
+mc-admin/src/main/resources/application-local.yml.bak

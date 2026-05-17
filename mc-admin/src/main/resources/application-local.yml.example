@@ -1,0 +1,46 @@
+# 本地开发配置模板
+# 使用方式：复制此文件为 application-local.yml，填入真实的配置值
+# 然后在 application.yml 中激活 local profile
+
+# DashScope API Key（从 https://dashscope.console.aliyun.com 获取）
+spring:
+  ai:
+    dashscope:
+      api-key: your-dashscope-api-key-here
+
+  # MySQL 数据库
+  datasource:
+    druid:
+      master:
+        password: your-mysql-password
+
+  # Redis
+  data:
+    redis:
+      password: your-redis-password
+
+  # Neo4j
+  neo4j:
+    authentication:
+      password: your-neo4j-password
+
+  # Milvus
+  milvus:
+    token: your-milvus-token
+
+  # 邮件
+  mail:
+    password: your-mail-smtp-password
+
+# JWT 密钥（建议使用 64 字节随机字符串，可通过 openssl rand -base64 64 生成）
+token:
+  secret: your-jwt-secret-key-at-least-64-bytes
+
+# 阿里云 OSS
+oss:
+  access-key-id: your-oss-access-key-id
+  access-key-secret: your-oss-access-key-secret
+
+# Tavily API Key（从 https://tavily.com 获取）
+tavily:
+  api-key: your-tavily-api-key
