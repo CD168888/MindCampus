@@ -148,52 +148,9 @@ public class KgSyncService {
         long startTime = System.currentTimeMillis();
 
         try {
-            // 先同步学生
-            List<StudentInfo> students = knowledgeStudentInfoMapper.selectAllStudents();
-            int studentSuccess = 0;
-            int studentFail = 0;
-            for (StudentInfo student : students) {
-                try {
-                    if (student.getUserId() != null) {
-                        neo4jClient.upsertStudent(
-                            student.getUserId(),
-                            student.getStudentId(),
-                            student.getStudentNo(),
-                            student.getName(),
-                            student.getGrade(),
-                            student.getMajor(),
-                            student.getClassName()
-                        );
-                        studentSuccess++;
-                    }
-                } catch (Exception e) {
-                    studentFail++;
-                }
-            }
-
-            // 再同步评估结果
-            List<KnowledgeEvaluationResult> results = knowledgeEvaluationResultMapper.selectAllResults();
-            int evalSuccess = 0;
-            int evalFail = 0;
-            for (KnowledgeEvaluationResult evalResult : results) {
-                try {
-                    if (evalResult.getStudentId() != null) {
-                        Long userId = getUserIdByStudentId(evalResult.getStudentId());
-                        if (userId != null) {
-                            neo4jClient.addAssessment(
-                                userId,
-                                evalResult.getResultId(),
-                                evalResult.getQuestionnaireTitle(),
-                                evalResult.getTotalScore(),
-                                evalResult.getRiskLevel()
-                            );
-                            evalSuccess++;
-                        }
-                    }
-                } catch (Exception e) {
-                    evalFail++;
-                }
-            }
+            // 直接复用已有的同步方法，避免重复代码
+            syncAllStudents();
+            syncAllEvaluations();
 
             // 同步对话会话
             Map<String, Object> chatSync = syncAllChatSessions();
@@ -206,8 +163,6 @@ public class KgSyncService {
 
             long cost = System.currentTimeMillis() - startTime;
             result.put("success", true);
-            result.put("studentSync", Map.of("success", studentSuccess, "fail", studentFail));
-            result.put("evaluationSync", Map.of("success", evalSuccess, "fail", evalFail));
             result.put("chatSync", chatSync);
             result.put("emotionSync", emotionSync);
             result.put("profileSync", profileSync);
@@ -281,7 +236,7 @@ public class KgSyncService {
         int successCount = 0;
         int failCount = 0;
 
-        // 获取所有有对话的学生及其最近的对话内容
+        // 优化：在数据库层面按 userId 分组，只取每个用户最新的消息
         String sql = """
             SELECT c.user_id as userId,
                    m.content,
@@ -289,27 +244,24 @@ public class KgSyncService {
             FROM ai_chat_message m
             JOIN ai_chat_session c ON m.session_id = c.session_id
             WHERE c.user_id IS NOT NULL
-            ORDER BY c.user_id, m.create_time DESC
+              AND m.create_time = (
+                  SELECT MAX(m2.create_time)
+                  FROM ai_chat_message m2
+                  JOIN ai_chat_session c2 ON m2.session_id = c2.session_id
+                  WHERE c2.user_id = c.user_id
+              )
+            GROUP BY c.user_id
             """;
         try {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
-            // 按 userId 去重，只取最新的
-            Map<Long, Map<String, String>> latestData = new LinkedHashMap<>();
-            for (Map<String, Object> row : rows) {
-                Long userId = row.get("userId") instanceof Number ? ((Number) row.get("userId")).longValue() : null;
-                if (userId == null || latestData.containsKey(userId)) continue;
-                latestData.put(userId, Map.of(
-                    "content", row.get("content") != null ? (String) row.get("content") : "",
-                    "kgContext", row.get("kg_context") != null ? (String) row.get("kg_context") : ""
-                ));
-            }
 
-            for (Map.Entry<Long, Map<String, String>> entry : latestData.entrySet()) {
+            for (Map<String, Object> row : rows) {
                 try {
-                    Long userId = entry.getKey();
-                    Map<String, String> data = entry.getValue();
-                    String kgContext = data.get("kgContext");
-                    String content = data.get("content");
+                    Long userId = row.get("userId") instanceof Number ? ((Number) row.get("userId")).longValue() : null;
+                    if (userId == null) continue;
+
+                    String kgContext = row.get("kg_context") != null ? (String) row.get("kg_context") : "";
+                    String content = row.get("content") != null ? (String) row.get("content") : "";
                     // 优先从 kg_context 提取，其次从 AI 回复内容提取
                     String emotion = extractEmotionFromContext(kgContext);
                     if (emotion == null) {
