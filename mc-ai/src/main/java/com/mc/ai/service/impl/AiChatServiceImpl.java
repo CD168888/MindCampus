@@ -2,6 +2,7 @@ package com.mc.ai.service.impl;
 
 import com.mc.ai.prompt.AiPrompts;
 import com.mc.ai.service.IAiChatService;
+import com.mc.common.service.KnowledgeQueryService;
 import com.mc.common.utils.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -83,6 +84,8 @@ public class AiChatServiceImpl implements IAiChatService {
 
     private ApplicationContext applicationContext;
 
+    private final KnowledgeQueryService knowledgeQueryService;
+
     @Autowired
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
@@ -94,13 +97,15 @@ public class AiChatServiceImpl implements IAiChatService {
             @Qualifier("mentalHealthChatClient") ChatClient mentalHealthChatClient,
             @Qualifier("questionGenerationChatClient") ChatClient questionGenerationChatClient,
             @Qualifier("studentChatClient") ChatClient studentChatClient,
-            ChatMemory chatMemory) {
+            ChatMemory chatMemory,
+            @Autowired(required = false) KnowledgeQueryService knowledgeQueryService) {
         this.chatClient = chatClient;
         this.multiModalChatClient = multiModalChatClient;
         this.mentalHealthChatClient = mentalHealthChatClient;
         this.questionGenerationChatClient = questionGenerationChatClient;
         this.studentChatClient = studentChatClient;
         this.chatMemory = chatMemory;
+        this.knowledgeQueryService = knowledgeQueryService;
     }
 
     /**
@@ -412,18 +417,6 @@ public class AiChatServiceImpl implements IAiChatService {
     // ==================== RAG + 知识图谱增强对话 ====================
 
     /**
-     * 运行时获取知识图谱服务（避免循环依赖）
-     */
-    private Object getKnowledgeService(String serviceName) {
-        try {
-            return applicationContext.getBean(serviceName);
-        } catch (Exception e) {
-            log.warn("[RAG] 未找到知识服务 Bean: {}", serviceName);
-            return null;
-        }
-    }
-
-    /**
      * 学生端 RAG + 知识图谱增强流式对话
      */
     @Override
@@ -435,14 +428,10 @@ public class AiChatServiceImpl implements IAiChatService {
 
         // 阶段1：知识图谱检索
         String kgContext = "";
-        if (enableKg && userId != null) {
+        if (enableKg && userId != null && knowledgeQueryService != null) {
             try {
-                Object kgService = getKnowledgeService("studentProfileKGService");
-                if (kgService != null) {
-                    Method buildMethod = kgService.getClass().getMethod("buildKgContext", Long.class);
-                    kgContext = (String) buildMethod.invoke(kgService, userId);
-                    log.info("[RAG-Chat] 知识图谱上下文获取成功 - 长度: {}", kgContext.length());
-                }
+                kgContext = knowledgeQueryService.buildKgContext(userId);
+                log.info("[RAG-Chat] 知识图谱上下文获取成功 - 长度: {}", kgContext.length());
             } catch (Exception e) {
                 log.warn("[RAG-Chat] 知识图谱检索失败: {}", e.getMessage());
             }
@@ -453,34 +442,25 @@ public class AiChatServiceImpl implements IAiChatService {
 
         // 阶段2：RAG 向量检索
         String ragContext = "";
-        if (enableRag && userMessage != null && !userMessage.isBlank()) {
+        if (enableRag && userMessage != null && !userMessage.isBlank() && knowledgeQueryService != null) {
             try {
-                Object kgService = getKnowledgeService("studentProfileKGService");
-                if (kgService != null) {
-                    Method ragMethod = kgService.getClass().getMethod("ragRetrieve",
-                        String.class, Long.class, int.class);
-                    @SuppressWarnings("unchecked")
-                    List<?> ragResults = (List<?>) ragMethod.invoke(kgService, userMessage, null, 5);
-                    if (ragResults != null && !ragResults.isEmpty()) {
-                        StringBuilder sb = new StringBuilder();
-                        int idx = 1;
-                        for (Object result : ragResults) {
-                            Method contentMethod = result.getClass().getMethod("getContent");
-                            Method scoreMethod = result.getClass().getMethod("getScore");
-                            Method kbNameMethod = result.getClass().getMethod("getKbName");
-                            String content = (String) contentMethod.invoke(result);
-                            Object score = scoreMethod.invoke(result);
-                            String kbName = (String) kbNameMethod.invoke(result);
-                            if (content != null && !content.isEmpty()) {
-                                sb.append(String.format("[参考%d - %s (相似度: %.2f)] %s\n",
-                                    idx++, kbName != null ? kbName : "知识库",
-                                    score instanceof Number ? ((Number) score).doubleValue() : 0.0,
-                                    content.length() > 200 ? content.substring(0, 200) + "..." : content));
-                            }
+                List<KnowledgeQueryService.RagResult> ragResults = knowledgeQueryService.ragRetrieve(userMessage, userId, 5);
+                if (ragResults != null && !ragResults.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    int idx = 1;
+                    for (KnowledgeQueryService.RagResult result : ragResults) {
+                        String content = result.getContent();
+                        double score = result.getScore();
+                        String kbName = result.getKbName();
+                        if (content != null && !content.isEmpty()) {
+                            sb.append(String.format("[参考%d - %s (相似度: %.2f)] %s\n",
+                                idx++, kbName != null ? kbName : "知识库",
+                                score,
+                                content.length() > 200 ? content.substring(0, 200) + "..." : content));
                         }
-                        ragContext = sb.toString();
-                        log.info("[RAG-Chat] RAG 检索结果 - {} 条", ragResults.size());
                     }
+                    ragContext = sb.toString();
+                    log.info("[RAG-Chat] RAG 检索结果 - {} 条", ragResults.size());
                 }
             } catch (Exception e) {
                 log.warn("[RAG-Chat] RAG 检索失败: {}", e.getMessage());

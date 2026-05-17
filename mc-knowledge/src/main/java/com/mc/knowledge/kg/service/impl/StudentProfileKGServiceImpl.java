@@ -1,5 +1,6 @@
 package com.mc.knowledge.kg.service.impl;
 
+import com.mc.common.service.KnowledgeQueryService;
 import com.mc.knowledge.domain.vo.RagResultDTO;
 import com.mc.knowledge.domain.vo.StudentProfileNode;
 import com.mc.knowledge.kg.graph.Neo4jClient;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 学生画像知识图谱服务实现
@@ -21,7 +23,7 @@ import java.util.List;
  */
 @Service("studentProfileKGService")
 @Slf4j
-public class StudentProfileKGServiceImpl implements IStudentProfileKGService {
+public class StudentProfileKGServiceImpl implements IStudentProfileKGService, KnowledgeQueryService {
 
     @Resource
     private Neo4jClient neo4jClient;
@@ -158,5 +160,21 @@ public class StudentProfileKGServiceImpl implements IStudentProfileKGService {
             log.error("[RAG] 检索失败 - query: {}, kbId: {}", query, kbId, e);
             return new ArrayList<>();
         }
+    }
+
+    /**
+     * 实现 KnowledgeQueryService 接口的 ragRetrieve 方法
+     * 将 RagResultDTO 转换为 KnowledgeQueryService.RagResult
+     */
+    @Override
+    public List<KnowledgeQueryService.RagResult> ragRetrieve(String query, Long userId, int topK) {
+        List<RagResultDTO> dtos = ragRetrieve(query, null, topK);
+        return dtos.stream()
+            .map(dto -> new KnowledgeQueryService.RagResult(
+                dto.getContent(),
+                dto.getScore(),
+                dto.getKbName()
+            ))
+            .collect(Collectors.toList());
     }
 }
