@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 import org.springframework.web.multipart.MultipartFile;
@@ -72,6 +73,13 @@ public class AiChatServiceImpl implements IAiChatService {
     private final ChatClient studentChatClient;
 
     private final ConcurrentHashMap<String, AtomicBoolean> cancelFlags = new ConcurrentHashMap<>();
+
+    private final java.util.concurrent.ExecutorService titleExecutor =
+            java.util.concurrent.Executors.newFixedThreadPool(2, r -> {
+                Thread t = new Thread(r, "title-generator");
+                t.setDaemon(true);
+                return t;
+            });
 
     private ApplicationContext applicationContext;
 
@@ -159,7 +167,8 @@ public class AiChatServiceImpl implements IAiChatService {
                 })
                 .concatWith(Flux.just(ServerSentEvent.<String>builder()
                         .data("\u0003")
-                        .build()));
+                        .build()))
+                .doFinally(signalType -> cleanupCancelFlag(conversationId));
 
         return new StreamChatResult(sseFlux, fullContentHolder);
     }
@@ -256,7 +265,7 @@ public class AiChatServiceImpl implements IAiChatService {
     @Override
     public void generateSessionTitleAsync(String conversationId, String userMessage,
                                            String aiResponse, TitleCallback callback) {
-        new Thread(() -> {
+        titleExecutor.submit(() -> {
             try {
                 String prompt = String.format(
                         "请根据以下对话内容，生成一个5-6个字的简短标题，直接输出标题，不要其他说明。\n\n用户：%s\n\nAI：%s",
@@ -289,7 +298,7 @@ public class AiChatServiceImpl implements IAiChatService {
             } catch (Exception e) {
                 log.error("生成会话标题失败 - 会话ID: {}", conversationId, e);
             }
-        }).start();
+        });
     }
 
     /**
@@ -307,6 +316,16 @@ public class AiChatServiceImpl implements IAiChatService {
         } else {
             log.warn("未找到活跃的流式对话 - 会话ID: {}", conversationId);
         }
+    }
+
+    /**
+     * 清理指定会话的取消标志，防止内存泄漏
+     *
+     * @param conversationId 会话 ID
+     */
+    private void cleanupCancelFlag(String conversationId) {
+        cancelFlags.remove(conversationId);
+        log.debug("已清理取消标志 - 会话ID: {}", conversationId);
     }
 
     /**
@@ -384,7 +403,8 @@ public class AiChatServiceImpl implements IAiChatService {
                 })
                 .concatWith(Flux.just(ServerSentEvent.<String>builder()
                         .data("\u0003")
-                        .build()));
+                        .build()))
+                .doFinally(signalType -> cleanupCancelFlag(conversationId));
 
         return new StreamChatResult(sseFlux, fullContentHolder);
     }
@@ -506,7 +526,8 @@ public class AiChatServiceImpl implements IAiChatService {
                 fullContentHolder.append(chunk);
                 return ServerSentEvent.<String>builder().data(chunk).build();
             })
-            .concatWith(Flux.just(ServerSentEvent.<String>builder().data("\u0003").build()));
+            .concatWith(Flux.just(ServerSentEvent.<String>builder().data("\u0003").build()))
+                .doFinally(signalType -> cleanupCancelFlag(conversationId));
 
         log.info("[RAG-Chat] 增强对话返回 SSE 流 - 系统提示词长度: {}", enhancedPrompt.length());
         return new StreamChatResult(sseFlux, fullContentHolder);
