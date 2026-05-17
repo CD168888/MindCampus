@@ -120,9 +120,8 @@ public class SecurityConfig {
                 .logout(logout -> logout.logoutUrl("/logout").logoutSuccessHandler(logoutSuccessHandler))
                 // 添加JWT filter
                 .addFilterBefore(authenticationTokenFilter, UsernamePasswordAuthenticationFilter.class)
-                // 添加CORS filter
+                // 添加CORS filter（只需添加一次，在JWT filter之前即可）
                 .addFilterBefore(corsFilter, JwtAuthenticationTokenFilter.class)
-                .addFilterBefore(corsFilter, LogoutFilter.class)
                 .build();
     }
 
