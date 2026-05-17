@@ -3,10 +3,12 @@ package com.mc.evaluation.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mc.ai.service.IAiChatService;
 import com.mc.common.utils.DateUtils;
+import com.mc.common.utils.QuestionnaireUtils;
 import com.mc.evaluation.domain.EvaluationResult;
 import com.mc.evaluation.domain.QuestionnaireAnswer;
 import com.mc.evaluation.mapper.EvaluationResultMapper;
 import com.mc.evaluation.mapper.QuestionnaireAnswerMapper;
+import com.mc.evaluation.event.EvaluationCompletedEvent;
 import com.mc.evaluation.service.IMentalHealthEvaluationService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +16,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -81,14 +84,17 @@ public class MentalHealthEvaluationServiceImpl implements IMentalHealthEvaluatio
      * @return 问卷内容字符串
      */
     private String buildQuestionnaireContent(List<QuestionnaireAnswer> answers) {
-        return answers.stream()
-                .map(answer -> {
-                    String question = "题目: " + answer.getContent();
-                    String type = "类型: " + ("choice".equals(answer.getType()) ? "选择题" : "简答题");
-                    String userAnswer = "用户回答: " + answer.getUserAnswer();
-                    return String.format("%s\n%s\n%s\n", question, type, userAnswer);
-                })
-                .collect(Collectors.joining("\n"));
+        List<String> contents = new ArrayList<>();
+        List<String> types = new ArrayList<>();
+        List<String> userAnswers = new ArrayList<>();
+
+        for (QuestionnaireAnswer answer : answers) {
+            contents.add(answer.getContent());
+            types.add(answer.getType());
+            userAnswers.add(answer.getUserAnswer());
+        }
+
+        return QuestionnaireUtils.buildQuestionnaireContent(contents, types, userAnswers);
     }
 
     /**
@@ -120,9 +126,14 @@ public class MentalHealthEvaluationServiceImpl implements IMentalHealthEvaluatio
                 evaluationResultMapper.updateEvaluationResult(dbResult);
                 log.info("更新评估结果到数据库 - 测评结果ID: {}, 总得分: {}, 风险等级: {}",
                         resultId, evaluationResult.totalScore(), evaluationResult.riskLevel());
-                
+
                 // 发布评测结果更新事件，触发干预通知生成
-                eventPublisher.publishEvent(resultId);
+                EvaluationCompletedEvent event = new EvaluationCompletedEvent(
+                        resultId,
+                        dbResult.getStudentId(),
+                        evaluationResult.riskLevel()
+                );
+                eventPublisher.publishEvent(event);
             } else {
                 log.warn("未找到对应的测评结果记录 - 测评结果ID: {}", resultId);
             }

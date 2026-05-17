@@ -1,12 +1,12 @@
 package com.mc.intervention.listener;
 
-import com.mc.evaluation.domain.EvaluationResult;
-import com.mc.evaluation.service.IEvaluationResultService;
+import com.mc.evaluation.event.EvaluationCompletedEvent;
 import com.mc.intervention.service.IInterventionNotificationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * 评测结果监听器
@@ -15,35 +15,29 @@ import org.springframework.stereotype.Component;
  * @author mc
  */
 @Component
+@Slf4j
 public class EvaluationResultListener {
-    @Autowired
-    private IEvaluationResultService evaluationResultService;
-
     @Autowired
     private IInterventionNotificationService notificationService;
 
     /**
-     * 监听评测结果更新事件
+     * 监听评测完成事件，在事务提交后执行
+     * 使用 @TransactionalEventListener 确保数据已持久化后再触发干预通知
      *
-     * @param resultId 评测结果ID
+     * @param event 评测完成事件
      */
-    @Async
-    @EventListener(value = Long.class, condition = "#resultId != null")
-    public void onEvaluationResultUpdate(Long resultId) {
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onEvaluationCompleted(EvaluationCompletedEvent event) {
         try {
-            // 查询评测结果
-            EvaluationResult result = evaluationResultService.selectEvaluationResultByResultId(resultId);
-            if (result == null) {
-                return;
-            }
-
-            // 判断是否为高风险且AI分析已完成
-            if ("1".equals(result.getAiStatus()) && "高".equals(result.getRiskLevel())) {
+            // 判断是否为高风险
+            if ("高".equals(event.getRiskLevel())) {
+                log.info("检测到高风险评估结果，生成干预通知 - 结果ID: {}, 学生ID: {}",
+                        event.getResultId(), event.getStudentId());
                 // 生成干预通知
-                notificationService.generateNotification(resultId, result.getStudentId());
+                notificationService.generateNotification(event.getResultId(), event.getStudentId());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("生成干预通知失败 - 结果ID: {}", event.getResultId(), e);
         }
     }
 }
