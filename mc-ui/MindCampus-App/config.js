@@ -1,5 +1,9 @@
+// 根据环境动态设置 baseUrl
+const isProd = process.env.NODE_ENV === 'production';
+const baseUrl = isProd ? 'https://your-domain.com/api' : '/dev-api';
+
 module.exports = {
-  baseUrl: '/dev-api',
+  baseUrl: baseUrl,
   appInfo: {
     name: "MindCampus",
     version: "1.2.0",
