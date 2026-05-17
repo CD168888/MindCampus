@@ -194,7 +194,7 @@ public class MentalHealthTools {
         result.put("grade", student.getGrade());
         result.put("major", student.getMajor());
         result.put("className", student.getClassName());
-        result.put("phone", student.getPhone());
+        // 手机号属于个人隐私，不暴露给AI模型
         result.put("status", "0".equals(student.getStatus()) ? "正常" : "异常");
         return result;
     }
