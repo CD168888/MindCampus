@@ -125,9 +125,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteEvaluationResultByResultIds" parameterType="String">
-        delete from evaluation_result where result_id in 
+        delete from evaluation_result where result_id in
         <foreach item="resultId" collection="array" open="(" separator="," close=")">
             #{resultId}
         </foreach>
     </delete>
+
+    <select id="selectLatestCompletedResult" parameterType="Long" resultMap="EvaluationResultResult">
+        <include refid="selectEvaluationResultVo"/>
+        where er.student_id = #{studentId}
+          and er.completion_status = '1'
+        order by er.create_time desc
+        limit 1
+    </select>
+
+    <select id="selectRecentResults" resultMap="EvaluationResultResult">
+        <include refid="selectEvaluationResultVo"/>
+        where er.student_id = #{studentId}
+        order by er.create_time desc
+        limit #{limit}
+    </select>
 </mapper>

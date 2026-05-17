@@ -126,4 +126,27 @@ public class EvaluationResultServiceImpl implements IEvaluationResultService {
         // 再删除测评结果
         return evaluationResultMapper.deleteEvaluationResultByResultId(resultId);
     }
+
+    /**
+     * 查询指定学生最新的已完成评估结果
+     *
+     * @param studentId 学生ID
+     * @return 最新的已完成评估结果
+     */
+    @Override
+    public EvaluationResult selectLatestCompletedResult(Long studentId) {
+        return evaluationResultMapper.selectLatestCompletedResult(studentId);
+    }
+
+    /**
+     * 查询指定学生最近的评估结果列表（带分页）
+     *
+     * @param studentId 学生ID
+     * @param limit 返回数量限制
+     * @return 评估结果列表
+     */
+    @Override
+    public List<EvaluationResult> selectRecentResults(Long studentId, int limit) {
+        return evaluationResultMapper.selectRecentResults(studentId, limit);
+    }
 }

@@ -90,16 +90,9 @@ public class MentalHealthTools {
         result.put("grade", student.getGrade());
         result.put("major", student.getMajor());
 
-        EvaluationResult evalQuery = new EvaluationResult();
-        evalQuery.setStudentId(studentId);
-        List<EvaluationResult> evalList = evaluationResultService.selectEvaluationResultList(evalQuery);
+        EvaluationResult latestEval = evaluationResultService.selectLatestCompletedResult(studentId);
 
-        if (evalList != null && !evalList.isEmpty()) {
-            EvaluationResult latestEval = evalList.stream()
-                    .filter(e -> "1".equals(e.getCompletionStatus()))
-                    .max(Comparator.comparing(EvaluationResult::getCreateTime))
-                    .orElse(evalList.get(0));
-
+        if (latestEval != null) {
             result.put("latestAssessmentDate", latestEval.getCreateTime());
             result.put("latestAssessmentScore", latestEval.getTotalScore());
             result.put("latestRiskLevel", latestEval.getRiskLevel());
@@ -150,14 +143,10 @@ public class MentalHealthTools {
             limit = 10;
         }
 
-        EvaluationResult query = new EvaluationResult();
-        query.setStudentId(studentId);
-        List<EvaluationResult> list = evaluationResultService.selectEvaluationResultList(query);
+        List<EvaluationResult> list = evaluationResultService.selectRecentResults(studentId, limit);
 
         List<Map<String, Object>> reports = new ArrayList<>();
-        int count = 0;
         for (EvaluationResult eval : list) {
-            if (count >= limit) break;
             if (!"1".equals(eval.getCompletionStatus())) continue;
 
             Map<String, Object> report = new LinkedHashMap<>();
@@ -169,7 +158,6 @@ public class MentalHealthTools {
             report.put("aiAnalysisCompleted", "1".equals(eval.getAiStatus()));
             report.put("readStatus", "1".equals(eval.getReadStatus()) ? "已读" : "未读");
             reports.add(report);
-            count++;
         }
         return reports;
     }

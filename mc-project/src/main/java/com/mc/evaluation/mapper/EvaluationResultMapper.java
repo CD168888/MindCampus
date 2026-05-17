@@ -1,6 +1,7 @@
 package com.mc.evaluation.mapper;
 
 import com.mc.evaluation.domain.EvaluationResult;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -58,4 +59,21 @@ public interface EvaluationResultMapper {
      * @return 结果
      */
     public int deleteEvaluationResultByResultIds(Long[] resultIds);
+
+    /**
+     * 查询指定学生最新的已完成评估结果
+     *
+     * @param studentId 学生ID
+     * @return 最新的已完成评估结果
+     */
+    public EvaluationResult selectLatestCompletedResult(@Param("studentId") Long studentId);
+
+    /**
+     * 查询指定学生最近的评估结果列表（带分页）
+     *
+     * @param studentId 学生ID
+     * @param limit 返回数量限制
+     * @return 评估结果列表
+     */
+    public List<EvaluationResult> selectRecentResults(@Param("studentId") Long studentId, @Param("limit") int limit);
 }

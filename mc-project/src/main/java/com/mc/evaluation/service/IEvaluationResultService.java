@@ -58,4 +58,21 @@ public interface IEvaluationResultService {
      * @return 结果
      */
     public int deleteEvaluationResultByResultId(Long resultId);
+
+    /**
+     * 查询指定学生最新的已完成评估结果
+     *
+     * @param studentId 学生ID
+     * @return 最新的已完成评估结果
+     */
+    public EvaluationResult selectLatestCompletedResult(Long studentId);
+
+    /**
+     * 查询指定学生最近的评估结果列表（带分页）
+     *
+     * @param studentId 学生ID
+     * @param limit 返回数量限制
+     * @return 评估结果列表
+     */
+    public List<EvaluationResult> selectRecentResults(Long studentId, int limit);
 }
