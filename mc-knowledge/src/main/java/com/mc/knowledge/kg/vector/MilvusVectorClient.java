@@ -41,6 +41,11 @@ public class MilvusVectorClient {
 
     private final Gson gson = new Gson();
 
+    /**
+     * Collection 是否已加载到内存的标志位
+     */
+    private volatile boolean collectionLoaded = false;
+
     @PostConstruct
     public void initCollection() {
         try {
@@ -64,6 +69,7 @@ public class MilvusVectorClient {
                 LoadCollectionReq.builder()
                     .collectionName(COLLECTION_NAME)
                     .build());
+            collectionLoaded = true;
             log.info("[Milvus] Collection '{}' 加载成功", COLLECTION_NAME);
         } catch (Exception e) {
             log.warn("[Milvus] 初始化 Collection 失败: {}", e.getMessage());
@@ -103,6 +109,7 @@ public class MilvusVectorClient {
                     LoadCollectionReq.builder()
                         .collectionName(COLLECTION_NAME)
                         .build());
+                collectionLoaded = true;
                 log.info("[Milvus] Collection '{}' 重新加载成功", COLLECTION_NAME);
             }
             return chunks.stream().map(c -> c.getChunkId()).collect(Collectors.toList());
@@ -114,14 +121,17 @@ public class MilvusVectorClient {
 
     public List<RagResultDTO> search(float[] queryVector, Long kbId, int topK, double minScore) {
         try {
-            // 确保 Collection 已加载
-            try {
-                milvusClient.loadCollection(
-                    LoadCollectionReq.builder()
-                        .collectionName(COLLECTION_NAME)
-                        .build());
-            } catch (Exception ignored) {
-                // 已加载时会抛异常，忽略即可
+            // 确保 Collection 已加载（使用标志位避免重复加载）
+            if (!collectionLoaded) {
+                synchronized (this) {
+                    if (!collectionLoaded) {
+                        milvusClient.loadCollection(
+                            LoadCollectionReq.builder()
+                                .collectionName(COLLECTION_NAME)
+                                .build());
+                        collectionLoaded = true;
+                    }
+                }
             }
 
             SearchResp resp = milvusClient.search(
