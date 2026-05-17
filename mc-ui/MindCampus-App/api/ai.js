@@ -4,6 +4,7 @@
 import request from '@/utils/request'
 import config from '@/config'
 import {getToken} from '@/utils/auth'
+import {createSSEParser} from '@/utils/sse'
 
 const baseUrl = config.baseUrl
 
@@ -94,8 +95,10 @@ export function streamChat(options) {
     const {message, sessionId, files, fileUrls, enableRag, enableKg, onMessage, onError, onComplete} = options
 
     const token = getToken()
-    let fullContent = ''
-    const END_MARKER = '\u0003'
+    const END_MARKER = ''
+
+    // 创建 SSE 解析器（复用公共解析逻辑）
+    const sseParser = createSSEParser({ onMessage, onComplete, onError })
 
     // 创建 AbortController 用于取消请求
     const abortController = new AbortController()
@@ -146,101 +149,24 @@ export function streamChat(options) {
 
             const reader = response.body.getReader()
             const decoder = new TextDecoder('utf-8')
-            let buffer = '' // 用于处理跨 chunk 的不完整行
-            let eventDataLines = [] // 收集同一个SSE事件中的所有data行
 
             function processChunk({done, value}) {
                 if (done) {
-                    // 处理最后可能残留的事件数据
-                    if (eventDataLines.length > 0) {
-                        const content = eventDataLines.join('\n')
-                        if (content && !content.includes(END_MARKER)) {
-                            fullContent += content
-                            if (typeof onMessage === 'function') {
-                                onMessage(content, fullContent)
-                            }
-                        }
-                    }
-                    // 流结束
-                    if (typeof onComplete === 'function') {
-                        onComplete(fullContent)
-                    }
+                    sseParser.processChunk('', true)
                     return
                 }
-
-                // 解码二进制数据
                 const text = decoder.decode(value, {stream: true})
-                buffer += text
-
-                // 按行分割处理 SSE 数据
-                const lines = buffer.split('\n')
-                // 保留最后一行（可能不完整）
-                buffer = lines.pop() || ''
-
-                for (const line of lines) {
-                    // 移除行末的 \r（Windows换行符）
-                    const cleanLine = line.endsWith('\r') ? line.slice(0, -1) : line
-
-                    if (cleanLine.startsWith('data:')) {
-                        // 获取data:后面的内容，不使用trim()以保留空白
-                        const data = cleanLine.substring(5)
-
-                        // 检查结束标记
-                        if (data === END_MARKER || data.includes(END_MARKER)) {
-                            // 先处理之前收集的数据
-                            if (eventDataLines.length > 0) {
-                                const content = eventDataLines.join('\n')
-                                fullContent += content
-                                if (typeof onMessage === 'function') {
-                                    onMessage(content, fullContent)
-                                }
-                                eventDataLines = []
-                            }
-                            // 处理结束标记
-                            const cleanData = data.replace(END_MARKER, '')
-                            if (cleanData) {
-                                fullContent += cleanData
-                                if (typeof onMessage === 'function') {
-                                    onMessage(cleanData, fullContent)
-                                }
-                            }
-                            if (typeof onComplete === 'function') {
-                                onComplete(fullContent)
-                            }
-                            return
-                        }
-
-                        // 收集data行（包括空字符串，因为空字符串表示换行）
-                        eventDataLines.push(data)
-                    } else if (cleanLine === '') {
-                        // 空行表示一个SSE事件结束
-                        if (eventDataLines.length > 0) {
-                            // 将同一事件的多个data行用换行符连接
-                            const content = eventDataLines.join('\n')
-                            eventDataLines = []
-
-                            if (content !== ':heartbeat') {
-                                fullContent += content
-                                if (typeof onMessage === 'function') {
-                                    onMessage(content, fullContent)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 继续读取下一个 chunk
+                sseParser.processChunk(text)
                 return reader.read().then(processChunk)
             }
 
-            // 开始读取流
             return reader.read().then(processChunk)
         })
         .catch(error => {
             if (error.name === 'AbortError') {
                 console.log('请求被中断')
                 if (typeof onComplete === 'function') {
-                    onComplete(fullContent)
+                    onComplete(sseParser.getFullContent())
                 }
             } else {
                 console.error('Fetch 错误:', error)
@@ -255,7 +181,7 @@ export function streamChat(options) {
     // 非H5端：如果有文件，先上传获取URL，再发送流式请求
     let uploadedFileUrls = fileUrls ? [...fileUrls] : []
     let filesToSend = files || []
-    
+
     // 先上传文件
     const uploadPromises = []
     if (filesToSend.length > 0) {
@@ -289,10 +215,10 @@ export function streamChat(options) {
             }
         }
     }
-    
+
     Promise.all(uploadPromises).then(uploadedUrls => {
         uploadedFileUrls = [...uploadedFileUrls, ...uploadedUrls]
-        
+
         // 构建请求URL
         let requestUrl = `${baseUrl}/ai/chatStream?message=${encodeURIComponent(message)}`
         if (sessionId) {
@@ -310,7 +236,7 @@ export function streamChat(options) {
                 requestUrl += `&fileUrls=${encodeURIComponent(url)}`
             })
         }
-        
+
         const requestTask = uni.request({
             url: requestUrl,
             method: 'POST',
@@ -323,21 +249,10 @@ export function streamChat(options) {
             success: (res) => {
                 if (res.statusCode === 200) {
                     if (typeof res.data === 'string') {
-                        const lines = res.data.split('\n')
-                        for (const line of lines) {
-                            if (line.startsWith('data:')) {
-                                const data = line.substring(5).trim()
-                                if (data && data !== END_MARKER && !data.includes(END_MARKER)) {
-                                    fullContent += data
-                                    if (typeof onMessage === 'function') {
-                                        onMessage(data, fullContent)
-                                    }
-                                }
-                            }
-                        }
+                        sseParser.processChunk(res.data, true)
                     }
                     if (typeof onComplete === 'function') {
-                        onComplete(fullContent)
+                        onComplete(sseParser.getFullContent())
                     }
                 } else {
                     if (typeof onError === 'function') {
@@ -353,63 +268,13 @@ export function streamChat(options) {
             }
         })
 
-        // 监听分块数据
-        let chunkBuffer = ''
-        let chunkEventDataLines = []
-
+        // 监听分块数据（使用公共 SSE 解析器）
         if (requestTask.onChunkReceived) {
             requestTask.onChunkReceived((res) => {
                 try {
                     const decoder = new TextDecoder('utf-8')
                     const text = decoder.decode(res.data)
-                    chunkBuffer += text
-
-                    const lines = chunkBuffer.split('\n')
-                    chunkBuffer = lines.pop() || ''
-
-                    for (const line of lines) {
-                        const cleanLine = line.endsWith('\r') ? line.slice(0, -1) : line
-
-                        if (cleanLine.startsWith('data:')) {
-                            const data = cleanLine.substring(5)
-
-                            if (data === END_MARKER || data.includes(END_MARKER)) {
-                                if (chunkEventDataLines.length > 0) {
-                                    const content = chunkEventDataLines.join('\n')
-                                    fullContent += content
-                                    if (typeof onMessage === 'function') {
-                                        onMessage(content, fullContent)
-                                    }
-                                    chunkEventDataLines = []
-                                }
-                                const cleanData = data.replace(END_MARKER, '')
-                                if (cleanData) {
-                                    fullContent += cleanData
-                                    if (typeof onMessage === 'function') {
-                                        onMessage(cleanData, fullContent)
-                                    }
-                                }
-                                if (typeof onComplete === 'function') {
-                                    onComplete(fullContent)
-                                }
-                                return
-                            }
-
-                            chunkEventDataLines.push(data)
-                        } else if (cleanLine === '') {
-                            if (chunkEventDataLines.length > 0) {
-                                const content = chunkEventDataLines.join('\n')
-                                chunkEventDataLines = []
-
-                                if (content !== ':heartbeat') {
-                                    fullContent += content
-                                    if (typeof onMessage === 'function') {
-                                        onMessage(content, fullContent)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    sseParser.processChunk(text)
                 } catch (error) {
                     console.error('解析分块数据错误:', error)
                 }
@@ -467,8 +332,9 @@ export function streamChatByRequest(options) {
     }
 
     const token = getToken()
-    let fullContent = ''
-    const END_MARKER = '\u0003'
+
+    // 创建 SSE 解析器（复用公共解析逻辑）
+    const sseParser = createSSEParser({ onMessage, onComplete, onError })
 
     const requestTask = uni.request({
         url: url,
@@ -488,73 +354,12 @@ export function streamChatByRequest(options) {
         }
     })
 
-    // 监听分块数据
-    let chunkBuffer = '' // 用于处理跨chunk的不完整行
-    let eventDataLines = [] // 收集同一个SSE事件中的所有data行
-
+    // 监听分块数据（使用公共 SSE 解析器）
     requestTask.onChunkReceived && requestTask.onChunkReceived((res) => {
         try {
-            // 将ArrayBuffer转换为字符串
             const decoder = new TextDecoder('utf-8')
             const text = decoder.decode(res.data)
-            chunkBuffer += text
-
-            // 按行分割
-            const lines = chunkBuffer.split('\n')
-            // 保留最后一行（可能不完整）
-            chunkBuffer = lines.pop() || ''
-
-            for (const line of lines) {
-                // 移除行末的 \r（Windows换行符）
-                const cleanLine = line.endsWith('\r') ? line.slice(0, -1) : line
-
-                if (cleanLine.startsWith('data:')) {
-                    // 获取data:后面的内容，不使用trim()以保留空白
-                    const data = cleanLine.substring(5)
-
-                    // 检查结束标记
-                    if (data === END_MARKER || data.includes(END_MARKER)) {
-                        // 先处理之前收集的数据
-                        if (eventDataLines.length > 0) {
-                            const content = eventDataLines.join('\n')
-                            fullContent += content
-                            if (typeof onMessage === 'function') {
-                                onMessage(content, fullContent)
-                            }
-                            eventDataLines = []
-                        }
-                        // 处理结束标记
-                        const cleanData = data.replace(END_MARKER, '')
-                        if (cleanData) {
-                            fullContent += cleanData
-                            if (typeof onMessage === 'function') {
-                                onMessage(cleanData, fullContent)
-                            }
-                        }
-                        if (typeof onComplete === 'function') {
-                            onComplete(fullContent)
-                        }
-                        return
-                    }
-
-                    // 收集data行（包括空字符串，因为空字符串表示换行）
-                    eventDataLines.push(data)
-                } else if (cleanLine === '') {
-                    // 空行表示一个SSE事件结束
-                    if (eventDataLines.length > 0) {
-                        // 将同一事件的多个data行用换行符连接
-                        const content = eventDataLines.join('\n')
-                        eventDataLines = []
-
-                        if (content !== ':heartbeat') {
-                            fullContent += content
-                            if (typeof onMessage === 'function') {
-                                onMessage(content, fullContent)
-                            }
-                        }
-                    }
-                }
-            }
+            sseParser.processChunk(text)
         } catch (error) {
             console.error('解析分块数据错误:', error)
         }
