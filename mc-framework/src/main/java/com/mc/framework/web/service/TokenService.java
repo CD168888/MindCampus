@@ -228,6 +228,7 @@ public class TokenService {
                 String userKey = getTokenKey(uuid);
                 return redisCache.getCacheObject(userKey);
             } catch (Exception e) {
+                log.warn("通过Token获取用户信息失败: {}", e.getMessage());
             }
         }
         return null;
