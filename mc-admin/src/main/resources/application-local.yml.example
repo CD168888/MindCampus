@@ -32,9 +32,9 @@ spring:
   mail:
     password: your-mail-smtp-password
 
-# JWT 密钥（建议使用 64 字节随机字符串，可通过 openssl rand -base64 64 生成）
+# JWT 密钥（必须是 Base64 编码的 64 字节密钥，可通过 openssl rand -base64 64 生成）
 token:
-  secret: your-jwt-secret-key-at-least-64-bytes
+  secret: your-base64-encoded-64-byte-jwt-secret-key-here-use-openssl-rand-base64-64
 
 # 阿里云 OSS
 oss:
