@@ -152,7 +152,7 @@ public class StudentProfileKGServiceImpl implements IStudentProfileKGService, Kn
     }
 
     @Override
-    public List<RagResultDTO> ragRetrieve(String query, Long kbId, int topK) {
+    public List<RagResultDTO> ragRetrieveByKb(String query, Long kbId, int topK) {
         try {
             float[] queryVector = embeddingService.embed(query);
             return milvusVectorClient.search(queryVector, kbId, topK, ragMinScore);
@@ -168,7 +168,7 @@ public class StudentProfileKGServiceImpl implements IStudentProfileKGService, Kn
      */
     @Override
     public List<KnowledgeQueryService.RagResult> ragRetrieve(String query, Long userId, int topK) {
-        List<RagResultDTO> dtos = ragRetrieve(query, null, topK);
+        List<RagResultDTO> dtos = ragRetrieveByKb(query, null, topK);
         return dtos.stream()
             .map(dto -> new KnowledgeQueryService.RagResult(
                 dto.getContent(),

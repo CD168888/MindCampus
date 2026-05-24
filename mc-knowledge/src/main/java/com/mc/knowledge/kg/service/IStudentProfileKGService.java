@@ -108,5 +108,5 @@ public interface IStudentProfileKGService {
      * @param topK  返回前 K 条
      * @return RAG 检索结果列表
      */
-    List<RagResultDTO> ragRetrieve(String query, Long kbId, int topK);
+    List<RagResultDTO> ragRetrieveByKb(String query, Long kbId, int topK);
 }
