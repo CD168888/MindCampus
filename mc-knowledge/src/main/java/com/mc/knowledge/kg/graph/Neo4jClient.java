@@ -700,9 +700,9 @@ public class Neo4jClient {
                 } else if (relType.equals("INTERACTED_IN") && props.containsKey("sessionId")) {
                     return "interaction_" + n.get("sessionId").asLong();
                 } else if (relType.equals("HAS_PROFILE")) {
-                    return "profile_" + n.id();
+                    return "profile_" + n.elementId();
                 } else if (relType.equals("HAS_RISK")) {
-                    return "risk_" + n.id();
+                    return "risk_" + n.elementId();
                 }
             }
         }
@@ -714,8 +714,8 @@ public class Neo4jClient {
         if (props.containsKey("resultId")) return "assessment_" + n.get("resultId").asLong();
         if (props.containsKey("sessionId")) return "interaction_" + n.get("sessionId").asLong();
         if (props.containsKey("emotion")) return "emotion_" + System.identityHashCode(n);
-        if (props.containsKey("personality")) return "profile_" + n.id();
-        if (props.containsKey("level")) return "risk_" + n.id();
+        if (props.containsKey("personality")) return "profile_" + n.elementId();
+        if (props.containsKey("level")) return "risk_" + n.elementId();
         return null;
     }
 
