@@ -67,6 +67,7 @@ public class StudentProfileKGController extends BaseController {
         return success(result);
     }
 
+    @SuppressWarnings("unchecked")
     @PreAuthorize("@ss.hasPermi('knowledge:persona:update')")
     @PostMapping("/profile/{userId}")
     public AjaxResult updateProfile(

@@ -37,6 +37,7 @@ public class CounselorDeptController extends BaseController {
      * @param params 绑定参数
      * @return 绑定结果
      */
+    @SuppressWarnings("unchecked")
     @PostMapping("/bind")
     @Log(title = "辅导员管理", businessType = BusinessType.INSERT)
     public AjaxResult bindCounselorDept(@RequestBody Map<String, Object> params) {
