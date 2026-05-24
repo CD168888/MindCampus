@@ -32,7 +32,7 @@ public class BannerController extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('banner:banner:list')")
     @GetMapping("/list")
-    public TableDataInfo<List<Banner>> list(Banner banner) {
+    public TableDataInfo<Banner> list(Banner banner) {
         startPage();
         List<Banner> list = bannerService.selectBannerList(banner);
         return getDataTable(list);

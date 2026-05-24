@@ -32,7 +32,7 @@ public class RecommendCourseController extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('recommendCourse:recommendCourse:list')")
     @GetMapping("/list")
-    public TableDataInfo<List<RecommendCourse>> list(RecommendCourse recommendCourse) {
+    public TableDataInfo<RecommendCourse> list(RecommendCourse recommendCourse) {
         startPage();
         List<RecommendCourse> list = recommendCourseService.selectRecommendCourseList(recommendCourse);
         return getDataTable(list);

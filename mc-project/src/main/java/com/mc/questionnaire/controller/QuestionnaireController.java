@@ -51,7 +51,7 @@ public class QuestionnaireController extends BaseController {
     @Operation(summary = "查询问卷列表")
     @PreAuthorize("@ss.hasPermi('questionnaire:questionnaireinfo:list')")
     @GetMapping("/list")
-    public TableDataInfo<List<Questionnaire>> list(Questionnaire questionnaire) {
+    public TableDataInfo<Questionnaire> list(Questionnaire questionnaire) {
         startPage();
         List<Questionnaire> list = questionnaireService.selectQuestionnaireList(questionnaire);
         return getDataTable(list);

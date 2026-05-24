@@ -32,7 +32,7 @@ public class RecommendMusicController extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('recommendMusic:recommendMusic:list')")
     @GetMapping("/list")
-    public TableDataInfo<List<RecommendMusic>> list(RecommendMusic recommendMusic) {
+    public TableDataInfo<RecommendMusic> list(RecommendMusic recommendMusic) {
         startPage();
         List<RecommendMusic> list = recommendMusicService.selectRecommendMusicList(recommendMusic);
         return getDataTable(list);

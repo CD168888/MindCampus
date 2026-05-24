@@ -38,7 +38,7 @@ public class StudentInfoController extends BaseController {
     @Operation(summary = "查询学生信息列表")
     @PreAuthorize("@ss.hasPermi('student:info:list')")
     @GetMapping("/list")
-    public TableDataInfo<List<Student>> list(
+    public TableDataInfo<Student> list(
             @Parameter(description = "学生信息查询条件") Student student) {
         startPage();
         List<Student> list = studentInfoService.selectStudentInfoList(student);
