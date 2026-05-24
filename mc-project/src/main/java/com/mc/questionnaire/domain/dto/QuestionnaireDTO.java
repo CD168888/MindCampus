@@ -5,6 +5,7 @@ import com.mc.common.core.domain.BaseEntityPlus;
 import com.mc.questionnaire.domain.Question;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Date;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.List;
  * 问卷 DTO（包含题目）
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "问卷新增/修改 DTO")
 public class QuestionnaireDTO extends BaseEntityPlus {
 
