@@ -111,7 +111,7 @@ public class QuestionnaireServiceImpl extends ServiceImpl<QuestionnaireMapper, Q
     @Transactional(rollbackFor = Exception.class)
     public void deleteQuestionnaire(Long[] questionnaireIds) {
         // 删除题目
-        questionMapper.delete(new LambdaQueryWrapper<Question>().in(Question::getQuestionnaireId, questionnaireIds));
+        questionMapper.delete(new LambdaQueryWrapper<Question>().in(Question::getQuestionnaireId, (Object) questionnaireIds));
         // 删除问卷
         this.removeByIds(List.of(questionnaireIds));
     }
